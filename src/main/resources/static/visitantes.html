@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visitantes — Sistema Esportivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--verde:#00C97A;--azul:#0A1628;--azul2:#112244;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;
+ --card-bg:linear-gradient(135deg,#0D1E3C,#112244);--card-border:rgba(255,255,255,0.06);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;; overflow-y: auto; }
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
+.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
+.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
+nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
+.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);}
+.user-name{font-size:13px;font-weight:600;}.user-role{font-size:11px;color:var(--cinza);}
+.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-logout:hover{background:rgba(255,80,80,0.2);}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
+.page-header{margin-bottom:22px;}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;}
+.page-header p{font-size:14px;color:var(--cinza);margin-top:4px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px;transition:transform 0.2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.stat-num{font-family:'Bebas Neue',cursive;font-size:30px;line-height:1;}
+.stat-label{font-size:11px;color:var(--cinza);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:12px;padding:4px;margin-bottom:22px;width:fit-content;}
+.tab{padding:8px 20px;border-radius:9px;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;cursor:pointer;border:none;background:transparent;color:var(--cinza);transition:all 0.2s;}
+.tab.active{background:linear-gradient(135deg,var(--verde),#00A865);color:var(--azul);}
+.tab:hover:not(.active){color:var(--branco);background:rgba(255,255,255,0.05);}
+.secao{display:none;}.secao.visible{display:block;}
+
+/* CARD */
+.card-dark{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:24px;margin-bottom:22px;}
+.card-dark h4{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;margin-bottom:18px;color:var(--verde);}
+
+/* FORM */
+.form-control,.form-select{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--branco)!important;font-family:'Barlow',sans-serif;}
+.form-control:focus,.form-select:focus{border-color:var(--verde)!important;box-shadow:0 0 0 3px rgba(0,201,122,0.15)!important;background:rgba(0,201,122,0.04)!important;}
+.form-control::placeholder{color:rgba(136,153,187,0.4)!important;}
+.form-select option{background:#0D1E3C;color:var(--branco);}
+label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;display:block;}
+.btn-cadastrar{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 32px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-cadastrar:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,201,122,0.3);}
+.btn-cancelar-form{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 24px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-cancelar-form:hover{background:rgba(255,255,255,0.1);color:var(--branco);}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.search-wrap{position:relative;}
+.search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;}
+.search-bar{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 16px 9px 36px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;width:240px;outline:none;transition:all 0.2s;}
+.search-bar:focus{border-color:var(--verde);background:rgba(0,201,122,0.04);}
+.search-bar::placeholder{color:rgba(136,153,187,0.4);}
+.select-filtro{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--cinza)!important;font-family:'Barlow',sans-serif;font-size:13px;padding:9px 14px;outline:none;cursor:pointer;max-width:220px;}
+.select-filtro:focus{border-color:var(--verde)!important;}
+.select-filtro option{background:#0D1E3C;color:var(--branco);}
+.ml-auto{margin-left:auto;}
+.btn-novo{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;padding:9px 20px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-novo:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,201,122,0.3);}
+
+/* VIEW TOGGLE */
+.view-toggle{display:flex;gap:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px;}
+.view-btn{width:32px;height:28px;border:none;background:transparent;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;color:var(--cinza);}
+.view-btn.active{background:rgba(0,201,122,0.2);color:var(--verde);}
+
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.vis-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:18px;transition:all 0.2s;border-left:3px solid var(--verde);}
+.vis-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.3);border-left-color:var(--verde);}
+.vis-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.vis-avatar{width:42px;height:42px;border-radius:50%;background:rgba(0,201,122,0.15);border:2px solid rgba(0,201,122,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:var(--verde);flex-shrink:0;}
+.vis-nome{font-size:14px;font-weight:700;line-height:1.3;}
+.vis-evento{font-size:11px;color:var(--cinza);margin-top:2px;}
+.vis-meta{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--cinza);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.vis-meta span{display:flex;align-items:center;gap:6px;}
+.vis-footer{display:flex;justify-content:space-between;align-items:center;}
+.vis-acoes{display:flex;gap:6px;}
+/* btn-acao-sm replaced */
+
+.btn-ver:hover{background:rgba(78,201,255,0.25);}
+
+.btn-edit:hover{background:rgba(255,176,32,0.25);}
+
+.btn-del:hover{background:rgba(255,80,80,0.25);}
+
+/* TABELA */
+.table-wrapper{display:none;}.table-wrapper.visible{display:block;}
+.cards-wrapper{display:none;}.cards-wrapper.visible{display:block;}
+.table{color:var(--branco)!important;border-collapse:separate!important;border-spacing:0 6px!important;}
+.table thead th{background:rgba(9,21,37,0.8)!important;color:var(--cinza)!important;font-size:11px;letter-spacing:2px;text-transform:uppercase;border:none!important;font-weight:700;padding:12px 16px!important;}
+.table tbody tr{background:rgba(255,255,255,0.03);transition:all 0.2s;}
+.table tbody tr:hover{background:rgba(0,201,122,0.05);transform:translateY(-1px);}
+.table tbody td{padding:12px 16px!important;vertical-align:middle;border:none!important;}
+.table tbody td:first-child{border-radius:10px 0 0 10px;}
+.table tbody td:last-child{border-radius:0 10px 10px 0;}
+
+/* AGRUPAMENTO POR EVENTO */
+.evento-grupo{margin-bottom:28px;}
+.evento-header{background:rgba(0,201,122,0.08);border:1px solid rgba(0,201,122,0.15);border-radius:12px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.evento-header-nome{font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:1px;color:var(--verde);}
+.evento-header-count{font-size:12px;color:var(--cinza);font-weight:600;}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 24px;color:var(--cinza);}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
+
+/* MODAL */
+.modal-content{background:#0D1E3C!important;color:var(--branco)!important;border:1px solid rgba(0,201,122,0.2)!important;border-radius:18px!important;}
+.modal-header{border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 24px!important;}
+.modal-body{padding:20px 24px!important;}
+.modal-footer{border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 24px!important;}
+.btn-close{filter:invert(1)!important;}
+.detalhe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.detalhe-item{padding:11px 14px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);}
+.detalhe-item.full{grid-column:1/-1;}
+.detalhe-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:4px;}
+.detalhe-valor{font-size:14px;font-weight:600;}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;color:var(--branco);}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── MODAL LOGOUT ── */
+#logoutModal{
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+ z-index:99998;display:none;align-items:center;justify-content:center;
+}
+#logoutModal.show{display:flex;}
+.logout-card{
+ background:linear-gradient(135deg,#0D1E3C,#112244);
+ border:1px solid rgba(255,80,80,0.25);
+ border-radius:20px;padding:36px 40px;text-align:center;
+ max-width:360px;width:90%;
+ animation:slideUp 0.25s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.logout-icon{font-size:48px;margin-bottom:16px;}
+.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;color:#F0F4FF;margin-bottom:8px;}
+.logout-msg{font-size:14px;color:#8899BB;margin-bottom:28px;line-height:1.6;}
+.logout-btns{display:flex;gap:12px;justify-content:center;}
+.btn-logout-cancel{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#8899BB;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-logout-cancel:hover{background:rgba(255,255,255,0.1);color:#F0F4FF;}
+.btn-logout-confirm{background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.35);color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-logout-confirm:hover{background:rgba(255,80,80,0.3);}
+
+/* ── TEMA CLARO ── */
+/* ── BOTÃO TEMA ── */
+/* ── TABLE UX ── */
+.table-responsive{border-radius:14px;overflow:hidden;}
+.table{border-collapse:separate!important;border-spacing:0!important;width:100%;}
+.table thead th{
+  background:rgba(9,21,37,0.9)!important;color:var(--cinza)!important;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  border:none!important;font-weight:700;padding:14px 16px!important;
+  position:sticky;top:0;z-index:2;
+}
+.table thead th:first-child{border-radius:12px 0 0 0;}
+.table thead th:last-child{border-radius:0 12px 0 0;}
+.table tbody tr{
+  background:rgba(255,255,255,0.02)!important;
+  transition:background 0.15s,transform 0.15s;
+  cursor:default;
+}
+.table tbody tr:hover{
+  background:rgba(0,201,122,0.05)!important;
+  transform:translateX(2px);
+}
+.table tbody td{
+  padding:13px 16px!important;vertical-align:middle;
+  border-top:1px solid rgba(255,255,255,0.03)!important;
+  border-bottom:none!important;border-left:none!important;border-right:none!important;
+  font-size:13px;
+}
+.table tbody td:first-child{
+  border-left:3px solid transparent!important;
+  transition:border-color 0.15s;
+}
+.table tbody tr:hover td:first-child{border-left-color:var(--verde)!important;}
+.table tbody tr:last-child td:first-child{border-radius:0 0 0 10px;}
+.table tbody tr:last-child td:last-child{border-radius:0 0 10px 0;}
+.table .td-avatar{
+  width:36px;height:36px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;flex-shrink:0;
+}
+.table .td-main{font-weight:700;color:var(--branco);}
+.table .td-sub{font-size:11px;color:var(--cinza);margin-top:2px;}
+.table .td-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+/* ── TEMA CLARO — Soft Blue-Grey ── */
+/* theme toggle in light mode */
+.btn-acao-sm:hover { transform: translateY(-1px); }
+.btn-ver  { background: rgba(78,201,255,0.10); color: #4EC9FF; border-color: rgba(78,201,255,0.25); }
+.btn-ver:hover  { background: rgba(78,201,255,0.22); }
+.btn-edit { background: rgba(255,176,32,0.10);  color: #FFB020; border-color: rgba(255,176,32,0.25); }
+.btn-edit:hover { background: rgba(255,176,32,0.22); }
+.btn-del  { background: rgba(255,80,80,0.10);   color: #FF6B6B; border-color: rgba(255,80,80,0.25); }
+.btn-del:hover  { background: rgba(255,80,80,0.22); }
+.btn-bask { background: rgba(255,176,32,0.10); color: #FFB020; border-color: rgba(255,176,32,0.2); }
+.btn-bask:hover { background: rgba(255,176,32,0.22); }
+/* action group spacing */
+.user-acoes, .desemp-acoes { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+.user-avatar.has-foto{background:none!important;overflow:hidden;padding:0;}
+.user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+/* ── TIME INDICATOR SIDEBAR ── */
+.time-indicator{
+  margin:0 12px 12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px;
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:background .2s;text-decoration:none;
+}
+.time-indicator:hover{background:rgba(255,255,255,0.08);}
+.ti-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ti-nome{font-size:12px;font-weight:700;color:var(--branco);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.ti-trocar{font-size:10px;color:var(--cinza);font-weight:600;
+  letter-spacing:.5px;white-space:nowrap;}
+
+/* ── CARD ACTION BUTTONS — consistent across all pages ── */
+.user-acoes, .exam-acoes, .desemp-acoes, .ativ-acoes, .bv-acoes,
+[class$="-acoes"], [class*="-acoes"] {
+  display: flex !important;
+  gap: 5px !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+/* cards use flex-column so buttons always sit at bottom */
+.user-card, .exam-card, .desemp-card, .ativ-card, .bv-card {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.user-card-body, .exam-card-body, .desemp-card-body,
+.ativ-card-body, .bv-card-body {
+  flex: 1;
+}
+/* btn-acao-sm consistent sizing */
+.btn-acao-sm {
+  padding: 5px 13px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .4px;
+  border-radius: 7px !important;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .18s;
+  font-family: 'Barlow', sans-serif;
+}
+.btn-acao-sm:hover { transform: translateY(-1px); }
+</style>
+</head>
+<body>
+
+<script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+
+
+<!-- MODAL LOGOUT -->
+<div id="logoutModal">
+ <div class="logout-card">
+    <div class="logout-icon">👋</div>
+ <div class="logout-titulo">Sair do Sistema?</div>
+ <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
+ <div class="logout-btns">
+ <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
+ <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
+ </div>
+ </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+ <div class="sidebar-logo" id="sidebarLogo">
+ <div class="logo-icon" id="sidebarLogoIcon">L</div>
+ <div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>
+</div>
+ <nav>
+ <div class="nav-section">Principal</div>
+    <a href="dashboard.html" class="nav-item">Dashboard</a>
+    <a href="usuarios.html"  class="nav-item">Usuários</a>
+ <div class="nav-section">Admin</div>
+    <a href="cadastrar-treinador.html" class="nav-item">Treinadores</a>
+    <div class="nav-section">Gestão</div>
+    <a href="exames.html"     class="nav-item">Exames</a>
+    <a href="desempenho.html" class="nav-item">Desempenho</a>
+    <a href="atividades.html" class="nav-item">Atividades</a>
+    <a href="calendario.html" class="nav-item">Calendário</a>
+    <a href="visitantes.html" class="nav-item active">Visitantes</a>
+ </nav>
+ <!-- TIME SELECIONADO -->
+ <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
+   <div class="ti-dot"></div>
+   <div class="ti-nome">—</div>
+   <div class="ti-trocar">Trocar</div>
+ </a>
+ <div class="sidebar-footer">
+ <div class="user-info">
+ <div class="user-avatar" id="avatarLetra">A</div>
+ <div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>
+ </div>
+ <button class="btn-logout" onclick="logout()">Sair do Sistema</button>
+ </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+ <div class="page-header">
+ <h1>Visitantes</h1>
+ <p>Times e delegações visitantes por evento esportivo</p>
+ </div>
+
+ <!-- STATS -->
+ <div class="stats-row">
+ <div class="stat-card">
+ <div class="stat-dot" style="background:var(--verde)"></div>
+ <div><div class="stat-num" id="st-total" style="color:var(--verde)">—</div><div class="stat-label">Total de Times</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:#4EC9FF"></div>
+ <div><div class="stat-num" id="st-eventos" style="color:#4EC9FF">—</div><div class="stat-label">Eventos com Visitantes</div></div>
+ </div>
+ <div class="stat-card">
+ <div class="stat-dot" style="background:#FFB020"></div>
+ <div><div class="stat-num" id="st-municipios" style="color:#FFB020">—</div><div class="stat-label">Municípios</div></div>
+ </div>
+ </div>
+
+ <!-- TABS -->
+ <div class="tabs">
+ <button class="tab active" onclick="mudarTab('lista',this)"> Lista</button>
+ <button class="tab" onclick="mudarTab('form',this)"> Novo Visitante</button>
+ <button class="tab" onclick="mudarTab('grupos',this)"> Por Evento</button>
+ </div>
+
+ <!-- TAB LISTA -->
+ <div class="secao visible" id="tab-lista">
+ <div class="card-dark" style="padding:18px 24px;">
+ <div class="toolbar">
+ <div class="search-wrap">
+ <input class="search-bar" id="busca" placeholder="Buscar time ou município..." oninput="renderizar()">
+ </div>
+ <select class="select-filtro" id="filtroEvento" onchange="renderizar()">
+ <option value="">Todos os eventos</option>
+ </select>
+ <div class="view-toggle ml-auto">
+ <button class="view-btn active" id="vCards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+ <button class="view-btn" id="vTabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+ </div>
+ <button class="btn-novo" onclick="mudarTab('form', document.querySelectorAll('.tab')[1])">+ Novo</button>
+ </div>
+
+ <!-- CARDS -->
+ <div class="cards-wrapper visible" id="cardsWrapper">
+ <div class="cards-grid" id="cardsGrid"></div>
+ </div>
+
+ <!-- TABELA -->
+ <div class="table-wrapper" id="tabelaWrapper">
+ <div class="table-responsive">
+ <table class="table">
+ <thead><tr><th>ID</th><th>Time / Visitante</th><th>Município</th><th>Evento</th><th>Atividade</th><th style="text-align:right">Ações</th></tr></thead>
+ <tbody id="tabelaVis"></tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <!-- TAB FORM -->
+ <div class="secao" id="tab-form">
+ <div class="card-dark">
+ <h4 id="formTitulo"> Novo Visitante</h4>
+ <form id="formVis">
+ <input type="hidden" id="editId">
+ <div class="row g-3">
+ <div class="col-md-12">
+ <label class="form-label">Evento / Calendário</label>
+ <select class="form-select" id="selectCal" name="calendario_id" required>
+ <option value="">Selecionar evento...</option>
+ </select>
+ </div>
+ <div class="col-md-6">
+ <label class="form-label">Nome do Time / Visitante</label>
+ <input class="form-control" name="nome_visitante" placeholder="Ex: Escola Municipal ABC, Time Estrela..." required>
+ </div>
+ <div class="col-md-6">
+ <label class="form-label">Município de Origem</label>
+ <input class="form-control" name="municipio_visitante" placeholder="Ex: São Paulo, Osasco, Guarulhos...">
+ </div>
+ <div class="col-12 d-flex gap-2 mt-2">
+ <button type="submit" class="btn-cadastrar" id="btnSubmit">Registrar Visitante</button>
+ <button type="button" class="btn-cancelar-form" onclick="cancelarForm()">Cancelar</button>
+ </div>
+ </div>
+ </form>
+ </div>
+ </div>
+
+ <!-- TAB GRUPOS -->
+ <div class="secao" id="tab-grupos">
+ <div id="gruposContainer">
+ <div class="empty-state"><div class="empty-icon" style="color:#8899BB;margin-bottom:8px;opacity:0.6"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><p>Carregando...</p></div>
+ </div>
+ </div>
+
+</main>
+
+<!-- MODAL VER -->
+<div class="modal fade" id="modalVer" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered">
+ <div class="modal-content">
+ <div class="modal-header">
+ <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;">Detalhes do Visitante</h5>
+ <button class="btn-close" data-bs-dismiss="modal"></button>
+ </div>
+ <div class="modal-body" id="modalVerBody"></div>
+ <div class="modal-footer">
+ <button id="btnEditModal" class="btn-cadastrar" style="font-size:14px;padding:8px 20px;" onclick="editarDoModal()"> Editar</button>
+ <button class="btn-cancelar-form" style="font-size:14px;padding:8px 20px;" data-bs-dismiss="modal">Fechar</button>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="modal fade" id="modalDel" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-sm">
+ <div class="modal-content">
+ <div class="modal-body" style="padding:28px;text-align:center;">
+ <div style="font-size:38px;margin-bottom:12px;"></div>
+ <div style="font-family:'Bebas Neue',cursive;font-size:20px;margin-bottom:8px;">Excluir Visitante?</div>
+ <div style="font-size:13px;color:var(--cinza);margin-bottom:20px;" id="nomeDel">Esta ação não pode ser desfeita.</div>
+ <div style="display:flex;gap:10px;justify-content:center;">
+ <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+ <button id="btnConfDel" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#FF6B6B;padding:7px 20px;border-radius:8px;font-family:'Bebas Neue',cursive;font-size:15px;cursor:pointer;">Excluir</button>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// AUTH
+const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+if (!user.id_usuario) window.location.href = 'login.html';
+document.getElementById('nomeUsuario').textContent = user.nome_usuario||'—';
+document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0].toUpperCase();
+  // Mostrar foto na sidebar se existir
+  if(user.foto_usuario){
+    var av=document.getElementById('avatarLetra');
+    av.classList.add('has-foto');
+    av.innerHTML='<img src="'+user.foto_usuario+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  }
+document.getElementById('tipoUsuario').textContent = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario]||'—';
+// logout() defined below via shared handler
+const isAtleta = user.tipo_usuario === 3;
+const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+if(isAtleta){
+ const sa = document.createElement('style');
+ sa.textContent = '.btn-novo{display:none!important}.btn-cadastrar{display:none!important}';
+ document.head.appendChild(sa);
+ document.querySelectorAll('.tab').forEach(t=>{
+ if(t.textContent.includes('Novo')||t.textContent.includes('Nova'))t.style.display='none';
+ });
+}
+
+const apiV = '/visitantes';
+const apiC = '/calendarios';
+const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _idTime = _ts ? _ts.id : null;
+function urlTime(base){ return _idTime ? base + '?idTime=' + _idTime : base; }
+let dados = [];
+let calendarios = [];
+let idParaDel = null;
+let idParaEditarDoModal = null;
+let visao = 'cards';
+
+// TOAST
+function toast(msg, ok=true){
+ const el = document.createElement('div');
+ el.className = 'toast-item'+(ok?'':' erro');
+ el.innerHTML = `${ok?'':''} ${msg}`;
+ document.getElementById('toastWrap').appendChild(el);
+ setTimeout(()=>el.remove(), 3200);
+}
+
+// iniciais
+function ini(nome){ return (nome||'?').split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase(); }
+
+// CARREGAR CALENDÁRIOS
+function carregarCalendarios(){
+ return fetch(urlTime(apiC)).then(r=>r.json()).then(d=>{
+ calendarios = d;
+ const sel = document.getElementById('selectCal');
+ const filtro = document.getElementById('filtroEvento');
+ d.forEach(c=>{
+ const txt = `${c.atividade?.nome_atividade||'Evento'} (#${c.id_calendario})`;
+ const o1 = document.createElement('option'); o1.value=c.id_calendario; o1.textContent=txt; sel.appendChild(o1);
+ const o2 = document.createElement('option'); o2.value=c.id_calendario; o2.textContent=txt; filtro.appendChild(o2);
+ });
+ }).catch(()=>{});
+}
+
+// STATS
+function atualizarStats(){
+ document.getElementById('st-total').textContent = dados.length;
+ const eventos = new Set(dados.map(v=>v.calendario?.id_calendario).filter(Boolean));
+ document.getElementById('st-eventos').textContent = eventos.size;
+ const munis = new Set(dados.map(v=>v.municipio_visitante).filter(Boolean));
+ document.getElementById('st-municipios').textContent= munis.size;
+}
+
+// CARREGAR VISITANTES
+function carregar(){
+ console.log("[VISITANTES] timeSelecionado:", JSON.parse(sessionStorage.getItem("timeSelecionado")||"null"));
+ console.log("[VISITANTES] URL:", urlTime(apiV));
+ fetch(urlTime(apiV)).then(r=>r.json()).then(d=>{
+ dados = d;
+ atualizarStats();
+ renderizar();
+ renderGrupos();
+ }).catch(()=>{ dados=[]; atualizarStats(); renderizar(); renderGrupos(); });
+}
+
+// RENDERIZAR
+function renderizar(){
+ const busca = document.getElementById('busca').value.toLowerCase();
+ const evento = document.getElementById('filtroEvento').value;
+ const lista = dados.filter(v=>{
+ const matchBusca = !busca || (v.nome_visitante||'').toLowerCase().includes(busca)
+ || (v.municipio_visitante||'').toLowerCase().includes(busca);
+ const matchEvento = !evento || String(v.calendario?.id_calendario) === evento;
+ return matchBusca && matchEvento;
+ });
+ renderCards(lista);
+ renderTabela(lista);
+}
+
+// NOME EVENTO
+function nomeEvento(v){
+ if (!v.calendario) return '—';
+ const cal = calendarios.find(c=>c.id_calendario===v.calendario.id_calendario);
+ return cal?.atividade?.nome_atividade || `Evento #${v.calendario.id_calendario}`;
+}
+
+// CARDS
+function renderCards(lista){
+ const g = document.getElementById('cardsGrid');
+ if(!lista.length){
+ g.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon" style="color:#8899BB;margin-bottom:8px;opacity:0.6"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><p>Nenhum visitante encontrado</p></div>`;
+ return;
+ }
+ g.innerHTML = lista.map(v=>{
+ const ev = nomeEvento(v);
+ return `
+ <div class="vis-card">
+ <div class="vis-card-top">
+ <div class="vis-avatar">${ini(v.nome_visitante)}</div>
+ <div>
+ <div class="vis-nome">${v.nome_visitante||'—'}</div>
+ <div class="vis-evento"> ${ev}</div>
+ </div>
+ </div>
+ <div class="vis-meta">
+ ${v.municipio_visitante?`<span> ${v.municipio_visitante}</span>`:'<span style="color:rgba(136,153,187,0.4)"> Município não informado</span>'}
+ <span style="color:rgba(136,153,187,0.4);font-size:11px">ID #${v.id_visitante}</span>
+ </div>
+ <div class="vis-footer">
+ <span style="background:rgba(0,201,122,0.1);color:var(--verde);font-size:10px;font-weight:700;padding:3px 10px;border-radius:8px">Visitante</span>
+ <div class="vis-acoes">
+ <button class="btn-acao-sm btn-ver" onclick="ver(${v.id_visitante})">Ver</button>
+ <button class="btn-acao-sm btn-edit" onclick="abrirEdicao(${v.id_visitante})">Editar</button>
+ <button class="btn-acao-sm btn-del" onclick="confirmarDel(${v.id_visitante})">Excluir</button>
+ </div>
+ </div>
+ </div>`;
+ }).join('');
+}
+
+// TABELA
+function renderTabela(lista){
+ const tb = document.getElementById('tabelaVis');
+ if(!lista.length){
+ tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--cinza);padding:32px">Nenhum visitante encontrado</td></tr>`;
+ return;
+ }
+ tb.innerHTML = lista.map(v=>{
+ const ev = nomeEvento(v);
+ const cal = calendarios.find(c=>c.id_calendario===v.calendario?.id_calendario);
+ const ativ = cal?.atividade?.nome_atividade||'—';
+ return `<tr>
+ <td style="color:var(--cinza);font-size:12px">#${v.id_visitante}</td>
+ <td>
+ <div style="display:flex;align-items:center;gap:10px">
+ <div style="width:34px;height:34px;border-radius:50%;background:rgba(0,201,122,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--verde);flex-shrink:0">${ini(v.nome_visitante)}</div>
+ <span style="font-weight:700">${v.nome_visitante||'—'}</span>
+ </div>
+ </td>
+ <td>${v.municipio_visitante||'—'}</td>
+ <td style="color:var(--cinza);font-size:12px">#${v.calendario?.id_calendario||'—'}</td>
+ <td style="font-size:13px">${ativ}</td>
+ <td style="text-align:right">
+ <button class="btn-acao-sm btn-ver" onclick="ver(${v.id_visitante})">Ver</button>
+ <button class="btn-acao-sm btn-edit" onclick="abrirEdicao(${v.id_visitante})">Editar</button>
+ <button class="btn-acao-sm btn-del" onclick="confirmarDel(${v.id_visitante})">Excluir</button>
+ </td>
+ </tr>`;
+ }).join('');
+}
+
+// GRUPOS POR EVENTO
+function renderGrupos(){
+ const container = document.getElementById('gruposContainer');
+ if(!dados.length){
+ container.innerHTML = `<div class="empty-state"><div class="empty-icon" style="color:#8899BB;margin-bottom:8px;opacity:0.6"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><p>Nenhum visitante registrado</p></div>`;
+ return;
+ }
+ const grupos = {};
+ dados.forEach(v=>{
+ const key = v.calendario?.id_calendario||'sem-evento';
+ if(!grupos[key]) grupos[key]={ev:nomeEvento(v), lista:[]};
+ grupos[key].lista.push(v);
+ });
+ container.innerHTML = Object.entries(grupos).map(([key,g])=>`
+ <div class="evento-grupo">
+ <div class="evento-header">
+ <div class="evento-header-nome"> ${g.ev}</div>
+ <div class="evento-header-count">${g.lista.length} visitante${g.lista.length!==1?'s':''}</div>
+ </div>
+ <div class="cards-grid">
+ ${g.lista.map(v=>`
+ <div class="vis-card">
+ <div class="vis-card-top">
+ <div class="vis-avatar">${ini(v.nome_visitante)}</div>
+ <div><div class="vis-nome">${v.nome_visitante||'—'}</div>
+ ${v.municipio_visitante?`<div class="vis-evento"> ${v.municipio_visitante}</div>`:''}
+ </div>
+ </div>
+ <div class="vis-footer" style="padding-top:0;border-top:none">
+ <span style="font-size:11px;color:var(--cinza)">#${v.id_visitante}</span>
+ <div class="vis-acoes">
+ <button class="btn-acao-sm btn-ver" onclick="ver(${v.id_visitante})">Ver</button>
+ <button class="btn-acao-sm btn-del" onclick="confirmarDel(${v.id_visitante})">Excluir</button>
+ </div>
+ </div>
+ </div>`).join('')}
+ </div>
+ </div>`).join('');
+}
+
+// MUDAR VISÃO
+function mudarVisao(v){
+ visao=v;
+ document.getElementById('cardsWrapper').classList.toggle('visible',v==='cards');
+ document.getElementById('tabelaWrapper').classList.toggle('visible',v==='tabela');
+ document.getElementById('vCards').classList.toggle('active',v==='cards');
+ document.getElementById('vTabela').classList.toggle('active',v==='tabela');
+}
+
+// TABS
+function mudarTab(id, btn){
+ document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));
+ document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+ document.getElementById('tab-'+id).classList.add('visible');
+ btn.classList.add('active');
+}
+
+// VER
+function ver(id){
+ const v = dados.find(x=>x.id_visitante===id);
+ if(!v) return;
+ idParaEditarDoModal = id;
+ const ev = nomeEvento(v);
+ const cal = calendarios.find(c=>c.id_calendario===v.calendario?.id_calendario);
+ const placar = cal ? `${cal.placar_pro??'—'} × ${cal.placar_contra??'—'}` : '—';
+ document.getElementById('modalVerBody').innerHTML = `
+ <div style="text-align:center;margin-bottom:18px;">
+ <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,201,122,0.15);border:2px solid rgba(0,201,122,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;color:var(--verde);margin:0 auto 12px">${ini(v.nome_visitante)}</div>
+ <div style="font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:1px">${v.nome_visitante||'—'}</div>
+ ${v.municipio_visitante?`<div style="font-size:13px;color:var(--cinza);margin-top:4px"> ${v.municipio_visitante}</div>`:''}
+ </div>
+ <div class="detalhe-grid">
+ <div class="detalhe-item full"><div class="detalhe-label">Evento</div><div class="detalhe-valor">${ev}</div></div>
+ <div class="detalhe-item"><div class="detalhe-label">Município</div><div class="detalhe-valor">${v.municipio_visitante||'—'}</div></div>
+ <div class="detalhe-item"><div class="detalhe-label">Placar do Evento</div><div class="detalhe-valor" style="font-family:'Bebas Neue',cursive;font-size:20px;color:var(--verde)">${placar}</div></div>
+ <div class="detalhe-item"><div class="detalhe-label">ID Visitante</div><div class="detalhe-valor" style="color:var(--cinza)">#${v.id_visitante}</div></div>
+ <div class="detalhe-item"><div class="detalhe-label">ID Evento</div><div class="detalhe-valor" style="color:var(--cinza)">#${v.calendario?.id_calendario||'—'}</div></div>
+ </div>`;
+ new bootstrap.Modal(document.getElementById('modalVer')).show();
+}
+
+function editarDoModal(){
+ bootstrap.Modal.getInstance(document.getElementById('modalVer'))?.hide();
+ setTimeout(()=>abrirEdicao(idParaEditarDoModal), 300);
+}
+
+// ABRIR EDIÇÃO
+function abrirEdicao(id){
+ const v = dados.find(x=>x.id_visitante===id);
+ if(!v) return;
+ const f = document.getElementById('formVis');
+ f.nome_visitante.value = v.nome_visitante||'';
+ f.municipio_visitante.value = v.municipio_visitante||'';
+ document.getElementById('selectCal').value = v.calendario?.id_calendario||'';
+ document.getElementById('editId').value = v.id_visitante;
+ document.getElementById('formTitulo').textContent = ' Editar Visitante';
+ document.getElementById('btnSubmit').textContent = 'Salvar Alterações';
+ mudarTab('form', document.querySelectorAll('.tab')[1]);
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// CANCELAR FORM
+function cancelarForm(){
+ document.getElementById('formVis').reset();
+ document.getElementById('editId').value = '';
+ document.getElementById('formTitulo').textContent = ' Novo Visitante';
+ document.getElementById('btnSubmit').textContent = 'Registrar Visitante';
+ mudarTab('lista', document.querySelectorAll('.tab')[0]);
+}
+
+// SUBMIT
+document.getElementById('formVis').addEventListener('submit', function(e){ if(isAtleta){ toast('Acesso restrito.', false); return; }
+ e.preventDefault();
+ const d = Object.fromEntries(new FormData(this).entries());
+ const id = document.getElementById('editId').value;
+ const payload = {
+ nome_visitante: d.nome_visitante,
+ municipio_visitante: d.municipio_visitante,
+ calendario:{ id_calendario: parseInt(d.calendario_id) }
+ };
+ const url = id ? `${apiV}/${id}` : apiV;
+ const metodo = id ? 'PUT' : 'POST';
+ fetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ .then(()=>{ toast(id?'Visitante atualizado!':'Visitante registrado!'); cancelarForm(); carregar(); })
+ .catch(()=>toast('Erro ao salvar.', false));
+});
+
+// CONFIRMAR DELETE
+function confirmarDel(id, nome){
+ idParaDel = id;
+ document.getElementById('nomeDel').textContent = `"${nome}" será removido permanentemente.`;
+ new bootstrap.Modal(document.getElementById('modalDel')).show();
+}
+document.getElementById('btnConfDel').addEventListener('click',()=>{
+ if(!idParaDel) return;
+ fetch(`${apiV}/${idParaDel}`,{method:'DELETE'})
+ .then(()=>{ toast('Visitante excluído!'); bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide(); carregar(); })
+ .catch(()=>toast('Erro ao excluir.', false));
+});
+
+// INIT
+carregarCalendarios().then(()=>carregar());
+
+// ── LOGOUT COM CONFIRMAÇÃO ──
+function logout(){
+ document.getElementById('logoutModal').classList.add('show');
+}
+function fecharLogout(){
+ document.getElementById('logoutModal').classList.remove('show');
+}
+function confirmarLogout(){
+ sessionStorage.clear();
+ window.location.href='login.html';
+}
+
+// ══ FLATPICKR — date inputs ══
+document.addEventListener('DOMContentLoaded', function(){
+  if(typeof flatpickr === 'undefined') return;
+  var ptLocale = (flatpickr.l10ns && flatpickr.l10ns.pt) ? flatpickr.l10ns.pt : {};
+  document.querySelectorAll('input[type="date"]').forEach(function(el){
+    flatpickr(el,{dateFormat:'Y-m-d',locale:'pt',allowInput:true,disableMobile:true});
+  });
+  document.querySelectorAll('input[type="datetime-local"]').forEach(function(el){
+    flatpickr(el,{dateFormat:'Y-m-dTH:i',enableTime:true,time_24hr:true,locale:'pt',allowInput:true,disableMobile:true});
+  });
+});
+
+// ── TIME SELECIONADO — exibir na sidebar ──
+(function(){
+  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var el = document.getElementById('timeSidebarIndicator');
+  if (!el) return;
+  if (ts) {
+    el.style.display = 'flex';
+    var dot = el.querySelector('.ti-dot');
+    var nome = el.querySelector('.ti-nome');
+    if (dot)  dot.style.background = ts.cor || '#00C97A';
+    if (nome) nome.textContent = ts.nome || 'Time';
+  } else {
+    el.style.display = 'none';
+  }
+})();
+</script>
+
+<script>
+(function(){
+  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  if (!ts) return;
+  var icon = document.getElementById('sidebarLogoIcon');
+  var nome = document.getElementById('sidebarNomeTime');
+  if (nome) nome.textContent = ts.nome || 'LAIVY';
+  if (icon) {
+    if (ts.logo) {
+      icon.style.background = 'none';
+      icon.style.padding = '0';
+      icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+    } else {
+      var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
+      icon.textContent = ini;
+      if (ts.cor) icon.style.background = 'linear-gradient(135deg,' + ts.cor + ',' + ts.cor + 'AA)';
+    }
+  }
+})();
+</script>
+</body>
+</html>

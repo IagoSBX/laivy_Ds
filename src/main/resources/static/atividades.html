@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atividades — Sistema Esportivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<style>
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;
+ --t1:#00C97A;--t2:#FFB020;--t3:#A78FFF;--t4:#4EC9FF;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;; overflow-y: auto; }
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
+.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
+.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
+nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
+.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);}
+.user-name{font-size:13px;font-weight:600;}.user-role{font-size:11px;color:var(--cinza);}
+.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
+.page-header{margin-bottom:22px;}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;}
+.page-header p{font-size:14px;color:var(--cinza);margin-top:4px;}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.stat-card{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px;transition:transform 0.2s;cursor:pointer;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.stat-num{font-family:'Bebas Neue',cursive;font-size:30px;line-height:1;}
+.stat-label{font-size:11px;color:var(--cinza);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:4px;margin-bottom:22px;width:fit-content;}
+.tab{padding:8px 20px;border-radius:9px;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;cursor:pointer;border:none;background:transparent;color:var(--cinza);transition:all 0.2s;}
+.tab.active{background:linear-gradient(135deg,var(--verde),#00A865);color:var(--azul);}
+.tab:hover:not(.active){color:var(--branco);background:rgba(255,255,255,0.05);}
+.secao{display:none;}.secao.visible{display:block;}
+.card-dark{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,255,255,0.06);border-radius:18px;padding:24px;margin-bottom:22px;}
+.card-dark h4{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;margin-bottom:18px;color:var(--verde);}
+.form-control,.form-select{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--branco)!important;font-family:'Barlow',sans-serif;}
+.form-control:focus,.form-select:focus{border-color:var(--verde)!important;box-shadow:0 0 0 3px rgba(0,201,122,0.15)!important;}
+.form-control::placeholder{color:rgba(136,153,187,0.4)!important;}
+.form-select option{background:#0D1E3C;color:var(--branco);}
+label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;display:block;}
+.btn-cadastrar{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 32px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-cancelar-form{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 24px;border-radius:10px;cursor:pointer;}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.search-wrap{position:relative;}
+.search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;}
+.search-bar{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 16px 9px 38px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;width:240px;outline:none;}
+.search-bar::placeholder{color:rgba(136,153,187,0.4);}
+.select-filtro{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--cinza)!important;font-family:'Barlow',sans-serif;font-size:13px;padding:9px 14px;outline:none;cursor:pointer;}
+.select-filtro option{background:#0D1E3C;color:var(--branco);}
+.btn-novo{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;padding:9px 20px;border-radius:10px;cursor:pointer;}
+.ml-auto{margin-left:auto;}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.ativ-card{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:18px;transition:all 0.2s;border-left:3px solid;}
+.ativ-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.3);}
+.ativ-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;}
+.ativ-card-nome{font-size:15px;font-weight:700;line-height:1.3;}
+.ativ-tipo-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+.ativ-card-meta{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--cinza);margin-bottom:12px;}
+.ativ-card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);}
+.status-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;}
+.ativ-acoes{display:flex;gap:6px;}
+/* btn-acao-sm replaced */
+
+
+.btn-bask{background:rgba(255,176,32,0.12);color:#FFB020;border:1px solid rgba(255,176,32,0.2);}
+.btn-bask:hover{background:rgba(255,176,32,0.25);}
+.btn-esc-card{width:100%;margin-top:10px;padding:9px;background:rgba(255,176,32,0.08);border:1.5px dashed rgba(255,176,32,0.35);border-radius:8px;color:#FFB020;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;transition:background 0.2s;}
+.btn-esc-card:hover{background:rgba(255,176,32,0.2);}
+.view-toggle{display:flex;gap:4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px;}
+.view-btn{width:32px;height:28px;border:none;background:transparent;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all 0.2s;color:var(--cinza);}
+.view-btn.active{background:rgba(0,201,122,0.2);color:var(--verde);}
+.table{color:var(--branco)!important;}
+.table thead th{background:#091525!important;color:var(--cinza)!important;font-size:11px;letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.08)!important;font-weight:700;padding:13px 16px!important;}
+.table tbody tr{border-bottom:1px solid rgba(255,255,255,0.04)!important;}
+.table tbody tr:hover{background:rgba(0,201,122,0.04)!important;}
+.table tbody td{padding:11px 16px!important;vertical-align:middle;border:none!important;}
+.table-wrapper{display:none;}.table-wrapper.visible{display:block;}
+.cards-wrapper{display:none;}.cards-wrapper.visible{display:block;}
+.empty-state{text-align:center;padding:48px 24px;color:var(--cinza);}
+.empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
+#calendar{width:100%;}
+.fc-theme-standard td,.fc-theme-standard th{border-color:rgba(255,255,255,0.05)!important;}
+.fc-scrollgrid{border:none!important;}
+.fc-col-header-cell{background:rgba(9,21,37,0.8)!important;padding:10px 0!important;}
+.fc-col-header-cell-cushion{font-family:'Barlow',sans-serif!important;font-size:11px!important;font-weight:700!important;letter-spacing:2px!important;text-transform:uppercase!important;color:var(--cinza)!important;text-decoration:none!important;}
+.fc-daygrid-day-frame{background:rgba(17,34,68,0.5);border-radius:10px;margin:2px;padding:4px;}
+.fc-day-today .fc-daygrid-day-frame{background:rgba(0,201,122,0.12)!important;border:1px solid rgba(0,201,122,0.25)!important;}
+.fc-daygrid-day-number{color:rgba(136,153,187,0.8)!important;font-size:12px!important;font-weight:700!important;text-decoration:none!important;}
+.fc-day-today .fc-daygrid-day-number{color:var(--verde)!important;}
+.fc-event{border:none!important;border-radius:5px!important;padding:2px 5px!important;font-size:11px!important;font-weight:700!important;cursor:pointer;}
+.fc-toolbar-title{font-family:'Bebas Neue',cursive!important;font-size:24px!important;letter-spacing:2px!important;color:var(--branco)!important;}
+.fc-button-primary{background:rgba(0,201,122,0.15)!important;border:1px solid rgba(0,201,122,0.3)!important;color:var(--verde)!important;font-family:'Bebas Neue',cursive!important;font-size:13px!important;border-radius:8px!important;padding:5px 14px!important;box-shadow:none!important;}
+.fc-button-primary:hover{background:rgba(0,201,122,0.25)!important;}
+.fc-button-active{background:var(--verde)!important;color:var(--azul)!important;border-color:var(--verde)!important;}
+.fc-list-day-cushion{background:#091525!important;}
+.modal-content{background:#0D1E3C!important;color:var(--branco)!important;border:1px solid rgba(0,201,122,0.2)!important;border-radius:18px!important;}
+.modal-header{border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 24px!important;}
+.modal-body{padding:20px 24px!important;}
+.modal-footer{border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 24px!important;}
+.btn-close{filter:invert(1)!important;}
+.detalhe-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.detalhe-item{padding:11px 14px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);}
+.detalhe-item.full{grid-column:1/-1;}
+.detalhe-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:4px;}
+.detalhe-valor{font-size:14px;font-weight:600;}
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:10px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:12px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;color:var(--branco);}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── MODAL LOGOUT ── */
+#logoutModal{
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+ z-index:99998;display:none;align-items:center;justify-content:center;
+}
+#logoutModal.show{display:flex;}
+.logout-card{
+ background:linear-gradient(135deg,#0D1E3C,#112244);
+ border:1px solid rgba(255,80,80,0.25);
+ border-radius:20px;padding:36px 40px;text-align:center;
+ max-width:360px;width:90%;
+ animation:slideUp 0.25s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.logout-icon{font-size:48px;margin-bottom:16px;}
+.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;color:#F0F4FF;margin-bottom:8px;}
+.logout-msg{font-size:14px;color:#8899BB;margin-bottom:28px;line-height:1.6;}
+.logout-btns{display:flex;gap:12px;justify-content:center;}
+.btn-logout-cancel{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#8899BB;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-logout-cancel:hover{background:rgba(255,255,255,0.1);color:#F0F4FF;}
+.btn-logout-confirm{background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.35);color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;transition:all 0.2s;}
+.btn-logout-confirm:hover{background:rgba(255,80,80,0.3);}
+
+/* ── TEMA CLARO ── */
+/* ── BOTÃO TEMA ── */
+/* ── TABLE UX ── */
+.table-responsive{border-radius:14px;overflow:hidden;}
+.table{border-collapse:separate!important;border-spacing:0!important;width:100%;}
+.table thead th{
+  background:rgba(9,21,37,0.9)!important;color:var(--cinza)!important;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  border:none!important;font-weight:700;padding:14px 16px!important;
+  position:sticky;top:0;z-index:2;
+}
+.table thead th:first-child{border-radius:12px 0 0 0;}
+.table thead th:last-child{border-radius:0 12px 0 0;}
+.table tbody tr{
+  background:rgba(255,255,255,0.02)!important;
+  transition:background 0.15s,transform 0.15s;
+  cursor:default;
+}
+.table tbody tr:hover{
+  background:rgba(0,201,122,0.05)!important;
+  transform:translateX(2px);
+}
+.table tbody td{
+  padding:13px 16px!important;vertical-align:middle;
+  border-top:1px solid rgba(255,255,255,0.03)!important;
+  border-bottom:none!important;border-left:none!important;border-right:none!important;
+  font-size:13px;
+}
+.table tbody td:first-child{
+  border-left:3px solid transparent!important;
+  transition:border-color 0.15s;
+}
+.table tbody tr:hover td:first-child{border-left-color:var(--verde)!important;}
+.table tbody tr:last-child td:first-child{border-radius:0 0 0 10px;}
+.table tbody tr:last-child td:last-child{border-radius:0 0 10px 0;}
+.table .td-avatar{
+  width:36px;height:36px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;flex-shrink:0;
+}
+.table .td-main{font-weight:700;color:var(--branco);}
+.table .td-sub{font-size:11px;color:var(--cinza);margin-top:2px;}
+.table .td-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+/* ── TEMA CLARO — Soft Blue-Grey ── */
+/* theme toggle in light mode */
+.btn-acao-sm:hover { transform: translateY(-1px); }
+.btn-ver  { background: rgba(78,201,255,0.10); color: #4EC9FF; border-color: rgba(78,201,255,0.25); }
+.btn-ver:hover  { background: rgba(78,201,255,0.22); }
+.btn-edit { background: rgba(255,176,32,0.10);  color: #FFB020; border-color: rgba(255,176,32,0.25); }
+.btn-edit:hover { background: rgba(255,176,32,0.22); }
+.btn-del  { background: rgba(255,80,80,0.10);   color: #FF6B6B; border-color: rgba(255,80,80,0.25); }
+.btn-del:hover  { background: rgba(255,80,80,0.22); }
+.btn-bask { background: rgba(255,176,32,0.10); color: #FFB020; border-color: rgba(255,176,32,0.2); }
+.btn-bask:hover { background: rgba(255,176,32,0.22); }
+/* action group spacing */
+.user-acoes, .desemp-acoes { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+.user-avatar.has-foto{background:none!important;overflow:hidden;padding:0;}
+.user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+/* ── TIME INDICATOR SIDEBAR ── */
+.time-indicator{
+  margin:0 12px 12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px;
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:background .2s;text-decoration:none;
+}
+.time-indicator:hover{background:rgba(255,255,255,0.08);}
+.ti-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ti-nome{font-size:12px;font-weight:700;color:var(--branco);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.ti-trocar{font-size:10px;color:var(--cinza);font-weight:600;
+  letter-spacing:.5px;white-space:nowrap;}
+
+/* ── CARD ACTION BUTTONS — consistent across all pages ── */
+.user-acoes, .exam-acoes, .desemp-acoes, .ativ-acoes, .bv-acoes,
+[class$="-acoes"], [class*="-acoes"] {
+  display: flex !important;
+  gap: 5px !important;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+/* cards use flex-column so buttons always sit at bottom */
+.user-card, .exam-card, .desemp-card, .ativ-card, .bv-card {
+  display: flex !important;
+  flex-direction: column !important;
+}
+.user-card-body, .exam-card-body, .desemp-card-body,
+.ativ-card-body, .bv-card-body {
+  flex: 1;
+}
+/* btn-acao-sm consistent sizing */
+.btn-acao-sm {
+  padding: 5px 13px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .4px;
+  border-radius: 7px !important;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all .18s;
+  font-family: 'Barlow', sans-serif;
+}
+.btn-acao-sm:hover { transform: translateY(-1px); }
+</style>
+</head>
+<body>
+
+<script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+
+
+<!-- MODAL LOGOUT -->
+<div id="logoutModal">
+ <div class="logout-card">
+    <div class="logout-icon">👋</div>
+ <div class="logout-titulo">Sair do Sistema?</div>
+ <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
+ <div class="logout-btns">
+ <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
+ <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
+ </div>
+ </div>
+</div>
+
+<aside class="sidebar">
+ <div class="sidebar-logo" id="sidebarLogo">
+ <div class="logo-icon" id="sidebarLogoIcon">L</div>
+ <div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>
+</div>
+ <nav>
+ <div class="nav-section">Principal</div>
+    <a href="dashboard.html" class="nav-item">Dashboard</a>
+    <a href="usuarios.html"  class="nav-item">Usuários</a>
+ <div class="nav-section">Admin</div>
+    <a href="cadastrar-treinador.html" class="nav-item">Treinadores</a>
+    <div class="nav-section">Gestão</div>
+    <a href="exames.html"     class="nav-item">Exames</a>
+    <a href="desempenho.html" class="nav-item">Desempenho</a>
+    <a href="atividades.html" class="nav-item active">Atividades</a>
+    <a href="escalacao.html"  class="nav-item">Escalação</a>
+    <a href="calendario.html" class="nav-item">Calendário</a>
+    <a href="visitantes.html" class="nav-item">Visitantes</a>
+ </nav>
+ <!-- TIME SELECIONADO -->
+ <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
+   <div class="ti-dot"></div>
+   <div class="ti-nome">—</div>
+   <div class="ti-trocar">Trocar</div>
+ </a>
+ <div class="sidebar-footer">
+ <div class="user-info">
+ <div class="user-avatar" id="avatarLetra">A</div>
+ <div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>
+ </div>
+ <button class="btn-logout" onclick="logout()">Sair do Sistema</button>
+ </div>
+</aside>
+
+<main class="main">
+ <div class="page-header"><h1>Atividades</h1><p>Gerencie treinos, jogos e eventos</p></div>
+
+ <div class="stats-row">
+ <div class="stat-card" onclick="filtrarTipo('')"><div class="stat-dot" style="background:var(--cinza)"></div><div><div class="stat-num" id="st-total" style="color:var(--branco)">—</div><div class="stat-label">Total</div></div></div>
+ <div class="stat-card" onclick="filtrarTipo('1')"><div class="stat-dot" style="background:var(--t1)"></div><div><div class="stat-num" id="st-t1" style="color:var(--t1)">—</div><div class="stat-label">Treinos</div></div></div>
+ <div class="stat-card" onclick="filtrarTipo('2')"><div class="stat-dot" style="background:var(--t2)"></div><div><div class="stat-num" id="st-t2" style="color:var(--t2)">—</div><div class="stat-label">Jogos</div></div></div>
+ <div class="stat-card" onclick="filtrarTipo('4')"><div class="stat-dot" style="background:var(--t4)"></div><div><div class="stat-num" id="st-t4" style="color:var(--t4)">—</div><div class="stat-label">Competições</div></div></div>
+ </div>
+
+ <div class="tabs">
+ <button class="tab active" onclick="mudarTab('lista',this)"> Lista</button>
+ <button class="tab" onclick="mudarTab('form',this)"> Nova Atividade</button>
+ <button class="tab" onclick="mudarTab('cal',this)"> Calendário</button>
+ </div>
+
+ <div class="secao visible" id="tab-lista">
+ <div class="card-dark" style="padding:18px 24px;">
+ <div class="toolbar">
+ <div class="search-wrap"><input class="search-bar" id="busca" placeholder="Buscar atividade..." oninput="renderizar()"></div>
+ <select class="select-filtro" id="filtroTipo" onchange="renderizar()">
+ <option value="">Todos os tipos</option>
+ <option value="1"> Treino</option><option value="2"> Jogo</option>
+ <option value="3"> Evento</option><option value="4"> Competição</option>
+ </select>
+ <select class="select-filtro" id="filtroStatus" onchange="renderizar()">
+ <option value="">Qualquer status</option>
+ <option value="1"> Ativo</option><option value="0"> Cancelado</option>
+ </select>
+ <div class="view-toggle ml-auto">
+ <button class="view-btn active" id="vCards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
+ <button class="view-btn" id="vTabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+ </div>
+ <button class="btn-novo" id="btnNovo" onclick="mudarTab('form',document.querySelectorAll('.tab')[1])">+ Nova</button>
+ </div>
+ <div class="cards-wrapper visible" id="cardsWrapper"><div class="cards-grid" id="cardsGrid"></div></div>
+ <div class="table-wrapper" id="tabelaWrapper">
+ <div class="table-responsive">
+ <table class="table">
+ <thead><tr><th>ID</th><th>Nome</th><th>Responsável</th><th>Local</th><th>Data</th><th>Tipo</th><th>Status</th><th>Ações</th></tr></thead>
+ <tbody id="tabelaAtiv"></tbody>
+ </table>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ <div class="secao" id="tab-form">
+ <div class="card-dark">
+ <h4 id="formTitulo"> Nova Atividade</h4>
+ <form id="formAtiv">
+ <input type="hidden" id="editId">
+ <div class="row g-3">
+ <div class="col-md-6"><label class="form-label">Nome da Atividade</label><input class="form-control" name="nome_atividade" placeholder="Ex: Treino, Jogo Amistoso..." required></div>
+ <div class="col-md-6"><label class="form-label">Responsável</label>
+ <select class="form-select" id="selectResp" name="usuario_id" required><option value="">Selecionar...</option></select>
+ </div>
+ <div class="col-md-4"><label class="form-label">Local</label><input class="form-control" name="lugar_atividade" placeholder="Ginásio, Quadra..."></div>
+ <div class="col-md-4"><label class="form-label">Data e Hora</label><input type="datetime-local" class="form-control" name="data_atividade"></div>
+ <div class="col-md-2"><label class="form-label">Tipo</label>
+ <select class="form-select" name="tipo_atividade" id="tipoAtividade" onchange="toggleOponente(this.value)">
+ <option value="1"> Treino</option><option value="2"> Jogo</option>
+ <option value="3"> Evento</option><option value="4"> Competição</option>
+ </select>
+ </div>
+ <div class="col-md-2"><label class="form-label">Status</label>
+ <select class="form-select" name="status_atividade"><option value="1">Ativo</option><option value="0">Cancelado</option><option value="2">Finalizado</option></select>
+ </div>
+ <!-- Campo time oponente - só aparece para jogos -->
+ <div class="col-md-6" id="campoOponente" style="display:none">
+ <label class="form-label">Time Oponente / Adversário</label>
+ <input class="form-control" name="time_oponente" id="inpOponente" placeholder="Ex: Escola Municipal ABC, Time Estrela...">
+ </div>
+ <div class="col-12 d-flex gap-2 mt-2">
+ <button type="submit" class="btn-cadastrar" id="btnSubmit">Cadastrar Atividade</button>
+ <button type="button" class="btn-cancelar-form" onclick="cancelarForm()">Cancelar</button>
+ </div>
+ </div>
+ </form>
+ </div>
+ </div>
+
+ <div class="secao" id="tab-cal"><div class="card-dark"><div id="calendar"></div></div></div>
+</main>
+
+<!-- MODAL VER -->
+<div class="modal fade" id="modalVer" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered">
+ <div class="modal-content">
+ <div class="modal-header"><h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;">Detalhes</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+ <div class="modal-body" id="modalVerBody"></div>
+ <div class="modal-footer"><button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fechar</button></div>
+ </div>
+ </div>
+</div>
+
+<!-- MODAL EXCLUIR -->
+<div class="modal fade" id="modalDel" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-sm">
+ <div class="modal-content">
+ <div class="modal-body" style="padding:24px;text-align:center;">
+ <div style="font-size:36px;margin-bottom:12px;"></div>
+ <div style="font-family:'Bebas Neue',cursive;font-size:20px;margin-bottom:8px;">Excluir Atividade?</div>
+ <div style="font-size:13px;color:var(--cinza);margin-bottom:20px;">Esta ação não pode ser desfeita.</div>
+ <div style="display:flex;gap:10px;justify-content:center;">
+ <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+ <button id="btnConfDel" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#FF6B6B;padding:7px 20px;border-radius:8px;font-family:'Bebas Neue',cursive;font-size:15px;cursor:pointer;">Excluir</button>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- MODAL ESCALAÇÃO BASQUETE -->
+<div class="modal fade" id="modalEscalacao" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-xl">
+ <div class="modal-content" style="background:#0D1E3C!important;border:1px solid rgba(255,176,32,0.25)!important;border-radius:18px!important;">
+ <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 26px!important;">
+ <div>
+ <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;color:#FFB020;"> Escalação de Basquete</h5>
+ <div id="escAtivNome" style="font-size:13px;color:#8899BB;margin-top:2px;font-weight:600;"></div>
+ </div>
+ <button class="btn-close" style="filter:invert(1)" data-bs-dismiss="modal"></button>
+ </div>
+ <div class="modal-body" style="padding:20px 26px!important;">
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+ <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center;">
+ <div id="escStTotal" style="font-family:'Bebas Neue',cursive;font-size:28px;color:#00C97A">0</div>
+ <div style="font-size:10px;color:#8899BB;font-weight:700;letter-spacing:1px;text-transform:uppercase">Convocados</div>
+ </div>
+ <div style="background:rgba(255,176,32,0.06);border:1px solid rgba(255,176,32,0.15);border-radius:10px;padding:14px;text-align:center;">
+ <div id="escStTit" style="font-family:'Bebas Neue',cursive;font-size:28px;color:#FFB020">0</div>
+ <div style="font-size:10px;color:#8899BB;font-weight:700;letter-spacing:1px;text-transform:uppercase">Titulares</div>
+ </div>
+ <div style="background:rgba(78,201,255,0.06);border:1px solid rgba(78,201,255,0.15);border-radius:10px;padding:14px;text-align:center;">
+ <div id="escStRes" style="font-family:'Bebas Neue',cursive;font-size:28px;color:#4EC9FF">0</div>
+ <div style="font-size:10px;color:#8899BB;font-weight:700;letter-spacing:1px;text-transform:uppercase">Reservas</div>
+ </div>
+ </div>
+ <div style="display:grid;grid-template-columns:1fr 310px;gap:20px;align-items:start;">
+ <!-- QUADRA SVG -->
+ <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;">
+ <div style="font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;color:#8899BB;margin-bottom:12px;"> Quadra</div>
+ <div style="position:relative;width:100%;padding-bottom:58%;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+ <svg style="position:absolute;top:0;left:0;width:100%;height:100%" viewBox="0 0 560 325" xmlns="http://www.w3.org/2000/svg">
+ <rect width="560" height="325" fill="#c8843a"/>
+ <rect x="0" y="162" width="560" height="163" fill="#b87228"/>
+ <line x1="0" y1="54" x2="560" y2="54" stroke="#b07530" stroke-width="0.8" opacity="0.4"/>
+ <line x1="0" y1="108" x2="560" y2="108" stroke="#b07530" stroke-width="0.8" opacity="0.4"/>
+ <line x1="0" y1="216" x2="560" y2="216" stroke="#b07530" stroke-width="0.8" opacity="0.4"/>
+ <line x1="0" y1="270" x2="560" y2="270" stroke="#b07530" stroke-width="0.8" opacity="0.4"/>
+ <rect x="12" y="12" width="536" height="301" fill="none" stroke="white" stroke-width="2.5"/>
+ <line x1="12" y1="162" x2="548" y2="162" stroke="white" stroke-width="2"/>
+ <circle cx="280" cy="162" r="40" fill="none" stroke="white" stroke-width="2"/>
+ <circle cx="280" cy="162" r="3" fill="white"/>
+ <rect x="12" y="97" width="140" height="131" fill="rgba(160,90,20,0.5)" stroke="white" stroke-width="2"/>
+ <path d="M152,97 A65,65 0 0,1 152,228" fill="none" stroke="white" stroke-width="2"/>
+ <line x1="12" y1="97" x2="152" y2="97" stroke="white" stroke-width="1.8"/>
+ <line x1="12" y1="228" x2="152" y2="228" stroke="white" stroke-width="1.8"/>
+ <circle cx="152" cy="162" r="3.5" fill="white"/>
+ <line x1="12" y1="117" x2="22" y2="117" stroke="white" stroke-width="1.5"/>
+ <line x1="12" y1="137" x2="22" y2="137" stroke="white" stroke-width="1.5"/>
+ <line x1="12" y1="187" x2="22" y2="187" stroke="white" stroke-width="1.5"/>
+ <line x1="12" y1="207" x2="22" y2="207" stroke="white" stroke-width="1.5"/>
+ <line x1="140" y1="117" x2="152" y2="117" stroke="white" stroke-width="1.5"/>
+ <line x1="140" y1="137" x2="152" y2="137" stroke="white" stroke-width="1.5"/>
+ <line x1="140" y1="187" x2="152" y2="187" stroke="white" stroke-width="1.5"/>
+ <line x1="140" y1="207" x2="152" y2="207" stroke="white" stroke-width="1.5"/>
+ <rect x="8" y="144" width="5" height="37" fill="white" rx="1"/>
+ <rect x="20" y="148" width="28" height="27" fill="none" stroke="white" stroke-width="1.5"/>
+ <circle cx="57" cy="162" r="11" fill="none" stroke="#FF6600" stroke-width="3.5"/>
+ <path d="M12,55 L88,55 A130,130 0 0,1 88,270 L12,270" fill="none" stroke="white" stroke-width="2"/>
+ <rect x="408" y="97" width="140" height="131" fill="rgba(160,90,20,0.5)" stroke="white" stroke-width="2"/>
+ <path d="M408,97 A65,65 0 0,0 408,228" fill="none" stroke="white" stroke-width="2"/>
+ <line x1="408" y1="97" x2="548" y2="97" stroke="white" stroke-width="1.8"/>
+ <line x1="408" y1="228" x2="548" y2="228" stroke="white" stroke-width="1.8"/>
+ <circle cx="408" cy="162" r="3.5" fill="white"/>
+ <line x1="538" y1="117" x2="548" y2="117" stroke="white" stroke-width="1.5"/>
+ <line x1="538" y1="137" x2="548" y2="137" stroke="white" stroke-width="1.5"/>
+ <line x1="538" y1="187" x2="548" y2="187" stroke="white" stroke-width="1.5"/>
+ <line x1="538" y1="207" x2="548" y2="207" stroke="white" stroke-width="1.5"/>
+ <line x1="408" y1="117" x2="420" y2="117" stroke="white" stroke-width="1.5"/>
+ <line x1="408" y1="137" x2="420" y2="137" stroke="white" stroke-width="1.5"/>
+ <line x1="408" y1="187" x2="420" y2="187" stroke="white" stroke-width="1.5"/>
+ <line x1="408" y1="207" x2="420" y2="207" stroke="white" stroke-width="1.5"/>
+ <rect x="547" y="144" width="5" height="37" fill="white" rx="1"/>
+ <rect x="512" y="148" width="28" height="27" fill="none" stroke="white" stroke-width="1.5"/>
+ <circle cx="503" cy="162" r="11" fill="none" stroke="#FF6600" stroke-width="3.5"/>
+ <path d="M548,55 L472,55 A130,130 0 0,0 472,270 L548,270" fill="none" stroke="white" stroke-width="2"/>
+ <text x="70" y="30" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)" font-family="Barlow,sans-serif" font-weight="700" letter-spacing="2">DEFESA</text>
+ <text x="490" y="30" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.45)" font-family="Barlow,sans-serif" font-weight="700" letter-spacing="2">ATAQUE</text>
+ </svg>
+ <div id="escJogQuadra" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:12px;">
+ <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#FFB020;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0A1628">1</div><div style="font-size:9px;color:var(--cinza)">Armador</div></div>
+ <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#4EC9FF;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0A1628">2</div><div style="font-size:9px;color:var(--cinza)">Ala-Arm.</div></div>
+ <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#00C97A;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0A1628">3</div><div style="font-size:9px;color:var(--cinza)">Ala</div></div>
+ <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#A78FFF;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0A1628">4</div><div style="font-size:9px;color:var(--cinza)">Ala-Pivô</div></div>
+ <div style="text-align:center"><div style="width:22px;height:22px;border-radius:50%;background:#FF6B6B;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0A1628">5</div><div style="font-size:9px;color:var(--cinza)">Pivô</div></div>
+ </div>
+ </div>
+ <!-- LISTAS -->
+ <div style="display:flex;flex-direction:column;gap:14px;max-height:460px;overflow-y:auto;padding-right:4px;">
+ <div>
+ <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">Titulares <span id="escCntTit" style="background:rgba(255,176,32,0.15);color:#FFB020;padding:2px 8px;border-radius:6px;font-size:12px;font-family:'Bebas Neue',cursive;">0/5</span></div>
+ <div id="escListaTit"></div>
+ <button id="escBtnTitular" onclick="abrirAddEsc(1)" style="width:100%;padding:8px;background:rgba(255,176,32,0.08);border:1.5px dashed rgba(255,176,32,0.35);border-radius:8px;color:#FFB020;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;margin-top:6px;">+ Titular</button>
+ </div>
+ <div>
+ <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">Reservas <span id="escCntRes" style="background:rgba(78,201,255,0.15);color:#4EC9FF;padding:2px 8px;border-radius:6px;font-size:12px;font-family:'Bebas Neue',cursive;">0</span></div>
+ <div id="escListaRes"></div>
+ <button id="escBtnReserva" onclick="abrirAddEsc(0)" style="width:100%;padding:8px;background:rgba(78,201,255,0.06);border:1.5px dashed rgba(78,201,255,0.3);border-radius:8px;color:#4EC9FF;font-family:'Bebas Neue',cursive;font-size:14px;letter-spacing:1px;cursor:pointer;margin-top:6px;">+ Reserva</button>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 26px!important;display:flex;justify-content:space-between;align-items:center;">
+ <a href="escalacao.html" style="font-size:13px;color:#FFB020;text-decoration:none;font-weight:700;">Abrir página completa de escalação →</a>
+ <button style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8899BB;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:9px 24px;border-radius:10px;cursor:pointer;" data-bs-dismiss="modal">Fechar</button>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- MODAL ADD JOGADOR -->
+<div class="modal fade" id="modalAddJog" tabindex="-1" style="z-index:1060">
+ <div class="modal-dialog modal-dialog-centered modal-lg">
+ <div class="modal-content" style="background:#091525!important;border:1px solid rgba(255,176,32,0.2)!important;border-radius:18px!important;">
+ <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:18px 22px!important;">
+ <h5 class="modal-title" id="addJogTitulo" style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;color:#FFB020;">Adicionar Jogador</h5>
+ <button class="btn-close" style="filter:invert(1)" onclick="voltarEscalacao()"></button>
+ </div>
+ <div class="modal-body" style="padding:18px 22px!important;">
+ <div style="position:relative;margin-bottom:14px;">
+ <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px"></span>
+ <input id="buscaJogAdd" placeholder="Buscar atleta pelo nome..." oninput="filtrarJogAdd()" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 14px 9px 36px;color:#F0F4FF;font-family:'Barlow',sans-serif;font-size:14px;outline:none;">
+ </div>
+ <div id="gradeJogAdd" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:280px;overflow-y:auto;margin-bottom:14px;padding-right:4px;"></div>
+ <div id="cfgJogAdd" style="display:none;background:rgba(255,176,32,0.06);border:1px solid rgba(255,176,32,0.15);border-radius:10px;padding:14px;">
+ <div style="font-size:11px;color:#FFB020;font-weight:700;letter-spacing:1px;margin-bottom:10px"> CONFIGURAR JOGADOR SELECIONADO</div>
+ <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+ <div>
+ <label style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;display:block;margin-bottom:5px">Posição</label>
+ <select id="addPosicao" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#F0F4FF;font-family:'Barlow',sans-serif;padding:8px 10px;outline:none;cursor:pointer;">
+ <option value="">— Selecionar</option>
+ <option value="Armador">1 — Armador (PG)</option>
+ <option value="Ala-Armador">2 — Ala-Armador (SG)</option>
+ <option value="Ala">3 — Ala (SF)</option>
+ <option value="Ala-Pivo">4 — Ala-Pivô (PF)</option>
+ <option value="Pivo">5 — Pivô (C)</option>
+ </select>
+ </div>
+ <div>
+ <label style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;display:block;margin-bottom:5px">Nº Camisa</label>
+ <input type="number" id="addNumCamisa" min="0" max="99" placeholder="10" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#F0F4FF;font-family:'Barlow',sans-serif;padding:8px 10px;outline:none;">
+ </div>
+ <div>
+ <label style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;display:block;margin-bottom:5px">Tipo</label>
+ <select id="addTitular" style="width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#F0F4FF;font-family:'Barlow',sans-serif;padding:8px 10px;outline:none;cursor:pointer;">
+ <option value="1">Titular</option>
+ <option value="0">Reserva</option>
+ </select>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08)!important;padding:14px 22px!important;">
+ <button onclick="voltarEscalacao()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8899BB;font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;padding:9px 20px;border-radius:9px;cursor:pointer;">Voltar</button>
+ <button onclick="confirmarAddEsc()" style="background:linear-gradient(135deg,#FFB020,#e09010);border:none;color:#0A1628;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:9px 24px;border-radius:9px;cursor:pointer;">Confirmar</button>
+ </div>
+ </div>
+ </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const user=JSON.parse(sessionStorage.getItem('usuario')||'{}');
+if(!user.id_usuario)window.location.href='login.html';
+document.getElementById('nomeUsuario').textContent=user.nome_usuario||'—';
+document.getElementById('avatarLetra').textContent=(user.nome_usuario||'U')[0].toUpperCase();
+document.getElementById('tipoUsuario').textContent=({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario]||'—';
+// logout() defined below via shared handler
+
+const isAtleta = user.tipo_usuario === 3;
+const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+// ── FILTRO POR TIME ──
+const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
+function urlTime(base) {
+  return _idTime ? base + '?idTime=' + _idTime : base;
+}
+
+if(isAtleta){
+ // Esconder tabs de criação e botão + Nova
+ document.querySelectorAll('.tab').forEach(t=>{
+ if(t.textContent.includes('Nova')||t.textContent.includes('Novo'))t.style.display='none';
+ });
+ // CSS garante ocultação mesmo antes do JS processar
+ const sa=document.createElement('style');
+ sa.textContent='#btnNovo{display:none!important}#escBtnTitular,#escBtnReserva,#modalAddJog{display:none!important}';
+ document.head.appendChild(sa);
+ // Ocultar botões de escalação para atleta (injetado via CSS)
+ const styleAtleta=document.createElement('style');
+ styleAtleta.textContent='#escBtnTitular,#escBtnReserva,#modalAddJog{display:none!important}';
+ document.head.appendChild(styleAtleta);
+}
+
+const TIPO={1:{label:'Treino',emoji:'🏋️',cor:'#00C97A',bg:'rgba(0,201,122,0.15)'},2:{label:'Jogo',emoji:'🏀',cor:'#FFB020',bg:'rgba(255,176,32,0.15)'},3:{label:'Evento',emoji:'🎉',cor:'#A78FFF',bg:'rgba(167,143,255,0.15)'},4:{label:'Competição',emoji:'🏆',cor:'#4EC9FF',bg:'rgba(78,201,255,0.15)'}};
+const api='/atividades';
+const apiU='/usuarios';
+const apiEsc='/escalacoes';
+let dados=[],visao='cards',calRef=null,idParaDel=null;
+let todosAtletas=[],escAtivId=null,escDados=[],escAtletaSel=null;
+
+const POS_BASK={'Armador':{l:52,t:50},'Ala-Armador':{l:65,t:22},'Ala':{l:65,t:78},'Ala-Pivo':{l:78,t:28},'Pivo':{l:81,t:50}};
+const POS_COR={'Armador':'#FFB020','Ala-Armador':'#4EC9FF','Ala':'#00C97A','Ala-Pivo':'#A78FFF','Pivo':'#FF6B6B'};
+const POS_NUM={'Armador':'1','Ala-Armador':'2','Ala':'3','Ala-Pivo':'4','Pivo':'5'};
+function corP(p){return POS_COR[p]||'#8899BB';}
+function ini(n){return(n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();}
+function esc(s){return(s||'').replace(/'/g,'\u2019');}
+
+function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+fetch(apiU).then(r=>r.json()).then(data=>{
+ todosAtletas=data.filter(u=>u.tipo_usuario===3); // apenas atletas na escalação
+ const sel=document.getElementById('selectResp');
+ // Responsável só pode ser Admin ou Treinador (tipo 1 ou 2), não atleta
+ const responsaveis = data.filter(u => u.tipo_usuario === 1 || u.tipo_usuario === 2);
+ responsaveis.forEach(u=>{
+ const o=document.createElement('option');
+ const ico = u.tipo_usuario===1?' ':' ';
+ o.value=u.id_usuario; o.textContent=ico+u.nome_usuario;
+ sel.appendChild(o);
+ });
+}).catch(()=>{});
+
+function atualizarStats(){document.getElementById('st-total').textContent=dados.length;document.getElementById('st-t1').textContent=dados.filter(a=>a.tipo_atividade===1).length;document.getElementById('st-t2').textContent=dados.filter(a=>a.tipo_atividade===2).length;document.getElementById('st-t4').textContent=dados.filter(a=>a.tipo_atividade===4).length;}
+function filtrarTipo(v){document.getElementById('filtroTipo').value=v;mudarTab('lista',document.querySelectorAll('.tab')[0]);renderizar();}
+function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(sessionStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));fetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();if(calRef)calRef.refetchEvents();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
+
+function renderizar(){
+ const busca=document.getElementById('busca').value.toLowerCase();
+ const tipo=document.getElementById('filtroTipo').value;
+ const status=document.getElementById('filtroStatus').value;
+ const f=dados.filter(a=>{
+ const mb=!busca||a.nome_atividade.toLowerCase().includes(busca)||(a.lugar_atividade||'').toLowerCase().includes(busca)||(a.usuario?.nome_usuario||'').toLowerCase().includes(busca);
+ return mb&&(!tipo||String(a.tipo_atividade)===tipo)&&(status===''||String(a.status_atividade)===status);
+ });
+ renderCards(f);renderTabela(f);
+}
+
+function renderCards(lista){
+ const g=document.getElementById('cardsGrid');
+ if(!lista.length){g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon" style="color:#8899BB;margin-bottom:8px;opacity:0.6"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>Nenhuma atividade encontrada</p></div>';return;}
+ g.innerHTML=lista.map(a=>{
+ const t=TIPO[a.tipo_atividade]||TIPO[1];
+ const data=a.data_atividade?new Date(a.data_atividade).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+ const stCor=a.status_atividade===2?'#4EC9FF':a.status_atividade===1?'#00C97A':'#FF6B6B';
+ const stBg=a.status_atividade===2?'rgba(78,201,255,0.12)':a.status_atividade===1?'rgba(0,201,122,0.15)':'rgba(255,80,80,0.12)';
+ const nE=esc(a.nome_atividade);
+ return '<div class="ativ-card" style="border-left-color:'+t.cor+'">'
+ +'<div class="ativ-card-top"><div class="ativ-card-nome">'+a.nome_atividade+'</div>'
+ +'<span class="ativ-tipo-badge" style="background:'+t.bg+';color:'+t.cor+'">'+t.emoji+' '+t.label+'</span></div>'
+ +'<div class="ativ-card-meta"><span> '+data+'</span><span> '+(a.lugar_atividade||'Sem local')+'</span><span> '+(a.usuario?.nome_usuario||'—')+'</span>'+(a.time_oponente?'<span> '+a.time_oponente+'</span>':'')+'</div>'
+ +'<div class="ativ-card-footer">'
+ +'<span class="status-pill" style="background:'+stBg+';color:'+stCor+'">'+(a.status_atividade===2?' Finalizado':a.status_atividade===1?' Ativo':' Cancelado')+'</span>'
+ +'<div class="ativ-acoes">'
+ +'<button class="btn-acao-sm btn-ver" onclick="verDetalhes('+a.id_atividade+')">Ver</button>'
+ +(isAdmin?'<button class="btn-acao-sm btn-edit" onclick="abrirEdicao('+a.id_atividade+')">Editar</button><button class="btn-acao-sm btn-del" onclick="confirmarDel('+a.id_atividade+')">Excluir</button>':'')
+ +'</div></div>'
+ +'<button class="btn-esc-card" onclick="abrirEscalacao('+a.id_atividade+',\''+nE+'\')"> Montar Escalação</button>'
+ +(isAdmin && a.tipo_atividade===2 && a.status_atividade!==2 ? '<button class="btn-esc-card" style="background:rgba(0,201,122,0.08);border-color:rgba(0,201,122,0.3);color:#00C97A;margin-top:6px" onclick="abrirFinalizarJogo('+a.id_atividade+')"> Finalizar Jogo / Lançar Pontos</button>' : '')
+ +(a.status_atividade===2 && a.tipo_atividade===2 ? '<div style="background:rgba(0,201,122,0.06);border:1px solid rgba(0,201,122,0.15);border-radius:8px;padding:8px 12px;margin-top:6px;font-size:12px;color:#00C97A;font-weight:700;text-align:center"> Finalizado'+(a.placar_pro!=null?' · '+a.placar_pro+'×'+(a.placar_contra||0):'')+(a.time_oponente?' vs '+a.time_oponente:'')+'</div>' : '')
+ +'</div>';
+ }).join('');
+}
+
+function renderTabela(lista){
+ const tb=document.getElementById('tabelaAtiv');
+ if(!lista.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--cinza);padding:32px">Nenhuma atividade encontrada</td></tr>';return;}
+ tb.innerHTML=lista.map(a=>{
+ const t=TIPO[a.tipo_atividade]||TIPO[1];
+ const data=a.data_atividade?a.data_atividade.replace('T',' ').slice(0,16):'—';
+ const stCor=a.status_atividade===2?'#4EC9FF':a.status_atividade===1?'#00C97A':'#FF6B6B';
+ const stBg=a.status_atividade===2?'rgba(78,201,255,0.12)':a.status_atividade===1?'rgba(0,201,122,0.15)':'rgba(255,80,80,0.12)';
+ const nE=esc(a.nome_atividade);
+ return '<tr>'
+ +'<td style="color:var(--cinza)">#'+a.id_atividade+'</td>'
+ +'<td style="font-weight:700">'+a.nome_atividade+'</td>'
+ +'<td>'+(a.usuario?.nome_usuario||'—')+'</td>'
+ +'<td>'+(a.lugar_atividade||'—')+'</td>'
+ +'<td style="color:var(--cinza);font-size:13px">'+data+'</td>'
+ +'<td><span style="background:'+t.bg+';color:'+t.cor+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+t.emoji+' '+t.label+'</span></td>'
+ +'<td><span style="background:'+stBg+';color:'+stCor+';padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">'+(a.status_atividade===2?'Finalizado':a.status_atividade===1?'Ativo':'Cancelado')+'</span></td>'
+ +'<td style="white-space:nowrap">'
+ +'<button class="btn-acao-sm btn-ver" onclick="verDetalhes('+a.id_atividade+')">Ver</button>'
+ +(isAdmin?'<button class="btn-acao-sm btn-edit" onclick="abrirEdicao('+a.id_atividade+')">Editar</button><button class="btn-acao-sm btn-del" onclick="confirmarDel('+a.id_atividade+')">Excluir</button>':'')
+ +'<button class="btn-acao-sm btn-bask">Escalar</button>'
+ +'</td></tr>';
+ }).join('');
+}
+
+function mudarVisao(v){visao=v;document.getElementById('cardsWrapper').classList.toggle('visible',v==='cards');document.getElementById('tabelaWrapper').classList.toggle('visible',v==='tabela');document.getElementById('vCards').classList.toggle('active',v==='cards');document.getElementById('vTabela').classList.toggle('active',v==='tabela');}
+function mudarTab(id,btn){if(id==='form'&&isAtleta){toast('Acesso restrito: você não tem permissão para criar atividades.',false);return;}document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('visible');btn.classList.add('active');if(id==='cal'&&calRef)calRef.updateSize();}
+
+document.getElementById('formAtiv').addEventListener('submit',function(e){
+ e.preventDefault();
+ if(isAtleta){ toast('Acesso restrito.', false); return; }
+ const d=Object.fromEntries(new FormData(this).entries());
+ const payload={nome_atividade:d.nome_atividade,lugar_atividade:d.lugar_atividade,data_atividade:d.data_atividade,tipo_atividade:parseInt(d.tipo_atividade),status_atividade:parseInt(d.status_atividade),time_oponente:d.time_oponente||null,usuario:{id_usuario:parseInt(d.usuario_id)}};
+ const id=document.getElementById('editId').value;
+ fetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ .then(()=>{toast(id?'Atualizada!':'Cadastrada!');cancelarForm();carregar();}).catch(()=>toast('Erro.',false));
+});
+
+function cancelarForm(){document.getElementById('formAtiv').reset();document.getElementById('editId').value='';document.getElementById('formTitulo').textContent=' Nova Atividade';document.getElementById('btnSubmit').textContent='Cadastrar Atividade';mudarTab('lista',document.querySelectorAll('.tab')[0]);}
+
+function verDetalhes(id){
+ const a=dados.find(x=>x.id_atividade===id);if(!a)return;
+ const t=TIPO[a.tipo_atividade]||TIPO[1];
+ const data=a.data_atividade?new Date(a.data_atividade).toLocaleString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}):'—';
+ const hora=a.data_atividade?new Date(a.data_atividade).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
+ document.getElementById('modalVerBody').innerHTML='<div style="background:'+t.bg+';border:1px solid '+t.cor+'33;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px"><span style="font-size:28px">'+t.emoji+'</span><div><div style="font-family:\'Bebas Neue\',cursive;font-size:22px;color:'+t.cor+';letter-spacing:1px">'+t.label+'</div><div style="font-size:12px;color:'+t.cor+';opacity:0.7">'+a.nome_atividade+'</div></div></div><div class="detalhe-grid"><div class="detalhe-item full"><div class="detalhe-label">Nome</div><div class="detalhe-valor">'+a.nome_atividade+'</div></div><div class="detalhe-item"><div class="detalhe-label">Data</div><div class="detalhe-valor" style="font-size:12px">'+data+'</div></div><div class="detalhe-item"><div class="detalhe-label">Horário</div><div class="detalhe-valor">'+hora+'</div></div><div class="detalhe-item"><div class="detalhe-label">Local</div><div class="detalhe-valor">'+(a.lugar_atividade||'—')+'</div></div><div class="detalhe-item"><div class="detalhe-label">Responsável</div><div class="detalhe-valor">'+(a.usuario?.nome_usuario||'—')+'</div></div>'
+ +'<div class="detalhe-item"><div class="detalhe-label">Status</div><div class="detalhe-valor">'+(a.status_atividade===2?' Finalizado':a.status_atividade===1?' Ativo':' Cancelado')+'</div></div>'
+ +(a.tipo_atividade===2?'<div class="detalhe-item full" style="background:rgba(255,176,32,0.06);border-color:rgba(255,176,32,0.15)"><div class="detalhe-label">Adversário</div><div class="detalhe-valor">'+(a.time_oponente||'Não informado')+'</div></div>'
+ +(a.status_atividade===2&&a.placar_pro!=null?'<div class="detalhe-item full" style="background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.15);text-align:center"><div class="detalhe-label">Placar Final</div><div class="detalhe-valor" style="font-family:Bebas Neue,cursive;font-size:26px;color:#00C97A">'+a.placar_pro+' × '+(a.placar_contra||0)+'</div></div>':'')
+ :'')
+ +'</div>';
+ new bootstrap.Modal(document.getElementById('modalVer')).show();
+}
+
+function abrirEdicao(id){ if(isAtleta){ toast('Acesso restrito.', false); return; } const a=dados.find(x=>x.id_atividade===id);if(!a)return;const f=document.getElementById('formAtiv');f.nome_atividade.value=a.nome_atividade||'';f.lugar_atividade.value=a.lugar_atividade||'';f.data_atividade.value=a.data_atividade?a.data_atividade.slice(0,16):'';f.tipo_atividade.value=a.tipo_atividade||1;f.status_atividade.value=a.status_atividade||0;
+ if(f.time_oponente) f.time_oponente.value=a.time_oponente||'';
+ toggleOponente(a.tipo_atividade||1);document.getElementById('selectResp').value=a.usuario?.id_usuario||'';document.getElementById('editId').value=a.id_atividade;document.getElementById('formTitulo').textContent=' Editar Atividade';document.getElementById('btnSubmit').textContent='Salvar Alterações';mudarTab('form',document.querySelectorAll('.tab')[1]);window.scrollTo({top:0,behavior:'smooth'});}
+
+function confirmarDel(id){ if(isAtleta){ toast('Acesso restrito.', false); return; } idParaDel=id;new bootstrap.Modal(document.getElementById('modalDel')).show();}
+document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDel)return;fetch(api+'/'+idParaDel,{method:'DELETE'}).then(()=>{toast('Excluída!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();}).catch(()=>toast('Erro.',false));});
+
+document.addEventListener('DOMContentLoaded',function(){
+ calRef=new FullCalendar.Calendar(document.getElementById('calendar'),{initialView:'dayGridMonth',locale:'pt-br',height:'auto',dayMaxEvents:3,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listMonth'},buttonText:{today:'Hoje',month:'Mês',week:'Semana',list:'Lista'},events:function(info,ok,fail){fetch(urlTime(api)).then(r=>r.json()).then(data=>{ok(data.map(a=>{const t=TIPO[a.tipo_atividade]||TIPO[1];return{title:t.emoji+' '+a.nome_atividade,start:a.data_atividade,color:t.cor,textColor:'#0A1628',extendedProps:{raw:a}};}));}).catch(()=>ok([]))},eventClick:function(info){verDetalhes(info.event.extendedProps.raw.id_atividade);}});
+ calRef.render();carregar();
+});
+
+// ESCALAÇÃO BASQUETE 
+function abrirEscalacao(idAtiv,nomeAtiv){
+ escAtivId=idAtiv;
+ document.getElementById('escAtivNome').textContent=nomeAtiv;
+ fetch(apiEsc+'/atividade/'+idAtiv).then(r=>r.json()).then(d=>{escDados=d;renderEsc();}).catch(()=>{escDados=[];renderEsc();});
+ new bootstrap.Modal(document.getElementById('modalEscalacao')).show();
+}
+
+function renderEsc(){
+ const tit=escDados.filter(e=>e.titular==1||e.titular==='1');
+ const res=escDados.filter(e=>e.titular==0||e.titular==='0');
+ document.getElementById('escStTotal').textContent=escDados.length;
+ document.getElementById('escStTit').textContent=tit.length;
+ document.getElementById('escStRes').textContent=res.length;
+ document.getElementById('escCntTit').textContent=tit.length+'/5';
+ document.getElementById('escCntRes').textContent=res.length;
+ document.getElementById('escListaTit').innerHTML=tit.length?tit.map(e=>escItem(e)).join(''):'<div style="text-align:center;padding:12px;color:#8899BB;font-size:12px">Nenhum titular</div>';
+ document.getElementById('escListaRes').innerHTML=res.length?res.map(e=>escItem(e)).join(''):'<div style="text-align:center;padding:12px;color:#8899BB;font-size:12px">Nenhum reserva</div>';
+ renderQuadra(tit);
+}
+
+function escItem(e){
+ const nome=e.usuario?.nome_usuario||'—',cor=corP(e.posicao);
+ return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);margin-bottom:7px">'
+ +'<div style="width:32px;height:32px;border-radius:50%;background:'+cor+'22;color:'+cor+';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0">'+ini(nome)+'</div>'
+ +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+nome+'</div>'
+ +'<div style="font-size:10px;color:#8899BB">'+(e.posicao||'—')+(e.numero_camisa?' · #'+e.numero_camisa:'')+'</div></div>'
+ +(isAdmin ? '<button onclick="removerEsc('+e.id_escalacao+')" style="background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:Barlow,sans-serif;"></button>' : '')
+ +'</div>';
+}
+
+function renderQuadra(tit){
+ const wrap=document.getElementById('escJogQuadra');wrap.innerHTML='';
+ tit.forEach(e=>{
+ const pos=e.posicao,coord=POS_BASK[pos];if(!coord)return;
+ const nome=e.usuario?.nome_usuario||'?',cor=corP(pos);
+ const num=e.numero_camisa||POS_NUM[pos]||ini(nome);
+ const d=document.createElement('div');
+ d.style.cssText='position:absolute;transform:translate(-50%,-50%);text-align:center;left:'+coord.l+'%;top:'+coord.t+'%';
+ d.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:'+cor+';color:#0A1628;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin:0 auto;border:2px solid rgba(255,255,255,0.6);box-shadow:0 2px 10px rgba(0,0,0,0.5)">'+num+'</div>'
+ +'<div style="font-size:8px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,0.9);white-space:nowrap;max-width:54px;overflow:hidden;text-overflow:ellipsis;margin-top:2px;font-weight:700">'+nome.split(' ')[0]+'</div>';
+ wrap.appendChild(d);
+ });
+}
+
+function abrirAddEsc(titular){
+ if(isAtleta){ toast("Acesso restrito: apenas treinadores podem modificar a escalação.", false); return; }
+ escAtletaSel=null;
+ document.getElementById('addJogTitulo').textContent=titular?' Adicionar Titular':' Adicionar Reserva';
+ document.getElementById('addTitular').value=titular;
+ document.getElementById('buscaJogAdd').value='';
+ document.getElementById('cfgJogAdd').style.display='none';
+ renderGrade(todosAtletas);
+ bootstrap.Modal.getInstance(document.getElementById('modalEscalacao'))?.hide();
+ setTimeout(()=>new bootstrap.Modal(document.getElementById('modalAddJog')).show(),350);
+}
+
+function renderGrade(lista){
+ const jaEsc=new Set(escDados.map(e=>e.usuario?.id_usuario));
+ const g=document.getElementById('gradeJogAdd');
+ if(!lista.length){g.innerHTML='<div style="padding:20px;color:#8899BB;text-align:center">Nenhum atleta cadastrado</div>';return;}
+ g.innerHTML=lista.map(u=>{
+ const jaEsta=jaEsc.has(u.id_usuario),sel=escAtletaSel?.id_usuario===u.id_usuario;
+ return '<div onclick="'+(jaEsta?'':'selAtleta('+u.id_usuario+')')+'" '
+ +'style="background:'+(sel?'rgba(255,176,32,0.15)':jaEsta?'rgba(255,255,255,0.01)':'rgba(255,255,255,0.03)')
+ +';border:1.5px solid '+(sel?'#FFB020':jaEsta?'rgba(255,255,255,0.03)':'rgba(255,255,255,0.07)')
+ +';border-radius:10px;padding:12px;text-align:center;cursor:'+(jaEsta?'not-allowed':'pointer')
+ +';opacity:'+(jaEsta?0.35:1)+';position:relative;transition:all 0.15s">'
+ +(sel?'<div style="position:absolute;top:5px;right:5px;font-size:12px"></div>':'')
+ +'<div style="width:40px;height:40px;border-radius:50%;background:rgba(255,176,32,0.15);color:#FFB020;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;margin:0 auto 7px">'+ini(u.nome_usuario)+'</div>'
+ +'<div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+u.nome_usuario+'</div>'
+ +'<div style="font-size:9px;color:#8899BB;margin-top:2px">'+(jaEsta?'Já escalado':({1:'Admin',2:'Treinador',3:'Atleta'}[u.tipo_usuario]||'—'))+'</div>'
+ +'</div>';
+ }).join('');
+}
+
+function selAtleta(id){escAtletaSel=todosAtletas.find(u=>u.id_usuario===id)||null;document.getElementById('cfgJogAdd').style.display=escAtletaSel?'block':'none';filtrarJogAdd();}
+function filtrarJogAdd(){const t=document.getElementById('buscaJogAdd').value.toLowerCase();renderGrade(t?todosAtletas.filter(u=>u.nome_usuario.toLowerCase().includes(t)):todosAtletas);}
+
+function confirmarAddEsc(){ if(isAtleta){ toast("Acesso restrito.", false); return; }
+ if(!escAtletaSel){toast('Selecione um atleta!',false);return;}
+ const pos=document.getElementById('addPosicao').value;
+ const num=parseInt(document.getElementById('addNumCamisa').value)||null;
+ const tit=parseInt(document.getElementById('addTitular').value);
+ const payload={atividade:{id_atividade:escAtivId},usuario:{id_usuario:escAtletaSel.id_usuario},posicao:pos||null,numero_camisa:num,titular:tit};
+ fetch(apiEsc,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ .then(r=>{if(!r.ok)throw new Error();return r.json();})
+ .then(d=>{escDados.push(d);voltarEscalacao();})
+ .catch(()=>{escDados.push({id_escalacao:Date.now(),usuario:escAtletaSel,posicao:pos,numero_camisa:num,titular:tit});voltarEscalacao();});
+}
+
+function voltarEscalacao(){bootstrap.Modal.getInstance(document.getElementById('modalAddJog'))?.hide();escAtletaSel=null;setTimeout(()=>{renderEsc();new bootstrap.Modal(document.getElementById('modalEscalacao')).show();},350);}
+function removerEsc(id){ if(isAtleta){ toast("Acesso restrito.", false); return; } fetch(apiEsc+'/'+id,{method:'DELETE'}).catch(()=>{});escDados=escDados.filter(e=>e.id_escalacao!==id);renderEsc();}
+
+// ── LOGOUT COM CONFIRMAÇÃO ──
+function logout(){
+ document.getElementById('logoutModal').classList.add('show');
+}
+function fecharLogout(){
+ document.getElementById('logoutModal').classList.remove('show');
+}
+function confirmarLogout(){
+ sessionStorage.clear();
+ window.location.href='login.html';
+}
+
+// ── TOGGLE OPONENTE ──
+function toggleOponente(tipo){
+ const box = document.getElementById('campoOponente');
+ if(box) box.style.display = (String(tipo)==='2') ? 'block' : 'none';
+}
+
+// ── FINALIZAR JOGO — modal de lançamento de pontos ──
+let jogoFinalizandoId = null;
+let jogoEscalacao = [];
+
+async function abrirFinalizarJogo(idAtiv){
+ if(isAtleta){ toast('Acesso restrito.',false); return; }
+ jogoFinalizandoId = idAtiv;
+ const ativ = dados.find(a=>a.id_atividade===idAtiv);
+ if(!ativ) return;
+
+ document.getElementById('fjNomeJogo').textContent = ativ.nome_atividade;
+ document.getElementById('fjOponente').textContent = ativ.time_oponente ? ('vs ' + ativ.time_oponente) : '';
+ document.getElementById('fjPlacarPro').value = ativ.placar_pro || '';
+ document.getElementById('fjPlacarContra').value = ativ.placar_contra || '';
+
+ // Carregar escalação
+ try {
+ const r = await fetch('/escalacoes/atividade/'+idAtiv);
+ jogoEscalacao = await r.json();
+ } catch(e){ jogoEscalacao=[]; }
+
+ renderPontosForm();
+ new bootstrap.Modal(document.getElementById('modalFinalizarJogo')).show();
+}
+
+function renderPontosForm(){
+ const cont = document.getElementById('fjJogadores');
+ if(!jogoEscalacao.length){
+ cont.innerHTML='<div style="text-align:center;padding:20px;color:#8899BB;font-size:13px">Nenhum jogador escalado neste jogo.<br>Escale jogadores antes de finalizar.</div>';
+ return;
+ }
+ const tit = jogoEscalacao.filter(e=>e.titular==1||e.titular==='1');
+ const res = jogoEscalacao.filter(e=>e.titular==0||e.titular==='0');
+
+ function rowHTML(e){
+ const nome=e.usuario?.nome_usuario||'—';
+ const pos=e.posicao||'—';
+ const cor={'Armador':'#FFB020','Ala-Armador':'#4EC9FF','Ala':'#00C97A','Ala-Pivo':'#A78FFF','Pivo':'#FF6B6B'}[e.posicao]||'#8899BB';
+ return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">'
+ +'<div style="width:36px;height:36px;border-radius:50%;background:'+cor+'22;color:'+cor+';display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">'
+ +(nome.split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase())+'</div>'
+ +'<div style="flex:1;min-width:0">'
+ +'<div style="font-size:13px;font-weight:700">'+nome+'</div>'
+ +'<div style="font-size:11px;color:#8899BB">'+pos+(e.numero_camisa?' · #'+e.numero_camisa:'')+'</div>'
+ +'</div>'
+ +'<div style="display:flex;align-items:center;gap:8px">'
+ +'<label style="font-size:11px;color:#8899BB;white-space:nowrap">Pontos:</label>'
+ +'<input type="number" min="0" max="99" value="'+(e.pontos_jogo||0)+'" '
+ +'id="pts_'+e.id_escalacao+'" '
+ +'style="width:64px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#F0F4FF;font-family:Barlow,sans-serif;font-size:15px;font-weight:700;padding:5px 8px;text-align:center;outline:none"'
+ +' oninput="this.style.outline=\"none\"">'
+ +'</div>'
+ +'</div>';
+ }
+
+ cont.innerHTML =
+ (tit.length?'<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#FFB020;margin-bottom:4px">Titulares</div>'+tit.map(rowHTML).join(''):'')
+ +(res.length?'<div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#4EC9FF;margin:12px 0 4px">Reservas</div>'+res.map(rowHTML).join(''):'');
+}
+
+async function confirmarFinalizarJogo(){
+ if(isAtleta){ toast('Acesso restrito.',false); return; }
+ const placarPro = parseInt(document.getElementById('fjPlacarPro').value) || 0;
+ const placarContra = parseInt(document.getElementById('fjPlacarContra').value) || 0;
+ const api = '';
+
+ // 1. Atualizar placar e status da atividade
+ try {
+ await fetch(api+'/atividades/'+jogoFinalizandoId,{
+ method:'PUT',
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({placar_pro:placarPro, placar_contra:placarContra, status_atividade:2})
+ });
+ } catch(e){ console.warn('Atividade update failed',e); }
+
+ // 2. Atualizar pontos de cada jogador na escalação
+ const promises = jogoEscalacao.map(e=>{
+ const inp = document.getElementById('pts_'+e.id_escalacao);
+ const pts = inp ? (parseInt(inp.value)||0) : 0;
+ return fetch(api+'/escalacoes/'+e.id_escalacao,{
+ method:'PUT',
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({pontos_jogo:pts})
+ }).catch(()=>{});
+ });
+ await Promise.all(promises);
+
+ // 3. Fechar modal e recarregar
+ bootstrap.Modal.getInstance(document.getElementById('modalFinalizarJogo'))?.hide();
+ toast('Jogo finalizado! Pontos registrados com sucesso. ');
+ carregar();
+}
+
+// ══ FLATPICKR — date inputs ══
+document.addEventListener('DOMContentLoaded', function(){
+  if(typeof flatpickr === 'undefined') return;
+  var ptLocale = (flatpickr.l10ns && flatpickr.l10ns.pt) ? flatpickr.l10ns.pt : {};
+  document.querySelectorAll('input[type="date"]').forEach(function(el){
+    flatpickr(el,{dateFormat:'Y-m-d',locale:'pt',allowInput:true,disableMobile:true});
+  });
+  document.querySelectorAll('input[type="datetime-local"]').forEach(function(el){
+    flatpickr(el,{dateFormat:'Y-m-dTH:i',enableTime:true,time_24hr:true,locale:'pt',allowInput:true,disableMobile:true});
+  });
+});
+
+// ── TIME SELECIONADO — exibir na sidebar ──
+(function(){
+  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var el = document.getElementById('timeSidebarIndicator');
+  if (!el) return;
+  if (ts) {
+    el.style.display = 'flex';
+    var dot = el.querySelector('.ti-dot');
+    var nome = el.querySelector('.ti-nome');
+    if (dot)  dot.style.background = ts.cor || '#00C97A';
+    if (nome) nome.textContent = ts.nome || 'Time';
+  } else {
+    el.style.display = 'none';
+  }
+})();
+</script>
+
+<!-- MODAL FINALIZAR JOGO -->
+<div class="modal fade" id="modalFinalizarJogo" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-lg">
+ <div class="modal-content" style="background:#0D1E3C!important;color:#F0F4FF!important;border:1px solid rgba(0,201,122,0.2)!important;border-radius:18px!important;">
+ <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 24px!important;">
+ <div>
+ <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:1px;"> Finalizar Jogo</h5>
+ <div id="fjNomeJogo" style="font-size:14px;font-weight:700;color:#FFB020;margin-top:2px"></div>
+ <div id="fjOponente" style="font-size:12px;color:#8899BB;margin-top:2px"></div>
+ </div>
+ <button class="btn-close" style="filter:invert(1)" data-bs-dismiss="modal"></button>
+ </div>
+ <div class="modal-body" style="padding:20px 24px!important;">
+
+ <!-- PLACAR -->
+ <div style="background:rgba(255,176,32,0.06);border:1px solid rgba(255,176,32,0.2);border-radius:14px;padding:18px 24px;margin-bottom:20px;">
+ <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;margin-bottom:14px;text-align:center">Placar Final</div>
+ <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+ <div style="text-align:center;">
+ <div style="font-size:11px;color:#00C97A;font-weight:700;letter-spacing:1px;margin-bottom:8px">NOSSO TIME</div>
+ <input type="number" id="fjPlacarPro" min="0" max="999" placeholder="0"
+ style="width:90px;background:rgba(0,201,122,0.08);border:2px solid rgba(0,201,122,0.35);border-radius:12px;color:#00C97A;font-family:'Bebas Neue',cursive;font-size:40px;text-align:center;padding:8px;outline:none;">
+ </div>
+ <div style="font-family:'Bebas Neue',cursive;font-size:40px;color:#8899BB;">×</div>
+ <div style="text-align:center;">
+ <div style="font-size:11px;color:#FF6B6B;font-weight:700;letter-spacing:1px;margin-bottom:8px">ADVERSÁRIO</div>
+ <input type="number" id="fjPlacarContra" min="0" max="999" placeholder="0"
+ style="width:90px;background:rgba(255,80,80,0.08);border:2px solid rgba(255,80,80,0.25);border-radius:12px;color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:40px;text-align:center;padding:8px;outline:none;">
+ </div>
+ </div>
+ </div>
+
+ <!-- PONTOS JOGADORES -->
+ <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px 20px;">
+ <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;margin-bottom:12px"> Pontos por Jogador</div>
+ <div id="fjJogadores" style="max-height:320px;overflow-y:auto;padding-right:4px;"></div>
+ </div>
+
+ </div>
+ <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 24px!important;display:flex;justify-content:space-between;align-items:center;">
+ <div style="font-size:12px;color:#8899BB;">Os pontos serão usados para calcular a média no Desempenho</div>
+ <div style="display:flex;gap:10px;">
+ <button data-bs-dismiss="modal" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8899BB;font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;padding:9px 20px;border-radius:9px;cursor:pointer;">Cancelar</button>
+ <button onclick="confirmarFinalizarJogo()" style="background:linear-gradient(135deg,#00C97A,#00A865);border:none;color:#0A1628;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:9px 28px;border-radius:9px;cursor:pointer;"> Confirmar e Finalizar</button>
+ </div>
+ </div>
+ </div>
+ </div>
+</div>
+
+
+<script>
+(function(){
+  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  if (!ts) return;
+  var icon = document.getElementById('sidebarLogoIcon');
+  var nome = document.getElementById('sidebarNomeTime');
+  if (nome) nome.textContent = ts.nome || 'LAIVY';
+  if (icon) {
+    if (ts.logo) {
+      icon.style.background = 'none';
+      icon.style.padding = '0';
+      icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+    } else {
+      var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
+      icon.textContent = ini;
+      if (ts.cor) icon.style.background = 'linear-gradient(135deg,' + ts.cor + ',' + ts.cor + 'AA)';
+    }
+  }
+})();
+</script>
+</body>
+</html>

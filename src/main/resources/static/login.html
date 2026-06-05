@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAIVY - Sistema Esportivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+ :root {
+ --verde: #00C97A;
+ --azul: #0A1628;
+ --azul2: #112244;
+ --laranja: #FF6B1A;
+ --branco: #F0F4FF;
+ --cinza: #8899BB;
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+
+ body {
+ font-family: 'Barlow', sans-serif;
+ background: var(--azul);
+ min-height: 100vh;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ overflow: hidden;
+ position: relative;
+ }
+
+ /* Fundo animado com hexágonos */
+ .bg-hex {
+ position: fixed;
+ top: 0; left: 0;
+ width: 100%; height: 100%;
+ z-index: 0;
+ overflow: hidden;
+ }
+
+ .bg-hex::before {
+ content: '';
+ position: absolute;
+ width: 600px; height: 600px;
+ border-radius: 50%;
+ background: radial-gradient(circle, rgba(0,201,122,0.12) 0%, transparent 70%);
+ top: -100px; left: -100px;
+ animation: pulse 6s ease-in-out infinite;
+ }
+
+ .bg-hex::after {
+ content: '';
+ position: absolute;
+ width: 500px; height: 500px;
+ border-radius: 50%;
+ background: radial-gradient(circle, rgba(255,107,26,0.10) 0%, transparent 70%);
+ bottom: -100px; right: -100px;
+ animation: pulse 6s ease-in-out infinite 3s;
+ }
+
+ @keyframes pulse {
+ 0%, 100% { transform: scale(1); opacity: 0.6; }
+ 50% { transform: scale(1.2); opacity: 1; }
+ }
+
+ .container {
+ position: relative;
+ z-index: 1;
+ display: flex;
+ width: 100%;
+ max-width: 980px;
+ min-height: 580px;
+ border-radius: 28px;
+ overflow: hidden;
+ box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+ margin: 20px;
+ }
+
+ /* LADO ESQUERDO — LOGO */
+ .logo-side {
+ flex: 1;
+ background: linear-gradient(145deg, var(--azul2) 0%, #0D1E3C 100%);
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ padding: 40px 30px;
+ border-right: 1px solid rgba(0,201,122,0.15);
+ position: relative;
+ overflow: hidden;
+ }
+
+ .logo-side::before {
+ content: '';
+ position: absolute;
+ width: 300px; height: 300px;
+ border-radius: 50%;
+ border: 1px solid rgba(0,201,122,0.08);
+ top: 50%; left: 50%;
+ transform: translate(-50%, -50%);
+ animation: spin 20s linear infinite;
+ }
+
+ .logo-side::after {
+ content: '';
+ position: absolute;
+ width: 420px; height: 420px;
+ border-radius: 50%;
+ border: 1px solid rgba(0,201,122,0.05);
+ top: 50%; left: 50%;
+ transform: translate(-50%, -50%);
+ animation: spin 30s linear infinite reverse;
+ }
+
+ @keyframes spin {
+ from { transform: translate(-50%, -50%) rotate(0deg); }
+ to { transform: translate(-50%, -50%) rotate(360deg); }
+ }
+
+ /* LOGO SVG de Esportes */
+ .sports-logo {
+ position: relative;
+ z-index: 2;
+ animation: float 4s ease-in-out infinite;
+ }
+
+ @keyframes float {
+ 0%, 100% { transform: translateY(0px); }
+ 50% { transform: translateY(-10px); }
+ }
+
+
+ /* LADO DIREITO — FORM */
+ .form-side {
+ flex: 1.1;
+ background: #0D1A30;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ padding: 50px 48px;
+ }
+
+ .form-header {
+ margin-bottom: 36px;
+ }
+
+ .form-header h2 {
+ font-family: 'Bebas Neue', cursive;
+ font-size: 42px;
+ letter-spacing: 2px;
+ color: var(--branco);
+ line-height: 1;
+ }
+
+ .form-header p {
+ font-size: 14px;
+ color: var(--cinza);
+ margin-top: 6px;
+ font-weight: 300;
+ }
+
+ .form-group {
+ margin-bottom: 20px;
+ }
+
+ .form-group label {
+ display: block;
+ font-size: 11px;
+ font-weight: 600;
+ letter-spacing: 2px;
+ text-transform: uppercase;
+ color: var(--cinza);
+ margin-bottom: 8px;
+ }
+
+ .form-group input {
+ width: 100%;
+ background: rgba(255,255,255,0.04);
+ border: 1.5px solid rgba(255,255,255,0.08);
+ border-radius: 12px;
+ padding: 14px 18px;
+ font-size: 15px;
+ color: var(--branco);
+ font-family: 'Barlow', sans-serif;
+ transition: all 0.3s ease;
+ outline: none;
+ }
+
+ .form-group input:focus {
+ border-color: var(--verde);
+ background: rgba(0,201,122,0.06);
+ box-shadow: 0 0 0 3px rgba(0,201,122,0.1);
+ }
+
+ .form-group input::placeholder { color: rgba(136,153,187,0.5); }
+
+ .select-tipo {
+ width: 100%;
+ background: rgba(255,255,255,0.04);
+ border: 1.5px solid rgba(255,255,255,0.08);
+ border-radius: 12px;
+ padding: 14px 18px;
+ font-size: 15px;
+ color: var(--branco);
+ font-family: 'Barlow', sans-serif;
+ transition: all 0.3s ease;
+ outline: none;
+ cursor: pointer;
+ }
+
+ .select-tipo:focus {
+ border-color: var(--verde);
+ background: rgba(0,201,122,0.06);
+ }
+
+ .select-tipo option { background: #0D1A30; color: var(--branco); }
+
+ .btn-login {
+ width: 100%;
+ padding: 16px;
+ background: linear-gradient(135deg, var(--verde), #00A865);
+ border: none;
+ border-radius: 12px;
+ font-family: 'Bebas Neue', cursive;
+ font-size: 20px;
+ letter-spacing: 3px;
+ color: var(--azul);
+ cursor: pointer;
+ margin-top: 8px;
+ transition: all 0.3s ease;
+ position: relative;
+ overflow: hidden;
+ }
+
+ .btn-login::before {
+ content: '';
+ position: absolute;
+ top: 0; left: -100%;
+ width: 100%; height: 100%;
+ background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+ transition: left 0.5s ease;
+ }
+
+ .btn-login:hover::before { left: 100%; }
+ .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,201,122,0.4); }
+ .btn-login:active { transform: translateY(0); }
+
+ .form-footer {
+ margin-top: 24px;
+ text-align: center;
+ font-size: 13px;
+ color: var(--cinza);
+ }
+
+ .form-footer a {
+ color: var(--verde);
+ text-decoration: none;
+ font-weight: 600;
+ }
+
+ .form-footer a:hover { text-decoration: underline; }
+
+ .error-msg {
+ background: rgba(255,80,80,0.1);
+ border: 1px solid rgba(255,80,80,0.3);
+ border-radius: 8px;
+ padding: 10px 14px;
+ font-size: 13px;
+ color: #FF6B6B;
+ margin-bottom: 16px;
+ display: none;
+ }
+
+ /* Responsivo */
+ @media (max-width: 680px) {
+ .logo-side { display: none; }
+ .form-side { padding: 40px 28px; }
+ }
+
+/* ── LOADING SCREEN ── */
+#loadingScreen{
+ position:fixed;top:0;left:0;width:100%;height:100%;
+ background:#0A1628;z-index:99999;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ transition:opacity 0.5s ease;
+}
+#loadingScreen.fade-out{opacity:0;pointer-events:none;}
+.loading-logo{
+ width:72px;height:72px;
+ background:linear-gradient(135deg,#00C97A,#00A865);
+ border-radius:18px;
+ display:flex;align-items:center;justify-content:center;
+ font-family:'Bebas Neue',cursive;font-size:38px;color:#0A1628;
+ margin-bottom:28px;
+ animation:logoPulse 1.5s ease-in-out infinite;
+}
+@keyframes logoPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,201,122,0.4);}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(0,201,122,0);}}
+.loading-title{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:4px;color:#F0F4FF;margin-bottom:6px;}
+.loading-sub{font-size:12px;color:#8899BB;letter-spacing:2px;text-transform:uppercase;margin-bottom:36px;}
+.loading-bar-wrap{width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
+.loading-bar{height:100%;width:0%;background:linear-gradient(90deg,#00C97A,#00A865);border-radius:2px;animation:loadBar 1.4s ease forwards;}
+@keyframes loadBar{0%{width:0%}60%{width:75%}100%{width:100%}}
+
+/* ── POPUP TROCA DE SENHA ── */
+#popupSenha {
+ position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+ background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+ z-index: 99999; display: none; align-items: center; justify-content: center;
+}
+#popupSenha.show { display: flex; }
+.ps-card {
+ background: linear-gradient(135deg, #0D1E3C, #112244);
+ border: 1px solid rgba(0,201,122,0.25);
+ border-radius: 22px; padding: 40px 44px; width: 100%; max-width: 440px;
+ animation: psIn 0.3s ease;
+}
+@keyframes psIn { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.ps-icon  { font-size: 46px; text-align: center; margin-bottom: 16px; }
+.ps-title { font-family: 'Bebas Neue', cursive; font-size: 28px; letter-spacing: 2px;
+ color: #F0F4FF; text-align: center; margin-bottom: 6px; }
+.ps-sub { font-size: 13px; color: #8899BB; text-align: center; margin-bottom: 28px; line-height: 1.6; }
+.ps-field { position: relative; margin-bottom: 14px; }
+.ps-field label { font-size: 10px; font-weight: 700; letter-spacing: 2px;
+ text-transform: uppercase; color: #8899BB; display: block; margin-bottom: 6px; }
+.ps-field input {
+ width: 100%; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.1);
+ border-radius: 10px; color: #F0F4FF; font-family: 'Barlow', sans-serif;
+ font-size: 15px; padding: 11px 44px 11px 14px; outline: none; transition: border-color 0.2s;
+}
+.ps-field input:focus { border-color: #00C97A; background: rgba(0,201,122,0.04); }
+.ps-field input.ok { border-color: #00C97A !important; }
+.ps-field input.err { border-color: #FF6B6B !important; background: rgba(255,80,80,0.04) !important; }
+.ps-eye { position: absolute; right: 12px; bottom: 11px; cursor: pointer;
+ font-size: 16px; color: #8899BB; user-select: none; }
+/* Requisitos visuais */
+.ps-reqs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 22px; }
+.ps-req {
+ display: flex; align-items: center; gap: 7px;
+ background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+ border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #8899BB;
+ transition: all 0.2s;
+}
+.ps-req.met { background: rgba(0,201,122,0.08); border-color: rgba(0,201,122,0.25); color: #00C97A; }
+.ps-req-icon { font-size: 14px; width: 16px; text-align: center; }
+/* Match indicator */
+.ps-match { font-size: 11px; margin-top: -8px; margin-bottom: 14px;
+ padding: 5px 10px; border-radius: 6px; display: none; }
+.ps-match.ok { display: block; background: rgba(0,201,122,0.08); color: #00C97A; }
+.ps-match.err { display: block; background: rgba(255,80,80,0.08); color: #FF6B6B; }
+/* Strength bar */
+.ps-strength-wrap { height: 4px; background: rgba(255,255,255,0.06);
+ border-radius: 2px; margin-bottom: 18px; overflow: hidden; }
+.ps-strength-bar { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+/* Button */
+.ps-btn {
+ width: 100%; padding: 13px; border: none; border-radius: 11px;
+ background: linear-gradient(135deg, #00C97A, #00A865);
+ color: #0A1628; font-family: 'Bebas Neue', cursive;
+ font-size: 18px; letter-spacing: 2px; cursor: pointer;
+ transition: all 0.2s; opacity: 0.45; pointer-events: none;
+}
+.ps-btn.ready { opacity: 1; pointer-events: auto; }
+.ps-btn.ready:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,201,122,0.35); }
+
+
+/* ── LOGIN ERROR ── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(6px)}
+}
+.shake { animation: shake 0.5s ease; }
+.error-msg.shake { animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+.form-group input.err-field {
+  border-color: #FF6B6B !important;
+  background: rgba(255,80,80,0.04) !important;
+  box-shadow: 0 0 0 3px rgba(255,80,80,0.12) !important;
+}
+.form-group input.ok-field {
+  border-color: #00C97A !important;
+}
+
+/* ── TEMA CLARO — Soft Blue-Grey ── */
+/* theme toggle in light mode */
+.btn-acao-sm:hover { transform: translateY(-1px); }
+.btn-ver  { background: rgba(78,201,255,0.10); color: #4EC9FF; border-color: rgba(78,201,255,0.25); }
+.btn-ver:hover  { background: rgba(78,201,255,0.22); }
+.btn-edit { background: rgba(255,176,32,0.10);  color: #FFB020; border-color: rgba(255,176,32,0.25); }
+.btn-edit:hover { background: rgba(255,176,32,0.22); }
+.btn-del  { background: rgba(255,80,80,0.10);   color: #FF6B6B; border-color: rgba(255,80,80,0.25); }
+.btn-del:hover  { background: rgba(255,80,80,0.22); }
+.btn-bask { background: rgba(255,176,32,0.10); color: #FFB020; border-color: rgba(255,176,32,0.2); }
+.btn-bask:hover { background: rgba(255,176,32,0.22); }
+/* action group spacing */
+.user-acoes, .desemp-acoes { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+</style>
+</head>
+<body>
+<!-- LOGIN LOADING OVERLAY -->
+<div id="loginLoading" style="
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:#0A1628;z-index:99999;
+  flex-direction:column;align-items:center;justify-content:center;gap:20px;
+">
+  <div style="
+    width:64px;height:64px;
+    background:linear-gradient(135deg,#00C97A,#00A865);
+    border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',cursive;font-size:32px;color:#0A1628;
+    animation:loginPulse 1s ease-in-out infinite;
+  ">L</div>
+  <div style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:3px;color:#F0F4FF">
+    Carregando...
+  </div>
+  <div style="width:160px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">
+    <div style="height:100%;background:linear-gradient(90deg,#00C97A,#00A865);border-radius:2px;animation:loginBar 1.2s ease forwards"></div>
+  </div>
+</div>
+<style>
+@keyframes loginPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,201,122,0.4)}50%{transform:scale(1.08);box-shadow:0 0 0 12px rgba(0,201,122,0)}}
+@keyframes loginBar{0%{width:0%}70%{width:80%}100%{width:100%}}
+</style>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+ <div class="loading-logo">L</div>
+ <div class="loading-title">LAIVY</div>
+ <div class="loading-sub">Sistema Esportivo</div>
+ <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+
+<div class="bg-hex"></div>
+
+<div class="container">
+
+ <!-- LADO ESQUERDO -->
+ <div class="logo-side">
+
+ <!-- Logo SVG Esportes Multi-modal -->
+ <div class="sports-logo">
+ <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+ <!-- Círculo base -->
+ <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(0,201,122,0.15)" stroke-width="2"/>
+ <circle cx="100" cy="100" r="75" fill="none" stroke="rgba(0,201,122,0.08)" stroke-width="1"/>
+
+ <!-- Escudo central -->
+ <path d="M100 20 L140 40 L140 90 Q140 130 100 155 Q60 130 60 90 L60 40 Z"
+ fill="rgba(0,201,122,0.12)" stroke="#00C97A" stroke-width="1.5"/>
+
+ <!-- Letra S central -->
+ <text x="100" y="108" font-family="Bebas Neue, sans-serif" font-size="52" fill="#00C97A"
+ text-anchor="middle" opacity="0.9">LAIVY</text>
+
+ <!-- Ícone Futebol - canto superior esquerdo -->
+ <g transform="translate(30, 30)">
+ <circle cx="18" cy="18" r="14" fill="none" stroke="#FF6B1A" stroke-width="1.5"/>
+ <polygon points="18,8 22,14 18,20 14,14" fill="none" stroke="#FF6B1A" stroke-width="1.2"/>
+ </g>
+
+ <!-- Ícone Basquete - canto superior direito -->
+ <g transform="translate(140, 28)">
+ <circle cx="18" cy="18" r="14" fill="none" stroke="#FFB020" stroke-width="1.5"/>
+ <line x1="4" y1="18" x2="32" y2="18" stroke="#FFB020" stroke-width="1.2"/>
+ <path d="M12 6 Q18 14 12 22" fill="none" stroke="#FFB020" stroke-width="1.2"/>
+ <path d="M24 6 Q18 14 24 22" fill="none" stroke="#FFB020" stroke-width="1.2"/>
+ </g>
+
+ <!-- Ícone Natação - esquerda -->
+ <g transform="translate(14, 88)">
+ <path d="M0,10 Q6,4 12,10 Q18,16 24,10" fill="none" stroke="#4EC9FF" stroke-width="2"/>
+ <path d="M0,16 Q6,10 12,16 Q18,22 24,16" fill="none" stroke="#4EC9FF" stroke-width="1.5" opacity="0.6"/>
+ </g>
+
+ <!-- Ícone Atletismo - direita -->
+ <g transform="translate(160, 88)">
+ <circle cx="12" cy="5" r="4" fill="none" stroke="#A78FFF" stroke-width="1.5"/>
+ <line x1="12" y1="9" x2="12" y2="18" stroke="#A78FFF" stroke-width="1.5"/>
+ <line x1="12" y1="18" x2="6" y2="26" stroke="#A78FFF" stroke-width="1.5"/>
+ <line x1="12" y1="18" x2="18" y2="26" stroke="#A78FFF" stroke-width="1.5"/>
+ <line x1="12" y1="13" x2="6" y2="18" stroke="#A78FFF" stroke-width="1.5"/>
+ </g>
+
+ <!-- Ícone Vôlei - inferior esquerdo -->
+ <g transform="translate(32, 148)">
+ <circle cx="16" cy="14" r="12" fill="none" stroke="#00C97A" stroke-width="1.5"/>
+ <path d="M8 8 Q16 16 24 8" fill="none" stroke="#00C97A" stroke-width="1.2"/>
+ <path d="M6 16 Q16 22 26 16" fill="none" stroke="#00C97A" stroke-width="1.2"/>
+ </g>
+
+ <!-- Ícone Tênis - inferior direito -->
+ <g transform="translate(140, 148)">
+ <ellipse cx="16" cy="14" rx="13" ry="12" fill="none" stroke="#FF6B6B" stroke-width="1.5"/>
+ <path d="M6 6 Q16 14 26 22" fill="none" stroke="#FF6B6B" stroke-width="1.2"/>
+ <path d="M26 6 Q16 14 6 22" fill="none" stroke="#FF6B6B" stroke-width="1.2"/>
+ </g>
+
+ <!-- Estrelas decorativas -->
+ <circle cx="100" cy="170" r="2" fill="#00C97A" opacity="0.6"/>
+ <circle cx="90" cy="165" r="1.5" fill="#00C97A" opacity="0.4"/>
+ <circle cx="110" cy="165" r="1.5" fill="#00C97A" opacity="0.4"/>
+ </svg>
+ </div>
+
+ </div>
+
+ <!-- LADO DIREITO — LOGIN -->
+ <div class="form-side">
+
+ <div class="form-header">
+ <h2>Bem-vindo</h2>
+ <p>Faça login para acessar o sistema esportivo</p>
+ </div>
+
+ <div class="error-msg" id="errorMsg" style="display:none">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="errorText">Usuário ou senha inválidos.</span>
+        </div>
+      </div>
+
+ <form id="formLogin" onsubmit="fazerLogin(event)">
+
+ <div class="form-group">
+ <label>Login</label>
+ <input type="text" id="loginInput" placeholder="Digite seu login" required autocomplete="username" oninput="clearLoginError()">
+ </div>
+
+ <div class="form-group">
+ <label>Senha</label>
+ <input type="password" id="senhaInput" placeholder="••••••••" required autocomplete="current-password" oninput="clearLoginError()">
+ </div>
+
+ <div class="form-group">
+ <label>Perfil</label>
+ <select class="select-tipo" id="tipoSelect">
+ <option value="1">Administrador</option>
+ <option value="2">Treinador</option>
+ <option value="3">Atleta</option>
+ </select>
+ </div>
+
+ <button type="submit" class="btn-login">Entrar no Sistema</button>
+
+ </form>
+
+
+
+ </div>
+
+</div>
+
+<script>
+function fazerLogin(e) {
+  e.preventDefault();
+  const login = document.getElementById('loginInput').value.trim();
+  const senha = document.getElementById('senhaInput').value;
+  const tipo  = document.getElementById('tipoSelect').value;
+
+  function showError(msg, shakeLogin, shakeSenha) {
+    document.getElementById('errorText').textContent = msg;
+    const errDiv = document.getElementById('errorMsg');
+    errDiv.style.display = 'block';
+    errDiv.classList.remove('shake'); void errDiv.offsetWidth; errDiv.classList.add('shake');
+    const li = document.getElementById('loginInput');
+    const si = document.getElementById('senhaInput');
+    li.classList.toggle('err-field', shakeLogin);
+    si.classList.toggle('err-field', shakeSenha);
+    if(shakeSenha){ si.value=''; si.focus(); }
+  }
+
+  fetch('/usuarios')
+    .then(res => res.json())
+    .then(usuarios => {
+      const byLogin      = usuarios.find(u => u.login_usuario === login);
+      const byLoginSenha = byLogin && byLogin.senha_usuario === senha ? byLogin : null;
+      const user         = byLoginSenha && String(byLoginSenha.tipo_usuario) === tipo ? byLoginSenha : null;
+
+      if (user) {
+        fetch('/usuarios/' + user.id_usuario)
+          .then(r => r.json())
+          .then(fresh => {
+            const u = fresh || user;
+            sessionStorage.setItem('usuario', JSON.stringify(u));
+            if (u.primeiro_login === 1 || u.primeiro_login === '1') { psAbrir(u); }
+            else { mostrarLoginLoading(); }
+          })
+          .catch(() => {
+            sessionStorage.setItem('usuario', JSON.stringify(user));
+            if (user.primeiro_login === 1) { psAbrir(user); }
+            else { mostrarLoginLoading(); }
+          });
+      } else if (!byLogin) {
+        showError('Usuário não encontrado. Verifique o login.', true, false);
+      } else if (!byLoginSenha) {
+        showError('Senha incorreta. Tente novamente.', false, true);
+      } else {
+        showError('Perfil incorreto para este usuário.', false, false);
+      }
+    })
+    .catch(() => {
+      if (login === 'admin' && senha === 'admin') {
+        const demoUser = { id_usuario:1, nome_usuario:'Administrador', login_usuario:'admin', tipo_usuario:1, primeiro_login:0 };
+        sessionStorage.setItem('usuario', JSON.stringify(demoUser));
+        mostrarLoginLoading();
+      } else {
+        showError('Servidor offline. Verifique a conexão com o backend.', true, true);
+      }
+    });
+}
+
+// ── LOADING SCREEN ──
+window.addEventListener('load', function(){
+ const ls = document.getElementById('loadingScreen');
+ if(!ls) return;
+ setTimeout(function(){
+ ls.classList.add('fade-out');
+ setTimeout(()=>{ ls.style.display='none'; }, 500);
+ }, 1200);
+});
+
+// 
+// POPUP — TROCA DE SENHA NO PRIMEIRO LOGIN
+// 
+let _userPendente = null; // usuário autenticado aguardando troca de senha
+
+function psAbrir(user) {
+ _userPendente = user;
+ document.getElementById('popupSenha').classList.add('show');
+ document.getElementById('psNova').focus();
+}
+
+function psToggleVis(id, btn) {
+ const inp = document.getElementById(id);
+ const show = inp.type === 'password';
+ inp.type = show ? 'text' : 'password';
+ btn.textContent = show ? '' : '';
+}
+
+function psValidar() {
+ const val = document.getElementById('psNova').value;
+ const conf = document.getElementById('psConf').value;
+
+ const reqs = {
+ upper: /[A-Z]/.test(val),
+ num: /[0-9]/.test(val),
+ spec: /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?`~]/.test(val),
+ len: val.length >= 8
+ };
+
+ // Atualiza badges de requisito
+ Object.entries(reqs).forEach(([k, ok]) => {
+ const el = document.getElementById('req-' + k);
+ if (el) el.classList.toggle('met', ok);
+ });
+
+ // Barra de força (0–4 requisitos = 0–100%)
+ const metCount = Object.values(reqs).filter(Boolean).length;
+ const pct = metCount * 25;
+ const cores = ['#FF6B6B', '#FF6B6B', '#FFB020', '#FFB020', '#00C97A'];
+ const bar = document.getElementById('psStrBar');
+ bar.style.width = pct + '%';
+ bar.style.background = cores[metCount];
+
+ // Feedback de confirmação
+ const matchEl = document.getElementById('psMatch');
+ const inpNova = document.getElementById('psNova');
+ const inpConf = document.getElementById('psConf');
+ const allMet = Object.values(reqs).every(Boolean);
+
+ if (conf.length > 0) {
+ const match = val === conf;
+    matchEl.textContent = match ? '✅ Senhas conferem' : '❌ Senhas não conferem';
+ matchEl.className = 'ps-match ' + (match ? 'ok' : 'err');
+ inpConf.className = match ? 'ok' : 'err';
+ } else {
+ matchEl.className = 'ps-match';
+ inpConf.className = '';
+ }
+
+ inpNova.className = allMet ? 'ok' : (val.length > 0 ? 'err' : '');
+
+ // Habilitar botão apenas quando tudo ok
+ const btn = document.getElementById('psBtnConfirmar');
+ const pronto = allMet && val === conf && conf.length > 0;
+ btn.classList.toggle('ready', pronto);
+}
+
+async function psConfirmar() {
+ if (!_userPendente) return;
+ const nova = document.getElementById('psNova').value;
+
+ try {
+ const res = await fetch(
+ '/usuarios/' + _userPendente.id_usuario + '/senha',
+ {
+ method: 'PUT',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ senha_usuario: nova })
+ }
+ );
+ if (res.ok) {
+ const userAtualizado = await res.json();
+ // Atualiza sessionStorage com dados novos (primeiro_login=0)
+ sessionStorage.setItem('usuario', JSON.stringify(userAtualizado));
+ document.getElementById('popupSenha').classList.remove('show');
+ mostrarLoginLoading();
+ } else {
+ alert('Erro ao salvar a senha. Tente novamente.');
+ }
+ } catch (err) {
+ // Fallback offline: salva localmente e prossegue
+ _userPendente.primeiro_login = 0;
+ sessionStorage.setItem('usuario', JSON.stringify(_userPendente));
+ document.getElementById('popupSenha').classList.remove('show');
+ mostrarLoginLoading();
+ }
+}
+
+function clearLoginError(){
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('loginInput').classList.remove('err-field','ok-field');
+  document.getElementById('senhaInput').classList.remove('err-field','ok-field');
+}
+// ── TEMA na tela de login ──
+function mostrarLoginLoading(){
+  const el = document.getElementById('loginLoading');
+  el.style.display = 'flex';
+  setTimeout(()=>{ window.location.href='selecionar-time.html'; }, 1400);
+}
+</script>
+
+
+<!-- POPUP TROCA DE SENHA — PRIMEIRO LOGIN -->
+<div id="popupSenha">
+ <div class="ps-card">
+    <div class="ps-icon">🔐</div>
+ <div class="ps-title">Criar Nova Senha</div>
+ <div class="ps-sub">
+ Este é seu primeiro acesso.<br>
+ Crie uma senha segura para continuar.
+ </div>
+
+ <div class="ps-field">
+ <label>Nova Senha</label>
+ <input type="password" id="psNova" placeholder="••••••••" oninput="psValidar()" autocomplete="new-password">
+      <span class="ps-eye" onclick="psToggleVis('psNova',this)">👁</span>
+ </div>
+
+ <!-- Barra de força -->
+ <div class="ps-strength-wrap">
+ <div class="ps-strength-bar" id="psStrBar" style="width:0%"></div>
+ </div>
+
+ <!-- Requisitos -->
+    <div class="ps-reqs">
+      <div class="ps-req" id="req-upper"><span class="ps-req-icon">🔡</span> Letra maiúscula</div>
+      <div class="ps-req" id="req-num">  <span class="ps-req-icon">🔢</span> Número</div>
+      <div class="ps-req" id="req-spec"> <span class="ps-req-icon">✳️</span> Caractere especial</div>
+      <div class="ps-req" id="req-len">  <span class="ps-req-icon">📏</span> Mínimo 8 caracteres</div>
+ </div>
+
+ <div class="ps-field">
+ <label>Confirmar Senha</label>
+ <input type="password" id="psConf" placeholder="••••••••" oninput="psValidar()" autocomplete="new-password">
+      <span class="ps-eye" onclick="psToggleVis('psConf',this)">👁</span>
+ </div>
+ <div class="ps-match" id="psMatch"></div>
+
+    <button class="ps-btn" id="psBtnConfirmar" onclick="psConfirmar()">
+      ✅ Confirmar Nova Senha
+ </button>
+ </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selecionar Time — LAIVY</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;}
+
+/* HEADER */
+.page-header{text-align:center;margin-bottom:40px;}
+.logo-wrap{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:20px;}
+.logo-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--verde),#00A865);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',cursive;font-size:26px;color:var(--azul);}
+.logo-name{font-family:'Bebas Neue',cursive;font-size:28px;letter-spacing:3px;}
+.page-title{font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:2px;
+  color:var(--branco);margin-bottom:8px;}
+.page-sub{font-size:14px;color:var(--cinza);}
+
+/* USER PILL */
+.user-pill{display:inline-flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+  border-radius:40px;padding:8px 16px 8px 8px;margin-bottom:32px;}
+.pill-av{width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--verde),#00A865);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;color:var(--azul);overflow:hidden;flex-shrink:0;}
+.pill-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.pill-nome{font-size:13px;font-weight:700;}
+.pill-tipo{font-size:11px;color:var(--cinza);}
+.pill-sair{background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);
+  color:#FF6B6B;border-radius:20px;padding:4px 12px;
+  font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;
+  font-family:'Barlow',sans-serif;transition:background .2s;}
+.pill-sair:hover{background:rgba(255,80,80,0.2);}
+
+/* GRID */
+.times-wrap{width:100%;max-width:900px;}
+.times-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+
+/* TIME CARD */
+.time-card{background:linear-gradient(135deg,#0D1E3C,#112244);
+  border:1px solid rgba(255,255,255,0.06);border-radius:20px;
+  overflow:hidden;cursor:pointer;transition:all .25s;position:relative;}
+.time-card:hover{transform:translateY(-5px);
+  box-shadow:0 20px 50px rgba(0,0,0,0.4);}
+.time-card:hover .tc-arrow{opacity:1;transform:translateX(0);}
+.tc-banner{height:6px;}
+.tc-body{padding:20px;}
+.tc-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.tc-logo{width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',cursive;font-size:20px;color:#fff;
+  flex-shrink:0;overflow:hidden;}
+.tc-logo img{width:100%;height:100%;object-fit:cover;border-radius:14px;}
+.tc-nome{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;line-height:1.1;}
+.tc-sub{font-size:12px;color:var(--cinza);margin-top:3px;}
+.tc-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px;}
+.tc-stat{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.05);
+  border-radius:8px;padding:8px;text-align:center;}
+.tc-stat-num{font-family:'Bebas Neue',cursive;font-size:20px;line-height:1;}
+.tc-stat-label{font-size:9px;color:var(--cinza);font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
+.tc-treinador{font-size:12px;color:var(--cinza);
+  display:flex;align-items:center;gap:6px;}
+.tc-treinador strong{color:var(--branco);}
+.tc-arrow{position:absolute;bottom:20px;right:20px;
+  background:var(--verde);border-radius:50%;width:30px;height:30px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transform:translateX(8px);transition:all .2s;}
+
+/* LOADING STATE */
+.loading-state{text-align:center;padding:60px 20px;color:var(--cinza);}
+.loading-spin{width:36px;height:36px;border:3px solid rgba(0,201,122,0.2);
+  border-top-color:var(--verde);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--cinza);}
+.empty-icon{opacity:.4;margin-bottom:16px;}
+.empty-title{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;
+  color:var(--branco);margin-bottom:8px;}
+.empty-msg{font-size:14px;line-height:1.7;}
+
+/* LOGOUT MODAL */
+#logoutModal{position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  z-index:9999;display:none;align-items:center;justify-content:center;}
+#logoutModal.show{display:flex;}
+.logout-card{background:linear-gradient(135deg,#0D1E3C,#112244);
+  border:1px solid rgba(255,80,80,.25);border-radius:20px;
+  padding:36px 40px;text-align:center;max-width:360px;width:90%;}
+.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;margin-bottom:8px;}
+.logout-msg{font-size:14px;color:var(--cinza);margin-bottom:28px;line-height:1.6;}
+.logout-btns{display:flex;gap:12px;justify-content:center;}
+.btn-cancel-l{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;
+  padding:11px 28px;border-radius:10px;cursor:pointer;}
+.btn-confirm-l{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.35);
+  color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;
+  padding:11px 28px;border-radius:10px;cursor:pointer;}
+
+/* ── CARD NOVO TIME ── */
+.time-card-new {
+  background: rgba(0,201,122,0.04);
+  border: 2px dashed rgba(0,201,122,0.3);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .25s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 20px;
+  min-height: 200px;
+}
+.time-card-new:hover {
+  background: rgba(0,201,122,0.08);
+  border-color: rgba(0,201,122,0.6);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.3);
+}
+.new-icon {
+  width: 56px; height: 56px;
+  background: rgba(0,201,122,0.12);
+  border: 2px solid rgba(0,201,122,0.3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+}
+.time-card-new:hover .new-icon {
+  background: rgba(0,201,122,0.2);
+  border-color: var(--verde);
+}
+.new-label {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 18px; letter-spacing: 2px;
+  color: var(--verde);
+}
+.new-sub { font-size: 12px; color: var(--cinza); }
+
+/* ── FORM PANEL (slide down) ── */
+.form-panel {
+  width: 100%; max-width: 900px;
+  margin-top: 24px;
+  display: none;
+  animation: slideDown .3s ease;
+}
+.form-panel.open { display: block; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
+.fp-card {
+  background: linear-gradient(135deg,#0D1E3C,#112244);
+  border: 1px solid rgba(0,201,122,0.2);
+  border-radius: 20px;
+  padding: 28px 32px;
+}
+.fp-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 24px; letter-spacing: 2px;
+  color: var(--branco); margin-bottom: 22px;
+  display: flex; align-items: center; gap: 10px;
+}
+.fp-close {
+  margin-left: auto; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+  color: var(--cinza); width: 32px; height: 32px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; transition: all .2s;
+}
+.fp-close:hover { background: rgba(255,80,80,0.15); color: #FF6B6B; }
+/* form controls inside panel */
+.fp-card .form-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--cinza);
+  margin-bottom: 6px; display: block;
+}
+.fp-card .form-control, .fp-card .form-select {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1.5px solid rgba(255,255,255,0.12) !important;
+  border-radius: 10px !important;
+  color: var(--branco) !important;
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px !important;
+  padding: 11px 14px !important;
+  transition: border-color .2s, box-shadow .2s;
+}
+.fp-card .form-control:focus, .fp-card .form-select:focus {
+  border-color: var(--verde) !important;
+  box-shadow: 0 0 0 3px rgba(0,201,122,0.14) !important;
+  background: rgba(0,201,122,0.04) !important;
+  outline: none !important;
+}
+.fp-card .form-control::placeholder { color: rgba(136,153,187,0.35) !important; }
+.fp-card label.form-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase;
+  color: var(--cinza);
+  margin-bottom: 6px;
+  display: block;
+}
+/* logo inside popup */
+.fp-logo-circle {
+  width: 80px; height: 80px; border-radius: 16px;
+  background: rgba(0,201,122,0.08);
+  border: 2px dashed rgba(0,201,122,0.35);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; cursor: pointer; transition: all .2s; position: relative;
+}
+.fp-logo-circle:hover { border-color: var(--verde); background: rgba(0,201,122,0.14); }
+.fp-logo-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
+.fp-logo-circle .fp-logo-ov {
+  position: absolute; inset: 0; background: rgba(0,0,0,.5); border-radius: 14px;
+  display: none; align-items: center; justify-content: center;
+  color: #fff; font-size: 11px; font-weight: 700;
+}
+.fp-logo-circle:hover .fp-logo-ov { display: flex; }
+.fp-logo-initials { font-family: 'Bebas Neue',cursive; font-size: 26px; color: var(--verde); }
+.fp-card .form-control:focus, .fp-card .form-select:focus {
+  border-color: var(--verde) !important;
+  box-shadow: 0 0 0 3px rgba(0,201,122,0.15) !important;
+}
+.fp-card .form-control::placeholder { color: rgba(136,153,187,0.4) !important; }
+.fp-card .form-select option { background: #0D1E3C; }
+.fp-card .form-control.is-invalid { border-color: #FF6B6B !important; background: rgba(255,80,80,0.04) !important; }
+.field-hint { font-size: 11px; margin-top: 4px; display: none; }
+.field-hint.show { display: block; }
+.field-hint.ok  { color: #00C97A; }
+.field-hint.err { color: #FF6B6B; }
+/* treinador options inside panel */
+.tr-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius: 10px; cursor: pointer; transition: all .2s;
+}
+.tr-option:hover { background: rgba(0,201,122,0.06); border-color: rgba(0,201,122,0.2); }
+.tr-option.selected { background: rgba(0,201,122,0.1); border-color: rgba(0,201,122,0.4); }
+.tr-av {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; flex-shrink: 0; overflow: hidden;
+}
+.tr-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.tr-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--verde); display: none;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tr-option.selected .tr-check { display: flex; }
+/* color swatch */
+.color-swatch {
+  width: 36px; height: 36px; border-radius: 9px;
+  border: 2px solid rgba(255,255,255,0.15); cursor: pointer; flex-shrink: 0;
+}
+/* buttons */
+.btn-criar {
+  background: linear-gradient(135deg, var(--verde), #00A865);
+  border: none; color: #0A1628;
+  font-family: 'Bebas Neue', cursive; font-size: 16px; letter-spacing: 2px;
+  padding: 11px 32px; border-radius: 10px; cursor: pointer; transition: all .2s;
+}
+.btn-criar:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,201,122,0.3); }
+.btn-criar:disabled { opacity: .5; pointer-events: none; }
+.btn-fp-cancel {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--cinza); font-family: 'Bebas Neue', cursive; font-size: 16px;
+  letter-spacing: 2px; padding: 11px 24px; border-radius: 10px; cursor: pointer;
+}
+
+/* ── POPUP CADASTRAR TREINADOR ── */
+#popupTreinador {
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);
+  z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;
+}
+#popupTreinador.show { display:flex; }
+.pt-card {
+  background:linear-gradient(135deg,#0D1E3C,#112244);
+  border:1px solid rgba(0,201,122,0.2);border-radius:22px;
+  width:100%;max-width:560px;max-height:90vh;overflow-y:auto;
+  animation:ptIn .3s ease;
+}
+@keyframes ptIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.pt-header {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 28px 0;margin-bottom:20px;
+}
+.pt-title { font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:2px;color:#F0F4FF; }
+.pt-close {
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  color:#8899BB;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:all .2s;
+}
+.pt-close:hover{background:rgba(255,80,80,0.15);color:#FF6B6B;}
+.pt-body { padding:0 28px 28px; }
+/* foto */
+.pt-foto-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:18px;}
+.pt-foto-circle{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.04);border:2px dashed rgba(0,201,122,0.3);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative;transition:all .2s;}
+.pt-foto-circle:hover{border-color:var(--verde);}
+.pt-foto-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.pt-foto-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+.pt-foto-circle:hover .pt-foto-ov{display:flex;}
+/* inputs */
+.pt-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;margin-bottom:5px;display:block;}
+.pt-input,.pt-select{width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:#F0F4FF;font-family:'Barlow',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;}
+.pt-input:focus,.pt-select:focus{border-color:var(--verde)!important;box-shadow:0 0 0 3px rgba(0,201,122,0.15);}
+.pt-input::placeholder{color:rgba(136,153,187,0.35);}
+.pt-select option{background:#0D1E3C;}
+.pt-input.err{border-color:#FF6B6B!important;background:rgba(255,80,80,0.04)!important;}
+.pt-hint{font-size:11px;margin-top:4px;display:none;}
+.pt-hint.show{display:block;}
+.pt-hint.ok{color:#00C97A;}.pt-hint.err{color:#FF6B6B;}
+/* time selector inside popup */
+.pt-time-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;}
+.pt-ts{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);border-radius:9px;cursor:pointer;transition:all .2s;}
+.pt-ts:hover{background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.2);}
+.pt-ts.selected{background:rgba(0,201,122,0.1);border-color:rgba(0,201,122,0.4);}
+.pt-ts-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pt-ts-nome{font-size:12px;font-weight:700;flex:1;}
+.pt-ts-cat{font-size:10px;color:#8899BB;}
+.pt-ts-chk{width:16px;height:16px;border-radius:50%;background:var(--verde);display:none;align-items:center;justify-content:center;flex-shrink:0;}
+.pt-ts.selected .pt-ts-chk{display:flex;}
+/* button */
+.pt-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:#0A1628;font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;border-radius:10px;cursor:pointer;transition:all .2s;margin-top:18px;}
+.pt-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,201,122,0.3);}
+.pt-btn:disabled{opacity:.5;pointer-events:none;}
+/* toast inside page */
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn .3s ease;color:#F0F4FF;}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal">
+  <div class="logout-card">
+    <div style="font-size:40px;margin-bottom:16px">👋</div>
+    <div class="logout-titulo">Sair do Sistema?</div>
+    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
+    <div class="logout-btns">
+      <button class="btn-cancel-l" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancelar</button>
+      <button class="btn-confirm-l" onclick="sessionStorage.clear();window.location.href='login.html'">Sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="logo-wrap">
+    <div class="logo-icon">L</div>
+    <div class="logo-name">LAIVY</div>
+  </div>
+  <div class="page-title">Selecionar Time</div>
+  <div class="page-sub">Escolha o time para acessar o sistema</div>
+</div>
+
+<!-- USER PILL -->
+<div class="user-pill">
+  <div class="pill-av" id="pillAv">A</div>
+  <div>
+    <div class="pill-nome" id="pillNome">—</div>
+    <div class="pill-tipo" id="pillTipo">—</div>
+  </div>
+  <button class="pill-sair" onclick="document.getElementById('logoutModal').classList.add('show')">Sair</button>
+</div>
+
+<!-- Botão cadastrar treinador — só admin -->
+<div id="btnCadTreinadorWrap" style="display:none;margin-bottom:28px;gap:10px;flex-wrap:wrap">
+  <button onclick="abrirPopupTreinador()" style="display:flex;align-items:center;gap:8px;background:rgba(0,201,122,0.08);border:1.5px solid rgba(0,201,122,0.3);border-radius:12px;color:var(--verde);font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;padding:10px 20px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(0,201,122,0.15)'" onmouseout="this.style.background='rgba(0,201,122,0.08)'">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+    Cadastrar Treinador
+  </button>
+</div>
+
+<!-- TIMES GRID -->
+<div class="times-wrap">
+  <div id="timesContainer">
+    <div class="loading-state">
+      <div class="loading-spin"></div>
+      <div>Carregando times...</div>
+    </div>
+  </div>
+</div>
+
+<!-- FORM NOVO TIME (admin only) -->
+<div class="form-panel" id="formPanel">
+  <div class="fp-card">
+    <div class="fp-title">
+      Novo Time
+      <button class="fp-close" onclick="fecharFormPanel()" title="Fechar">×</button>
+    </div>
+    <form id="formNovoTime" novalidate>
+      <!-- LOGO -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:20px">
+        <div class="fp-logo-circle" id="fpLogoCircle" onclick="document.getElementById('fpInputLogo').click()">
+          <span class="fp-logo-initials" id="fpLogoInitials">?</span>
+          <img id="fpLogoImg" style="display:none" alt="">
+          <div class="fp-logo-ov">Alterar</div>
+        </div>
+        <input type="file" id="fpInputLogo" accept="image/*" style="display:none" onchange="fpLogoCarregar(this)">
+        <span style="font-size:11px;color:var(--cinza);text-align:center">Logo do time · opcional · máx 2MB</span>
+        <button type="button" id="fpBtnRmLogo" onclick="fpLogoRemover()" style="display:none;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);color:#FF6B6B;border-radius:7px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer">Remover</button>
+        <input type="hidden" id="fpLogoB64">
+      </div>
+
+      <div class="row g-3">
+
+        <div class="col-md-8">
+          <label class="form-label">Nome do Time <span style="color:#FF6B6B">*</span></label>
+          <input class="form-control" id="fp-nome" name="nome_time" placeholder="Ex: Basquete Sub-17" required>
+          <div class="field-hint" id="fp-hint-nome"></div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Categoria</label>
+          <select class="form-select" id="fp-categoria" name="categoria_time">
+            <option value="Sub-13">Sub-13</option>
+            <option value="Sub-15">Sub-15</option>
+            <option value="Sub-17" selected>Sub-17</option>
+            <option value="Sub-20">Sub-20</option>
+            <option value="Adulto">Adulto</option>
+            <option value="Feminino">Feminino</option>
+            <option value="Misto">Misto</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Modalidade</label>
+          <input class="form-control" value="Basquete" readonly
+            style="opacity:.55;cursor:not-allowed;">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Status</label>
+          <select class="form-select" name="ativo_time">
+            <option value="1">Ativo</option>
+            <option value="0">Inativo</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Cor do Time</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="color-swatch" id="fp-swatch" style="background:#00C97A"
+              onclick="document.getElementById('fp-cor').click()"></div>
+            <input type="color" id="fp-cor" name="cor_time" value="#00C97A"
+              style="opacity:0;width:0;height:0;position:absolute"
+              onchange="document.getElementById('fp-swatch').style.background=this.value">
+            <span style="font-size:13px;color:var(--cinza)" id="fp-cor-label">#00C97A</span>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Treinador Responsável <span style="color:#FF6B6B">*</span></label>
+          <div class="field-hint" id="fp-hint-treinador"></div>
+          <div id="fp-treinador-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;max-height:180px;overflow-y:auto">
+            <div style="padding:14px;text-align:center;color:var(--cinza);font-size:13px;grid-column:1/-1">Carregando...</div>
+          </div>
+          <input type="hidden" id="fp-treinador-id">
+        </div>
+
+        <div class="col-12 d-flex gap-3 mt-2">
+          <button type="submit" class="btn-criar" id="fp-btn-submit">Criar Time</button>
+          <button type="button" class="btn-fp-cancel" onclick="fecharFormPanel()">Cancelar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ── AUTH ──
+const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+if (!user.id_usuario) window.location.href = 'login.html';
+
+// Preencher pill
+document.getElementById('pillNome').textContent = user.nome_usuario || '—';
+document.getElementById('pillTipo').textContent = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario] || '—';
+
+const pillAv = document.getElementById('pillAv');
+if (user.foto_usuario) {
+  pillAv.innerHTML = '<img src="' + user.foto_usuario + '" alt="">';
+} else {
+  pillAv.textContent = (user.nome_usuario || 'U')[0].toUpperCase();
+}
+
+const isAdmin   = user.tipo_usuario === 1;
+const isTreina  = user.tipo_usuario === 2;
+const isAtleta  = user.tipo_usuario === 3;
+
+const API_TIMES = '/times';
+let todosTimes = []; // times ativos — compartilhado com popup
+const API_USERS = '/usuarios';
+const API_ATIV  = '/atividades';
+
+function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
+
+function selecionarTime(timeId, timeNome, timeCor, timeLogo) {
+  // Salva na sessão a cada login
+  sessionStorage.setItem('timeSelecionado', JSON.stringify({
+    id: timeId, nome: timeNome, cor: timeCor || '#00C97A', logo: timeLogo || null
+  }));
+  // Loading antes de entrar
+  document.getElementById('timesContainer').innerHTML =
+    '<div class="loading-state"><div class="loading-spin"></div><div>Entrando em ' + timeNome + '...</div></div>';
+  setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
+}
+
+async function carregarTimes() {
+  try {
+    const [times, usuarios, atividades] = await Promise.all([
+      fetch(API_TIMES).then(r => r.json()),
+      fetch(API_USERS).then(r => r.json()),
+      fetch(API_ATIV).then(r => r.json()),
+    ]);
+
+    // Filtrar por perfil
+    let lista = times.filter(t => t.ativo_time === 1 || t.ativo_time === '1');
+    todosTimes = lista; // expose to popup
+
+    if (isAtleta) {
+      // Atleta só vê seu próprio time e é redirecionado automaticamente
+      const meuTime = lista.find(t =>
+        usuarios.find(u => u.id_usuario === user.id_usuario && u.time && u.time.id_time === t.id_time)
+      );
+      if (meuTime) {
+        selecionarTime(meuTime.id_time, meuTime.nome_time, meuTime.cor_time, meuTime.logo_time);
+        return;
+      }
+      // Atleta sem time
+      renderSemTime();
+      return;
+    }
+
+    if (isTreina) {
+      // Treinador vê o time ao qual está vinculado (user.time)
+      // OU onde está definido como responsável (t.treinador)
+      lista = lista.filter(t => {
+        const eResponsavel = t.treinador && t.treinador.id_usuario === user.id_usuario;
+        const eMembro      = user.time && (
+          user.time.id_time === t.id_time ||
+          String(user.time.id_time) === String(t.id_time)
+        );
+        return eResponsavel || eMembro;
+      });
+      if (lista.length === 0) {
+        renderSemTime();
+        return;
+      }
+      if (lista.length === 1) {
+        // Só um time — entra direto sem escolher
+        selecionarTime(lista[0].id_time, lista[0].nome_time, lista[0].cor_time, lista[0].logo_time);
+        return;
+      }
+    }
+    // Admin vê todos os times ativos
+
+    if (!lista.length) {
+      renderSemTime();
+      return;
+    }
+
+    renderGrid(lista, usuarios, atividades);
+
+  } catch(e) {
+    document.getElementById('timesContainer').innerHTML =
+      '<div class="empty-state">' +
+      '<div class="empty-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>' +
+      '<div class="empty-title">Servidor offline</div>' +
+      '<div class="empty-msg">Não foi possível conectar ao backend.<br>Verifique se o Spring Boot está rodando na porta 8080.</div>' +
+      '</div>';
+  }
+}
+
+function renderSemTime() {
+  document.getElementById('timesContainer').innerHTML =
+    '<div class="empty-state">' +
+    '<div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>' +
+    '<div class="empty-title">Nenhum time disponível</div>' +
+    '<div class="empty-msg">Você ainda não foi adicionado a um time.<br>Solicite ao administrador que faça isso.</div>' +
+    '</div>';
+}
+
+function renderGrid(times, usuarios, atividades) {
+  const grid = times.map(t => {
+    const cor = t.cor_time || '#00C97A';
+    const membros  = usuarios.filter(u => u.time && (u.time.id_time === t.id_time || u.time === t.id_time));
+    const atletas  = membros.filter(u => u.tipo_usuario === 3).length;
+    const atividTs = atividades.filter(a => a.time && (a.time.id_time === t.id_time || a.time === t.id_time));
+    const treinos  = atividTs.filter(a => a.tipo_atividade === 1).length;
+    const jogos    = atividTs.filter(a => a.tipo_atividade === 2).length;
+
+    const logoHTML = t.logo_time
+      ? '<img src="' + t.logo_time + '" alt="">'
+      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:20px">' + ini(t.nome_time) + '</span>';
+    const logoEncoded = t.logo_time ? encodeURIComponent(t.logo_time) : '';
+
+    return '<div class="time-card" onclick="selecionarTime(' + t.id_time + ',\'' + t.nome_time.replace(/'/g,"\\u2019") + '\',\'' + cor + '\',decodeURIComponent(\'' + logoEncoded + '\'))">'
+      + '<div class="tc-banner" style="background:' + cor + '"></div>'
+      + '<div class="tc-body">'
+        + '<div class="tc-top">'
+          + '<div class="tc-logo" style="background:' + cor + '22;border:2px solid ' + cor + '44">' + logoHTML + '</div>'
+          + '<div><div class="tc-nome">' + t.nome_time + '</div>'
+          + '<div class="tc-sub">' + (t.modalidade_time || '—') + ' &bull; ' + (t.categoria_time || '—') + '</div></div>'
+        + '</div>'
+        + '<div class="tc-stats">'
+          + '<div class="tc-stat"><div class="tc-stat-num" style="color:' + cor + '">' + atletas + '</div><div class="tc-stat-label">Atletas</div></div>'
+          + '<div class="tc-stat"><div class="tc-stat-num" style="color:#4EC9FF">' + treinos + '</div><div class="tc-stat-label">Treinos</div></div>'
+          + '<div class="tc-stat"><div class="tc-stat-num" style="color:#FFB020">' + jogos + '</div><div class="tc-stat-label">Jogos</div></div>'
+        + '</div>'
+        + '<div class="tc-treinador">'
+          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/></svg>'
+          + ' Treinador: <strong>'
+          + (t.treinador
+              ? t.treinador.nome_usuario
+              : (membros.find(u => u.tipo_usuario === 2)?.nome_usuario || '—'))
+          + '</strong>'
+        + '</div>'
+      + '</div>'
+      + '<div class="tc-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + cor + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>'
+    + '</div>';
+  }).join('');
+
+  const novoCard = isAdmin
+    ? '<div class="time-card-new" onclick="abrirFormPanel()">'
+        + '<div class="new-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00C97A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>'
+        + '<div class="new-label">Novo Time</div>'
+        + '<div class="new-sub">Cadastrar um novo time</div>'
+      + '</div>'
+    : '';
+  document.getElementById('timesContainer').innerHTML = '<div class="times-grid">' + grid + novoCard + '</div>';
+}
+
+carregarTimes();
+
+// ── FORM PANEL ──
+let fpTreinadorId = null;
+let todosUsuariosGlobal = [];
+
+function abrirFormPanel() {
+  document.getElementById('formPanel').classList.add('open');
+  document.getElementById('formPanel').scrollIntoView({behavior:'smooth', block:'start'});
+  if (!todosUsuariosGlobal.length) carregarTreinadores();
+}
+
+function fecharFormPanel() {
+  document.getElementById('formPanel').classList.remove('open');
+  fpLogoRemover();
+  document.getElementById('formNovoTime').reset();
+  document.getElementById('fp-swatch').style.background = '#00C97A';
+  document.getElementById('fp-cor-label').textContent = '#00C97A';
+  document.querySelectorAll('.tr-option').forEach(el => el.classList.remove('selected'));
+  fpTreinadorId = null;
+  ['fp-hint-nome','fp-hint-treinador'].forEach(id=>{
+    const h=document.getElementById(id); if(h){h.className='field-hint';h.textContent='';}
+  });
+  const n=document.getElementById('fp-nome'); if(n) n.classList.remove('is-invalid');
+}
+
+function carregarTreinadores() {
+  fetch(API_USERS).then(r=>r.json()).then(usuarios=>{
+    todosUsuariosGlobal = usuarios;
+    const resp = usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2);
+    const grid = document.getElementById('fp-treinador-grid');
+    if(!resp.length){
+      grid.innerHTML='<div style="padding:14px;text-align:center;color:var(--cinza);font-size:13px;grid-column:1/-1">Nenhum treinador cadastrado.</div>';
+      return;
+    }
+    grid.innerHTML = resp.map(u=>{
+      const bg  = u.tipo_usuario===1?'rgba(0,201,122,0.15)':'rgba(78,201,255,0.15)';
+      const cor = u.tipo_usuario===1?'#00C97A':'#4EC9FF';
+      const lbl = u.tipo_usuario===1?'Admin':'Treinador';
+      const ini2 = (u.nome_usuario||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
+      const avHTML = u.foto_usuario
+        ? '<img src="'+u.foto_usuario+'" alt="">'
+        : '<span style="color:'+cor+'">'+ini2+'</span>';
+      return '<div class="tr-option" data-tid="'+u.id_usuario+'" data-tnome="'+u.nome_usuario.replace(/"/g,'&quot;')+'" onclick="fpSelecionarTrein(this.dataset.tid,this.dataset.tnome)">'
+        +'<div class="tr-av" style="background:'+bg+'">'+avHTML+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+u.nome_usuario+'</div>'
+        +'<div style="font-size:10px;color:var(--cinza)">'+lbl+'</div></div>'
+        +'<div class="tr-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      +'</div>';
+    }).join('');
+  }).catch(()=>{
+    document.getElementById('fp-treinador-grid').innerHTML =
+      '<div style="padding:14px;text-align:center;color:#FF6B6B;font-size:13px;grid-column:1/-1">Erro ao carregar. Verifique o servidor.</div>';
+  });
+}
+
+function fpSelecionarTrein(id, nome) {
+  fpTreinadorId = parseInt(id)||id;
+  document.querySelectorAll('#fp-treinador-grid .tr-option').forEach(el=>el.classList.remove('selected'));
+  const opt = document.querySelector('#fp-treinador-grid [data-tid="'+id+'"]');
+  if(opt) opt.classList.add('selected');
+  const h=document.getElementById('fp-hint-treinador');
+  h.textContent='Treinador selecionado ✓'; h.className='field-hint show ok';
+}
+
+// Color picker sync
+document.addEventListener('DOMContentLoaded', function(){
+  const corInput = document.getElementById('fp-cor');
+  if(corInput){
+    corInput.addEventListener('input', function(){
+      document.getElementById('fp-swatch').style.background = this.value;
+      document.getElementById('fp-cor-label').textContent = this.value;
+    });
+  }
+});
+
+// Form submit
+document.addEventListener('DOMContentLoaded', function(){
+  const form = document.getElementById('formNovoTime');
+  if(!form) return;
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    let ok = true;
+    const nome = document.getElementById('fp-nome');
+    const hN   = document.getElementById('fp-hint-nome');
+    if(!nome.value.trim()){
+      nome.classList.add('is-invalid');
+      hN.textContent='Nome é obrigatório'; hN.className='field-hint show err';
+      ok=false;
+    } else {
+      nome.classList.remove('is-invalid');
+      hN.className='field-hint';
+    }
+    const hT = document.getElementById('fp-hint-treinador');
+    if(!fpTreinadorId){
+      hT.textContent='Selecione um treinador responsável'; hT.className='field-hint show err';
+      ok=false;
+    }
+    if(!ok) return;
+    const d = Object.fromEntries(new FormData(this).entries());
+    const payload = {
+      nome_time:       d.nome_time,
+      modalidade_time: 'Basquete',
+      categoria_time:  d.categoria_time,
+      cor_time:        d.cor_time || '#00C97A',
+      ativo_time:      parseInt(d.ativo_time)||1,
+      treinador:       fpTreinadorId ? {id_usuario: parseInt(fpTreinadorId)} : null,
+    };
+    const btn = document.getElementById('fp-btn-submit');
+    btn.textContent='Criando...'; btn.disabled=true;
+    fetch('/times', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    })
+    .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
+    .then(()=>{
+      fecharFormPanel();
+      carregarTimes(); // reload the grid
+    })
+    .catch(()=>{
+      btn.textContent='Criar Time'; btn.disabled=false;
+      const h=document.getElementById('fp-hint-nome');
+      h.textContent='Erro ao salvar. Verifique o servidor.'; h.className='field-hint show err';
+    });
+  });
+});
+
+// ── POPUP CADASTRAR TREINADOR ──
+let ptTimeId = null;
+let ptFotoB64 = null;
+
+function abrirPopupTreinador() {
+  ptTimeId = null; ptFotoB64 = null; fpLogoB64 = null;
+  ptResetForm();
+  ptRenderTimeGrid();
+  document.getElementById('popupTreinador').classList.add('show');
+}
+function fecharPopupTreinador() {
+  document.getElementById('popupTreinador').classList.remove('show');
+}
+
+function ptRenderTimeGrid() {
+  const g = document.getElementById('ptTimeGrid');
+  if (!todosTimes || !todosTimes.length) {
+    g.innerHTML = '<div style="padding:12px;color:#8899BB;font-size:13px;grid-column:1/-1">Nenhum time ativo.</div>';
+    return;
+  }
+  g.innerHTML = todosTimes.map(t => {
+    const cor = t.cor_time || '#00C97A';
+    return '<div class="pt-ts" data-tid="' + t.id_time + '" onclick="ptSelecionarTime(this)">'
+      + '<div class="pt-ts-dot" style="background:' + cor + '"></div>'
+      + '<div style="flex:1;min-width:0"><div class="pt-ts-nome">' + t.nome_time + '</div>'
+      + '<div class="pt-ts-cat">' + (t.categoria_time || '—') + '</div></div>'
+      + '<div class="pt-ts-chk"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      + '</div>';
+  }).join('');
+}
+
+function ptSelecionarTime(el) {
+  document.querySelectorAll('#ptTimeGrid .pt-ts').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  ptTimeId = parseInt(el.dataset.tid);
+  document.getElementById('ptTimeId').value = ptTimeId;
+  const h = document.getElementById('ptHintTime');
+  h.textContent = 'Time selecionado ✓'; h.className = 'pt-hint show ok';
+}
+
+function ptCarregarFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { ptToast('Foto muito grande. Máx 2MB.', false); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    ptFotoB64 = e.target.result;
+    const img = document.getElementById('ptFotoImg');
+    img.src = ptFotoB64; img.style.display = 'block';
+    document.getElementById('ptFotoCircle').querySelector('svg').style.display = 'none';
+    document.getElementById('ptBtnRmFoto').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function ptRemoverFoto() {
+  ptFotoB64 = null;
+  document.getElementById('ptFotoImg').style.display = 'none';
+  document.getElementById('ptFotoCircle').querySelector('svg').style.display = '';
+  document.getElementById('ptBtnRmFoto').style.display = 'none';
+}
+function ptMaskTel(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length <= 10) v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  else                v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  el.value = v.replace(/-$/, '');
+}
+
+function ptToast(msg, ok = true) {
+  const el = document.createElement('div');
+  el.className = 'toast-item' + (ok ? '' : ' erro');
+  el.innerHTML = (ok ? '✅' : '❌') + ' ' + msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+function ptValidar() {
+  let ok = true;
+  const nome  = document.getElementById('ptNome');
+  const email = document.getElementById('ptEmail');
+  const login = document.getElementById('ptLogin');
+  const hN = document.getElementById('ptHintNome');
+  const hE = document.getElementById('ptHintEmail');
+  const hL = document.getElementById('ptHintLogin');
+  const hT = document.getElementById('ptHintTime');
+
+  if (nome.value.trim().length < 3) {
+    nome.classList.add('err'); hN.textContent = 'Mínimo 3 caracteres'; hN.className = 'pt-hint show err'; ok = false;
+  } else { nome.classList.remove('err'); hN.className = 'pt-hint'; }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    email.classList.add('err'); hE.textContent = 'Email inválido'; hE.className = 'pt-hint show err'; ok = false;
+  } else { email.classList.remove('err'); hE.className = 'pt-hint'; }
+
+  if (login.value.trim().length < 3) {
+    login.classList.add('err'); hL.textContent = 'Login obrigatório'; hL.className = 'pt-hint show err'; ok = false;
+  } else { login.classList.remove('err'); hL.className = 'pt-hint'; }
+
+  if (!ptTimeId) {
+    hT.textContent = 'Selecione um time'; hT.className = 'pt-hint show err'; ok = false;
+  }
+  return ok;
+}
+
+async function ptSubmit() {
+  if (!ptValidar()) return;
+  const btn = document.getElementById('ptBtnSubmit');
+  btn.textContent = 'Salvando...'; btn.disabled = true;
+  const payload = {
+    nome_usuario:   document.getElementById('ptNome').value.trim(),
+    email_usuario:  document.getElementById('ptEmail').value.trim(),
+    cel_usuario:    document.getElementById('ptCel').value || '',
+    login_usuario:  document.getElementById('ptLogin').value.trim(),
+    senha_usuario:  document.getElementById('ptSenha').value || '1234',
+    tipo_usuario:   2,
+    primeiro_login: 1,
+    foto_usuario:   ptFotoB64 || null,
+    time:           ptTimeId ? { id_time: ptTimeId } : null,
+  };
+  try {
+    const r = await fetch('/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error();
+    fecharPopupTreinador();
+    ptToast('Treinador cadastrado com sucesso!');
+    carregarTimes(); // refresh grid
+  } catch (_) {
+    ptToast('Erro ao cadastrar. Verifique o servidor.', false);
+  } finally {
+    btn.textContent = 'Cadastrar Treinador'; btn.disabled = false;
+  }
+}
+
+function ptResetForm() {
+  ['ptNome','ptEmail','ptCel','ptLogin','ptSenha'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('err'); }
+  });
+  ['ptHintNome','ptHintEmail','ptHintLogin','ptHintTime'].forEach(id => {
+    const h = document.getElementById(id);
+    if (h) { h.className = 'pt-hint'; h.textContent = ''; }
+  });
+  ptRemoverFoto();
+  ptTimeId = null;
+  document.querySelectorAll('#ptTimeGrid .pt-ts').forEach(o => o.classList.remove('selected'));
+}
+
+// Show admin-only button
+if (isAdmin) {
+  const wrap = document.getElementById('btnCadTreinadorWrap');
+  if (wrap) wrap.style.display = 'flex';
+}
+
+// ── POLÍTICA: filtrar times por perfil ──
+// (já está em carregarTimes mas reforçar aqui)
+// Treinador: já é redirecionado direto se tem 1 time → lógica existente ok
+// Admin: vê todos e pode criar treinadores → botão acima
+
+// ── FP LOGO UPLOAD ──
+let fpLogoB64 = null;
+function fpLogoCarregar(input){
+  const file=input.files[0]; if(!file)return;
+  if(file.size>2*1024*1024){ptToast('Logo muito grande. Máx 2MB.',false);return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    fpLogoB64=e.target.result;
+    document.getElementById('fpLogoImg').src=fpLogoB64;
+    document.getElementById('fpLogoImg').style.display='block';
+    document.getElementById('fpLogoInitials').style.display='none';
+    document.getElementById('fpBtnRmLogo').style.display='inline-block';
+    // update card preview
+    const nome=document.getElementById('fp-nome')?.value||'';
+    if(nome) fpAtualizarPreview(nome);
+  };
+  reader.readAsDataURL(file); input.value='';
+}
+function fpLogoRemover(){
+  fpLogoB64=null;
+  document.getElementById('fpLogoImg').style.display='none';
+  document.getElementById('fpLogoInitials').style.display='block';
+  document.getElementById('fpBtnRmLogo').style.display='none';
+}
+function fpAtualizarPreview(nome){
+  const initEl=document.getElementById('fpLogoInitials');
+  if(initEl && !fpLogoB64){
+    const parts=nome.trim().split(' ').filter(Boolean);
+    initEl.textContent=(parts[0]?.[0]||'')+(parts[1]?.[0]||'').toUpperCase();
+  }
+}
+</script>
+
+<!-- POPUP CADASTRAR TREINADOR -->
+<div id="popupTreinador">
+  <div class="pt-card">
+    <div class="pt-header">
+      <div class="pt-title">Cadastrar Treinador</div>
+      <button class="pt-close" onclick="fecharPopupTreinador()">×</button>
+    </div>
+    <div class="pt-body">
+
+      <!-- Foto -->
+      <div class="pt-foto-wrap">
+        <div class="pt-foto-circle" id="ptFotoCircle" onclick="document.getElementById('ptInputFoto').click()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8899BB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <img id="ptFotoImg" style="display:none" alt="">
+          <div class="pt-foto-ov">Alterar</div>
+        </div>
+        <input type="file" id="ptInputFoto" accept="image/*" style="display:none" onchange="ptCarregarFoto(this)">
+        <span style="font-size:11px;color:#8899BB">Foto opcional · máx 2MB</span>
+        <button id="ptBtnRmFoto" onclick="ptRemoverFoto()" style="display:none;background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);color:#FF6B6B;border-radius:7px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer">Remover</button>
+        <input type="hidden" id="ptFotoB64">
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="pt-label">Nome Completo <span style="color:#FF6B6B">*</span></label>
+          <input class="pt-input" id="ptNome" placeholder="Nome do treinador">
+          <div class="pt-hint" id="ptHintNome"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="pt-label">Email <span style="color:#FF6B6B">*</span></label>
+          <input class="pt-input" id="ptEmail" placeholder="email@exemplo.com">
+          <div class="pt-hint" id="ptHintEmail"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="pt-label">Celular</label>
+          <input class="pt-input" id="ptCel" placeholder="(00) 00000-0000" oninput="ptMaskTel(this)" maxlength="15">
+        </div>
+        <div class="col-md-6">
+          <label class="pt-label">Login <span style="color:#FF6B6B">*</span></label>
+          <input class="pt-input" id="ptLogin" placeholder="login de acesso">
+          <div class="pt-hint" id="ptHintLogin"></div>
+        </div>
+        <div class="col-md-6">
+          <label class="pt-label">Senha Inicial</label>
+          <input type="password" class="pt-input" id="ptSenha" placeholder="Padrão: 1234">
+          <div style="font-size:10px;color:#00C97A;margin-top:4px">O treinador troca no primeiro acesso</div>
+        </div>
+        <div class="col-12">
+          <label class="pt-label">Time Responsável <span style="color:#FF6B6B">*</span></label>
+          <div class="pt-hint" id="ptHintTime"></div>
+          <div class="pt-time-grid" id="ptTimeGrid">
+            <div style="padding:12px;color:#8899BB;font-size:13px;grid-column:1/-1">Carregando times...</div>
+          </div>
+          <input type="hidden" id="ptTimeId">
+        </div>
+      </div>
+
+      <button class="pt-btn" id="ptBtnSubmit" onclick="ptSubmit()">Cadastrar Treinador</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+</body>
+</html>

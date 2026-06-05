@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastrar Treinador — LAIVY</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;
+  --sidebar-w:240px;--card-bg:linear-gradient(135deg,#0D1E3C,#112244);
+  --card-border:rgba(255,255,255,0.06);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;; overflow-y: auto; }
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
+.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
+.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
+nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);transition:all .2s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
+.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);overflow:hidden;}
+.user-avatar.has-foto{background:none!important;}
+.user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.user-name{font-size:13px;font-weight:600;}.user-role{font-size:11px;color:var(--cinza);}
+.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+.time-indicator{margin:0 12px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;text-decoration:none;}
+.ti-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ti-nome{font-size:12px;font-weight:700;color:var(--branco);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.ti-trocar{font-size:10px;color:var(--cinza);font-weight:600;white-space:nowrap;}
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px;}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;}
+.page-header p{font-size:14px;color:var(--cinza);margin-top:4px;}
+.btn-voltar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--cinza);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;padding:9px 18px;text-decoration:none;transition:all .2s;}
+.btn-voltar:hover{background:rgba(255,255,255,0.1);color:var(--branco);}
+/* LAYOUT */
+.card-dark{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:26px;}
+.card-dark h4{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;color:var(--verde);margin-bottom:18px;}
+/* FORM */
+.form-control,.form-select{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--branco)!important;font-family:'Barlow',sans-serif;}
+.form-control:focus,.form-select:focus{border-color:var(--verde)!important;box-shadow:0 0 0 3px rgba(0,201,122,0.15)!important;}
+.form-control::placeholder{color:rgba(136,153,187,0.4)!important;}
+.form-select option{background:#0D1E3C;}
+.form-control.is-valid{border-color:#00C97A!important;}
+.form-control.is-invalid{border-color:#FF6B6B!important;background:rgba(255,80,80,0.04)!important;}
+label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;display:block;}
+.required{color:#FF6B6B;}
+.field-hint{font-size:11px;margin-top:4px;display:none;}
+.field-hint.show{display:block;}
+.field-hint.ok{color:#00C97A;}
+.field-hint.err{color:#FF6B6B;}
+/* FOTO */
+.foto-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;}
+.foto-circle{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.04);border:2px dashed rgba(0,201,122,0.3);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;}
+.foto-circle:hover{border-color:var(--verde);background:rgba(0,201,122,0.06);}
+.foto-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.foto-circle .foto-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+.foto-circle:hover .foto-ov{display:flex;}
+.foto-hint{font-size:11px;color:var(--cinza);text-align:center;}
+.btn-rm-foto{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);color:#FF6B6B;border-radius:7px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;display:none;}
+.btn-rm-foto.show{display:inline-block;}
+/* TIME SELECTOR */
+.time-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;}
+.ts-option{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;transition:all .2s;}
+.ts-option:hover{background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.2);}
+.ts-option.selected{background:rgba(0,201,122,0.1);border-color:rgba(0,201,122,0.4);}
+.ts-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ts-nome{font-size:13px;font-weight:700;flex:1;}
+.ts-cat{font-size:10px;color:var(--cinza);}
+.ts-check{width:18px;height:18px;border-radius:50%;background:var(--verde);display:none;align-items:center;justify-content:center;flex-shrink:0;}
+.ts-option.selected .ts-check{display:flex;}
+/* TREINADORES LIST */
+.treinadores-list{display:flex;flex-direction:column;gap:6px;}
+.trein-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;transition:background .15s;}
+.trein-row:hover{background:rgba(255,255,255,0.05);}
+.trein-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;background:rgba(78,201,255,0.15);color:#4EC9FF;}
+.trein-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.trein-nome{font-size:14px;font-weight:700;flex:1;}
+.trein-time{display:flex;align-items:center;gap:6px;font-size:12px;}
+.trein-time-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.trein-sem-time{font-size:12px;color:var(--cinza);font-style:italic;}
+.btn-trocar-time{background:rgba(255,176,32,0.1);border:1px solid rgba(255,176,32,0.2);color:#FFB020;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-trocar-time:hover{background:rgba(255,176,32,0.2);}
+/* SUBMIT */
+.btn-cadastrar{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:12px 36px;border-radius:10px;cursor:pointer;transition:all .2s;}
+.btn-cadastrar:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,201,122,0.3);}
+.btn-cadastrar:disabled{opacity:.5;pointer-events:none;}
+.btn-cancelar{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:12px 24px;border-radius:10px;cursor:pointer;}
+/* TOAST */
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn .3s ease;color:var(--branco);}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* LOGOUT */
+#logoutModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:99998;display:none;align-items:center;justify-content:center;}
+#logoutModal.show{display:flex;}
+.logout-card{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,80,80,.25);border-radius:20px;padding:36px 40px;text-align:center;max-width:360px;width:90%;}
+.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;margin-bottom:8px;}
+.logout-msg{font-size:14px;color:var(--cinza);margin-bottom:28px;line-height:1.6;}
+.logout-btns{display:flex;gap:12px;justify-content:center;}
+.btn-lc{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:16px;padding:11px 28px;border-radius:10px;cursor:pointer;}
+.btn-ls{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.35);color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;padding:11px 28px;border-radius:10px;cursor:pointer;}
+/* MODAL TROCAR TIME */
+.modal-content{background:#0D1E3C!important;color:var(--branco)!important;border:1px solid rgba(0,201,122,0.2)!important;border-radius:18px!important;}
+.modal-header{border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 24px!important;}
+.modal-body{padding:20px 24px!important;}
+.modal-footer{border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 24px!important;}
+.btn-close{filter:invert(1)!important;}
+/* THEME */
+</style>
+</head>
+<body>
+
+<div id="logoutModal">
+  <div class="logout-card">
+    <div style="font-size:40px;margin-bottom:16px">👋</div>
+    <div class="logout-titulo">Sair do Sistema?</div>
+    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
+    <div class="logout-btns">
+      <button class="btn-lc" onclick="fecharLogout()">Cancelar</button>
+      <button class="btn-ls" onclick="confirmarLogout()">Sair</button>
+    </div>
+  </div>
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo" id="sidebarLogo">
+ <div class="logo-icon" id="sidebarLogoIcon">L</div>
+ <div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>
+</div>
+  <nav>
+    <div class="nav-section">Principal</div>
+    <a href="dashboard.html"  class="nav-item">Dashboard</a>
+    <a href="usuarios.html"   class="nav-item">Usuários</a>
+    <div class="nav-section">Gestão</div>
+    <a href="exames.html"     class="nav-item">Exames</a>
+    <a href="desempenho.html" class="nav-item">Desempenho</a>
+    <a href="atividades.html" class="nav-item">Atividades</a>
+    <a href="escalacao.html"  class="nav-item">Escalação</a>
+    <a href="calendario.html" class="nav-item">Calendário</a>
+    <a href="visitantes.html" class="nav-item">Visitantes</a>
+    <div class="nav-section">Admin</div>
+    <a href="cadastrar-treinador.html" class="nav-item active">Treinadores</a>
+  </nav>
+  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
+    <div class="ti-dot"></div><div class="ti-nome">—</div><div class="ti-trocar">Trocar</div>
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="avatarLetra">A</div>
+      <div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sair do Sistema</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Treinadores</h1>
+      <p>Cadastre treinadores e defina o time de cada um</p>
+    </div>
+    <a href="usuarios.html" class="btn-voltar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Voltar para Usuários
+    </a>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- CADASTRAR NOVO TREINADOR -->
+    <div class="col-lg-6">
+      <div class="card-dark">
+        <h4>Novo Treinador</h4>
+        <form id="formTreinador" novalidate>
+          <div class="row g-3">
+
+            <!-- Foto -->
+            <div class="col-12">
+              <div class="foto-wrap">
+                <div class="foto-circle" id="fotoCircle" onclick="document.getElementById('inputFoto').click()">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cinza)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <img id="fotoPreviewImg" style="display:none" alt="">
+                  <div class="foto-ov">Alterar</div>
+                </div>
+                <input type="file" id="inputFoto" accept="image/*" style="display:none" onchange="carregarFoto(this)">
+                <div class="foto-hint">Foto opcional · JPG, PNG · máx 2MB</div>
+                <button type="button" class="btn-rm-foto" id="btnRmFoto" onclick="removerFoto()">Remover foto</button>
+                <input type="hidden" id="inp-foto" name="foto_usuario">
+              </div>
+            </div>
+
+            <!-- Nome -->
+            <div class="col-12">
+              <label class="form-label">Nome Completo <span class="required">*</span></label>
+              <input class="form-control" id="inp-nome" name="nome_usuario" placeholder="Nome do treinador" required oninput="validarNome(this)">
+              <div class="field-hint" id="hint-nome"></div>
+            </div>
+
+            <!-- Email -->
+            <div class="col-md-6">
+              <label class="form-label">Email <span class="required">*</span></label>
+              <input class="form-control" id="inp-email" name="email_usuario" placeholder="email@exemplo.com" required oninput="validarEmail(this)">
+              <div class="field-hint" id="hint-email"></div>
+            </div>
+
+            <!-- Celular -->
+            <div class="col-md-6">
+              <label class="form-label">Celular</label>
+              <input class="form-control" id="inp-cel" name="cel_usuario" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" maxlength="15">
+            </div>
+
+            <!-- Login -->
+            <div class="col-md-6">
+              <label class="form-label">Login <span class="required">*</span></label>
+              <input class="form-control" id="inp-login" name="login_usuario" placeholder="login de acesso" required>
+            </div>
+
+            <!-- Senha -->
+            <div class="col-md-6">
+              <label class="form-label">Senha Inicial</label>
+              <input type="password" class="form-control" id="inp-senha" name="senha_usuario" placeholder="Mín. 4 caracteres">
+              <div class="field-hint ok show" style="font-size:10px">O treinador trocará a senha no primeiro acesso</div>
+            </div>
+
+            <!-- Time -->
+            <div class="col-12">
+              <label class="form-label">Time Responsável <span class="required">*</span></label>
+              <div class="field-hint" id="hint-time"></div>
+              <div class="time-selector" id="timeSelectorGrid">
+                <div style="padding:16px;text-align:center;color:var(--cinza);font-size:13px;grid-column:1/-1">Carregando times...</div>
+              </div>
+              <input type="hidden" id="inp-time-id">
+            </div>
+
+            <div class="col-12 d-flex gap-3 mt-2">
+              <button type="submit" class="btn-cadastrar" id="btnSubmit">Cadastrar Treinador</button>
+              <button type="button" class="btn-cancelar" onclick="resetForm()">Limpar</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TREINADORES CADASTRADOS -->
+    <div class="col-lg-6">
+      <div class="card-dark">
+        <h4>Treinadores Cadastrados</h4>
+        <div id="treinadoresList">
+          <div style="text-align:center;padding:32px;color:var(--cinza)">
+            <div style="width:28px;height:28px;border:3px solid rgba(0,201,122,0.2);border-top-color:var(--verde);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px"></div>
+            Carregando...
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL TROCAR TIME DO TREINADOR -->
+<div class="modal fade" id="modalTrocarTime" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px">Atribuir Time ao Treinador</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:14px;font-size:13px;color:var(--cinza)">Selecionando time para: <strong id="modalTreinNome" style="color:var(--branco)">—</strong></div>
+        <div class="time-selector" id="modalTimeSel"></div>
+        <input type="hidden" id="modalTimeSelecionadoId">
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button id="btnRemoverDoTime" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer" onclick="removerDoTime()">Remover do Time</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-cancelar" style="font-size:14px;padding:8px 20px" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn-cadastrar" style="font-size:14px;padding:8px 24px" onclick="confirmarTrocarTime()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── AUTH — admin only ──
+const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+if (!user.id_usuario) window.location.href = 'login.html';
+if (user.tipo_usuario !== 1) window.location.href = 'dashboard.html';
+
+document.getElementById('nomeUsuario').textContent = user.nome_usuario || '—';
+document.getElementById('avatarLetra').textContent = (user.nome_usuario || 'U')[0].toUpperCase();
+document.getElementById('tipoUsuario').textContent = 'Administrador';
+if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList.add('has-foto');av.innerHTML='<img src="'+user.foto_usuario+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';}
+
+// Time indicator
+(function(){
+  var ts=JSON.parse(sessionStorage.getItem('timeSelecionado')||'null');
+  var el=document.getElementById('timeSidebarIndicator');
+  if(!el)return;
+  if(ts){el.style.display='flex';el.querySelector('.ti-dot').style.background=ts.cor||'#00C97A';el.querySelector('.ti-nome').textContent=ts.nome||'Time';}
+  else el.style.display='none';
+})();
+
+// ── LOGOUT / THEME ──
+function logout(){document.getElementById('logoutModal').classList.add('show');}
+function fecharLogout(){document.getElementById('logoutModal').classList.remove('show');}
+function confirmarLogout(){sessionStorage.clear();window.location.href='login.html';}
+// ── HELPERS ──
+function ini(n){return(n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();}
+function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+const API_U = '/usuarios';
+const API_T = '/times';
+
+let todosTimes = [];
+let treinadorEditandoId = null;
+let timeNoModalId = null;
+let fotoBase64 = null;
+
+// ── CARREGAR DADOS ──
+async function carregar() {
+  const [usuarios, times] = await Promise.all([
+    fetch(API_U).then(r=>r.json()).catch(()=>[]),
+    fetch(API_T).then(r=>r.json()).catch(()=>[]),
+  ]);
+  todosTimes = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
+  renderTimeSelectorGrid('timeSelectorGrid', null);
+  renderTreinadores(usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2));
+}
+
+// ── TIME SELECTOR ──
+function renderTimeSelectorGrid(containerId, selectedId) {
+  const g = document.getElementById(containerId);
+  if(!todosTimes.length){
+    g.innerHTML='<div style="padding:14px;color:var(--cinza);font-size:13px;grid-column:1/-1">Nenhum time ativo cadastrado.</div>';
+    return;
+  }
+  g.innerHTML = todosTimes.map(t=>{
+    const cor = t.cor_time||'#00C97A';
+    const sel = selectedId && (t.id_time==selectedId) ? ' selected' : '';
+    return '<div class="ts-option'+sel+'" data-tid="'+t.id_time+'" data-tname="'+t.nome_time.replace(/"/g,'&quot;')+'" data-tcor="'+cor+'" onclick="selecionarTime(this,\''+containerId+'\')">'
+      +'<div class="ts-dot" style="background:'+cor+'"></div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div class="ts-nome">'+t.nome_time+'</div>'
+        +'<div class="ts-cat">'+(t.categoria_time||'—')+'</div>'
+      +'</div>'
+      +'<div class="ts-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+    +'</div>';
+  }).join('');
+}
+
+function selecionarTime(el, containerId) {
+  const grid = document.getElementById(containerId);
+  grid.querySelectorAll('.ts-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  if(containerId === 'timeSelectorGrid') {
+    document.getElementById('inp-time-id').value = el.dataset.tid;
+    const h=document.getElementById('hint-time');
+    h.textContent='Time selecionado ✓'; h.className='field-hint show ok';
+  } else {
+    timeNoModalId = parseInt(el.dataset.tid);
+  }
+}
+
+// ── TREINADORES LIST ──
+function renderTreinadores(lista) {
+  const el = document.getElementById('treinadoresList');
+  if(!lista.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--cinza);font-size:13px">Nenhum treinador cadastrado ainda.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(u=>{
+    const avHTML = u.foto_usuario
+      ? '<img src="'+u.foto_usuario+'" alt="">'
+      : ini(u.nome_usuario);
+    const time = u.time;
+    const timeHTML = time
+      ? '<div class="trein-time"><div class="trein-time-dot" style="background:'+(time.cor_time||'#00C97A')+'"></div><span style="color:var(--branco);font-weight:600">'+time.nome_time+'</span></div>'
+      : '<div class="trein-sem-time">Sem time atribuído</div>';
+    const label = u.tipo_usuario===1 ? '👑 Admin' : '🏋️ Treinador';
+    return '<div class="trein-row">'
+      +'<div class="trein-av">'+avHTML+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div class="trein-nome">'+u.nome_usuario+'</div>'
+        +'<div style="font-size:11px;color:var(--cinza);margin-bottom:3px">'+label+'</div>'
+        +timeHTML
+      +'</div>'
+      +'<button class="btn-trocar-time" onclick="abrirModalTrocarTime('+u.id_usuario+',\''+u.nome_usuario.replace(/'/g,'\\u2019')+'\','+(time?time.id_time:'null')+')">Atribuir Time</button>'
+    +'</div>';
+  }).join('');
+}
+
+// ── MODAL TROCAR TIME ──
+function abrirModalTrocarTime(idUsuario, nome, idTimeAtual) {
+  treinadorEditandoId = idUsuario;
+  timeNoModalId = idTimeAtual;
+  document.getElementById('modalTreinNome').textContent = nome;
+  renderTimeSelectorGrid('modalTimeSel', idTimeAtual);
+  new bootstrap.Modal(document.getElementById('modalTrocarTime')).show();
+}
+
+async function confirmarTrocarTime() {
+  if(!timeNoModalId){ toast('Selecione um time.',false); return; }
+  await salvarTimeDoTreinador(treinadorEditandoId, timeNoModalId);
+  bootstrap.Modal.getInstance(document.getElementById('modalTrocarTime'))?.hide();
+}
+
+async function removerDoTime() {
+  if(!treinadorEditandoId) return;
+  try {
+    await fetch(API_T+'/0/membros/'+treinadorEditandoId, {method:'DELETE'});
+  } catch(_){}
+  // Fallback: set time to null via PUT
+  await fetch(API_U+'/'+treinadorEditandoId, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({time: null})
+  }).catch(()=>{});
+  bootstrap.Modal.getInstance(document.getElementById('modalTrocarTime'))?.hide();
+  toast('Treinador removido do time.');
+  carregar();
+}
+
+async function salvarTimeDoTreinador(idUsuario, idTime) {
+  try {
+    const r = await fetch(API_T+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'});
+    if(!r.ok) throw new Error();
+    toast('Time atribuído com sucesso!');
+    carregar();
+  } catch(e) {
+    toast('Erro ao atribuir time.',false);
+  }
+}
+
+// ── FOTO ──
+function carregarFoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024){ toast('Foto muito grande. Máximo 2MB.',false); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    fotoBase64 = e.target.result;
+    document.getElementById('inp-foto').value = fotoBase64;
+    const img = document.getElementById('fotoPreviewImg');
+    img.src = fotoBase64; img.style.display='block';
+    document.getElementById('fotoCircle').querySelector('svg').style.display='none';
+    document.getElementById('btnRmFoto').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function removerFoto() {
+  fotoBase64=null;
+  document.getElementById('inp-foto').value='';
+  document.getElementById('fotoPreviewImg').style.display='none';
+  document.getElementById('fotoCircle').querySelector('svg').style.display='';
+  document.getElementById('btnRmFoto').classList.remove('show');
+}
+
+// ── VALIDAÇÕES ──
+function validarNome(el) {
+  const h=document.getElementById('hint-nome');
+  if(el.value.trim().length<3){el.classList.add('is-invalid');h.textContent='Mínimo 3 caracteres';h.className='field-hint show err';return false;}
+  el.classList.remove('is-invalid');h.className='field-hint';return true;
+}
+function validarEmail(el) {
+  const h=document.getElementById('hint-email');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value)){el.classList.add('is-invalid');h.textContent='Email inválido';h.className='field-hint show err';return false;}
+  el.classList.remove('is-invalid');h.className='field-hint';return true;
+}
+function mascaraTelefone(el) {
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length<=10) v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else             v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  el.value=v.replace(/-$/,'');
+}
+
+// ── SUBMIT ──
+document.getElementById('formTreinador').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const okN = validarNome(document.getElementById('inp-nome'));
+  const okE = validarEmail(document.getElementById('inp-email'));
+  const timeId = document.getElementById('inp-time-id').value;
+  const hT=document.getElementById('hint-time');
+  if(!timeId){hT.textContent='Selecione um time responsável';hT.className='field-hint show err';}
+  if(!okN||!okE||!timeId) return;
+
+  const d = Object.fromEntries(new FormData(this).entries());
+  const payload = {
+    nome_usuario:    d.nome_usuario,
+    email_usuario:   d.email_usuario,
+    cel_usuario:     d.cel_usuario||'',
+    login_usuario:   d.login_usuario,
+    senha_usuario:   d.senha_usuario||'1234',
+    tipo_usuario:    2, // Treinador
+    primeiro_login:  1, // Troca senha no primeiro acesso
+    foto_usuario:    fotoBase64||null,
+    time:            {id_time: parseInt(timeId)},
+  };
+
+  const btn=document.getElementById('btnSubmit');
+  btn.textContent='Salvando...'; btn.disabled=true;
+  try {
+    const r = await fetch(API_U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error();
+    toast('Treinador cadastrado! Senha inicial: '+(d.senha_usuario||'1234'));
+    resetForm();
+    carregar();
+  } catch(_){
+    toast('Erro ao cadastrar. Verifique o servidor.',false);
+  } finally {
+    btn.textContent='Cadastrar Treinador'; btn.disabled=false;
+  }
+});
+
+function resetForm() {
+  document.getElementById('formTreinador').reset();
+  removerFoto();
+  document.getElementById('inp-time-id').value='';
+  document.querySelectorAll('#timeSelectorGrid .ts-option').forEach(o=>o.classList.remove('selected'));
+  ['hint-nome','hint-email','hint-time'].forEach(id=>{
+    const h=document.getElementById(id);if(h){h.className='field-hint';h.textContent='';}
+  });
+  ['inp-nome','inp-email'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.remove('is-invalid');
+  });
+}
+
+carregar();
+</script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<script>
+(function(){
+  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  if (!ts) return;
+  var icon = document.getElementById('sidebarLogoIcon');
+  var nome = document.getElementById('sidebarNomeTime');
+  if (nome) nome.textContent = ts.nome || 'LAIVY';
+  if (icon) {
+    if (ts.logo) {
+      icon.style.background = 'none';
+      icon.style.padding = '0';
+      icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+    } else {
+      var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
+      icon.textContent = ini;
+      if (ts.cor) icon.style.background = 'linear-gradient(135deg,' + ts.cor + ',' + ts.cor + 'AA)';
+    }
+  }
+})();
+</script>
+</body>
+</html>
