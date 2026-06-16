@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil do Atleta — LAIVY</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
+.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
+.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
+nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
+.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+.ti-info{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,201,122,0.06);border-radius:10px;margin-bottom:12px;border:1px solid rgba(0,201,122,0.1);}
+.ti-avatar{width:32px;height:32px;border-radius:8px;background:rgba(0,201,122,0.2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:14px;color:var(--verde);overflow:hidden;flex-shrink:0;}
+.ti-avatar img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
+.ti-nome{font-size:12px;font-weight:700;color:var(--branco);}
+.ti-sub{font-size:10px;color:var(--cinza);}
+.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-w);flex:1;padding:36px 40px;min-height:100vh;}
+.page-header{display:flex;align-items:center;gap:16px;margin-bottom:32px;}
+.btn-back{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;cursor:pointer;text-decoration:none;transition:all 0.2s;}
+.btn-back:hover{color:var(--branco);background:rgba(255,255,255,0.1);}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:34px;letter-spacing:2px;line-height:1;}
+
+/* HERO CARD */
+.hero-card{background:linear-gradient(135deg,#0D1E3C,#111f3a);border:1px solid rgba(0,201,122,0.15);border-radius:16px;padding:32px;display:flex;gap:28px;align-items:center;margin-bottom:28px;position:relative;overflow:hidden;}
+.hero-card::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(0,201,122,0.08),transparent 70%);pointer-events:none;}
+.hero-avatar{width:110px;height:110px;border-radius:50%;border:3px solid rgba(0,201,122,0.4);overflow:hidden;flex-shrink:0;background:rgba(0,201,122,0.15);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:40px;color:var(--verde);}
+.hero-avatar img{width:100%;height:100%;object-fit:cover;}
+.hero-info{flex:1;}
+.hero-nome{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:2px;line-height:1;margin-bottom:6px;}
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.badge-time{background:rgba(0,201,122,0.15);color:var(--verde);border:1px solid rgba(0,201,122,0.3);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
+.badge-tipo{background:rgba(78,201,255,0.15);color:#4EC9FF;border:1px solid rgba(78,201,255,0.3);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:1px;}
+.hero-stats{display:flex;gap:24px;}
+.hero-stat{text-align:center;}
+.hero-stat-num{font-family:'Bebas Neue',cursive;font-size:26px;color:var(--verde);line-height:1;}
+.hero-stat-label{font-size:10px;color:var(--cinza);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px;}
+.info-card{background:rgba(13,30,60,0.7);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;}
+.info-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:4px;}
+.info-valor{font-size:15px;font-weight:600;color:var(--branco);}
+
+/* SECTION TITLE */
+.section-title{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;color:var(--verde);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:rgba(0,201,122,0.15);}
+
+/* GRID LAYOUT */
+.content-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;}
+.content-grid.full{grid-template-columns:1fr;}
+
+/* CARD */
+.card-dark{background:rgba(13,30,60,0.7);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:24px;}
+
+/* CHART */
+.chart-wrap{position:relative;height:220px;}
+
+/* EXAMES */
+.exame-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.exame-item:last-child{border-bottom:none;}
+.exame-data{font-size:12px;color:var(--cinza);}
+.exame-status{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.st-apto{background:rgba(0,201,122,0.15);color:var(--verde);}
+.st-inapto{background:rgba(255,80,80,0.15);color:#FF6B6B;}
+.exame-medidas{font-size:12px;color:var(--cinza);margin-top:2px;}
+
+/* ATIVIDADES */
+.atv-item{display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.atv-item:last-child{border-bottom:none;}
+.atv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.atv-nome{font-size:14px;font-weight:600;}
+.atv-data{font-size:11px;color:var(--cinza);}
+.atv-tipo{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
+
+/* DESEMP LIST */
+.desemp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.desemp-item:last-child{border-bottom:none;}
+.desemp-pts{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--verde);}
+.desemp-data{font-size:11px;color:var(--cinza);}
+.desemp-extra{font-size:11px;color:var(--cinza);}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:32px 0;color:var(--cinza);font-size:13px;}
+.empty-state .icon{font-size:28px;margin-bottom:8px;opacity:0.4;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">L</div>
+    <div class="logo-texts">
+      <div class="t1" id="sidebarNomeTime">LAIVY</div>
+      <div class="t2">Sistema Esportivo</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-section">Menu</div>
+    <a href="dashboard.html"  class="nav-item">Dashboard</a>
+    <a href="atividades.html" class="nav-item">Atividades</a>
+    <a href="calendario.html" class="nav-item">Calendário</a>
+    <a href="exames.html"     class="nav-item">Exames</a>
+    <a href="desempenho.html" class="nav-item">Desempenho</a>
+    <a href="visitantes.html" class="nav-item">Visitantes</a>
+    <div class="nav-section">Gestão</div>
+    <a href="usuarios.html"   class="nav-item active">Usuários</a>
+    <a href="times.html"      class="nav-item">Times</a>
+    <a href="escalacao.html"  class="nav-item">Escalação</a>
+     <div class="nav-section">IA</div>
+    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
+ </nav>
+  <div class="sidebar-footer">
+    <div class="ti-info">
+      <div class="ti-avatar" id="sidebarAvatar">L</div>
+      <div>
+        <div class="ti-nome" id="sidebarTime">—</div>
+        <div class="ti-sub">Time selecionado</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header">
+    <a href="usuarios.html" class="btn-back">← Voltar</a>
+    <h1>Perfil do Atleta</h1>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero-card" id="heroCard">
+    <div class="hero-avatar" id="heroAvatar">?</div>
+    <div class="hero-info">
+      <div class="hero-nome" id="heroNome">Carregando...</div>
+      <div class="hero-badges">
+        <span class="badge-tipo">Atleta</span>
+        <span class="badge-time" id="heroTime">—</span>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="statAtv">—</div>
+          <div class="hero-stat-label">Atividades</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="statExames">—</div>
+          <div class="hero-stat-label">Exames</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="statDesemp">—</div>
+          <div class="hero-stat-label">Desempenhos</div>
+        </div>
+        <div class="hero-stat">
+          <div class="hero-stat-num" id="statIdade">—</div>
+          <div class="hero-stat-label">Idade</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO PESSOAL -->
+  <div class="section-title">Informações Pessoais</div>
+  <div class="info-grid" id="infoGrid">
+    <div class="info-card"><div class="info-label">CPF</div><div class="info-valor" id="infoCpf">—</div></div>
+    <div class="info-card"><div class="info-label">Nascimento</div><div class="info-valor" id="infoNasc">—</div></div>
+    <div class="info-card"><div class="info-label">Celular</div><div class="info-valor" id="infoCel">—</div></div>
+  </div>
+
+  <!-- GRÁFICO + EXAMES -->
+  <div class="content-grid">
+    <div class="card-dark">
+      <div class="section-title">Pontuação nos Jogos</div>
+      <div class="chart-wrap">
+        <canvas id="chartPontuacao"></canvas>
+      </div>
+    </div>
+    <div class="card-dark">
+      <div class="section-title">Exames Médicos</div>
+      <div id="listaExames"><div class="empty-state"><div class="icon">🩺</div>Nenhum exame registrado</div></div>
+    </div>
+  </div>
+
+  <!-- ATIVIDADES -->
+  <div class="card-dark" style="margin-bottom:24px">
+    <div class="section-title">Atividades Participadas</div>
+    <div id="listaAtividades"><div class="empty-state"><div class="icon">📅</div>Nenhuma atividade registrada</div></div>
+  </div>
+
+  <!-- DESEMPENHOS -->
+  <div class="card-dark" style="margin-bottom:24px">
+    <div class="section-title">Histórico de Desempenho</div>
+    <div id="listaDesempenhos"><div class="empty-state"><div class="icon">📊</div>Nenhum desempenho registrado</div></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const api = '';
+const params = new URLSearchParams(location.search);
+const idAtleta = parseInt(params.get('id'));
+const _session = JSON.parse(sessionStorage.getItem('usuario') || 'null');
+const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+
+// Redireciona se não logado
+if (!_session) location.href = 'login.html';
+
+// Se for atleta, só pode ver o próprio perfil
+if (_session && _session.tipo_usuario === 3 && _session.id_usuario !== idAtleta) {
+  location.href = 'perfil-atleta.html?id=' + _session.id_usuario;
+}
+
+// Sidebar
+(function(){
+  if (_ts) {
+    document.getElementById('sidebarNomeTime').textContent = _ts.nome || 'LAIVY';
+    document.getElementById('sidebarTime').textContent = _ts.nome || '—';
+    const av = document.getElementById('sidebarAvatar');
+    if (_ts.logo) {
+      av.innerHTML = '<img src="'+_ts.logo+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">';
+    } else {
+      av.textContent = (_ts.nome||'L')[0].toUpperCase();
+    }
+    if (_ts.cor) av.style.background = _ts.cor + '33';
+  }
+  // Ocultar gestão se for atleta
+  if (_session && _session.tipo_usuario === 3) {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      const href = n.getAttribute('href') || '';
+      if (['usuarios.html','times.html','escalacao.html'].includes(href)) n.style.display='none';
+    });
+    document.querySelectorAll('.nav-section').forEach((s,i) => { if(i===1) s.style.display='none'; });
+  }
+})();
+
+function logout() {
+  sessionStorage.clear();
+  location.href = 'login.html';
+}
+
+function iniciais(nome) {
+  if (!nome) return '?';
+  const p = nome.trim().split(' ');
+  return p.length >= 2 ? (p[0][0]+p[p.length-1][0]).toUpperCase() : p[0][0].toUpperCase();
+}
+
+function calcIdade(dataNasc) {
+  if (!dataNasc) return '—';
+  const n = new Date(dataNasc + ' ');
+  let a = new Date().getFullYear() - n.getFullYear();
+  const m = new Date().getMonth() - n.getMonth();
+  if (m < 0 || (m===0 && new Date().getDate() < n.getDate())) a--;
+  return a + ' anos';
+}
+
+function fmtData(d) {
+  if (!d) return '—';
+  return new Date(d + ' ').toLocaleDateString('pt-BR');
+}
+
+const TIPO_ATV = {1:'Treino',2:'Jogo',3:'Reunião',4:'Evento',5:'Outro'};
+const TIPO_COR = {1:'#00C97A',2:'#FFB020',3:'#A78FFF',4:'#4EC9FF',5:'#8899BB'};
+
+let chartRef = null;
+
+// ── CARREGAR TUDO ──
+async function init() {
+  if (!idAtleta) { location.href = 'usuarios.html'; return; }
+
+  try {
+    // Dados do atleta
+    const uRes = await fetch(`${api}/usuarios/${idAtleta}`);
+    if (!uRes.ok) throw new Error();
+    const u = await uRes.json();
+
+    // Hero
+    const ini = iniciais(u.nome_usuario);
+    const av = document.getElementById('heroAvatar');
+    if (u.foto_usuario) {
+      av.innerHTML = '<img src="'+u.foto_usuario+'" alt="">';
+    } else {
+      av.textContent = ini;
+    }
+    document.getElementById('heroNome').textContent = u.nome_usuario || '—';
+    document.getElementById('heroTime').textContent = u.time ? u.time.nome_time : ((_ts && _ts.nome) || '—');
+    document.getElementById('statIdade').textContent = u.data_nasc_usuario ? calcIdade(u.data_nasc_usuario) : '—';
+
+    // Info pessoal
+    document.getElementById('infoCpf').textContent  = u.cpf_usuario  || '—';
+    document.getElementById('infoNasc').textContent = fmtData(u.data_nasc_usuario);
+    document.getElementById('infoCel').textContent  = u.cel_usuario  || '—';
+
+    // Buscar dados em paralelo
+    const [exames, desempenhos, atividades] = await Promise.all([
+      fetch(`${api}/exames/usuario/${idAtleta}`).then(r => r.ok ? r.json() : []),
+      fetch(`${api}/desempenhos/usuario/${idAtleta}`).then(r => r.ok ? r.json() : []),
+      fetch(`${api}/atividades/usuario/${idAtleta}`).then(r => r.ok ? r.json() : [])
+    ]);
+
+    // Stats
+    document.getElementById('statAtv').textContent    = atividades.length;
+    document.getElementById('statExames').textContent = exames.length;
+    document.getElementById('statDesemp').textContent = desempenhos.length;
+
+    renderExames(exames);
+    renderAtividades(atividades);
+    renderDesempenhos(desempenhos);
+    renderGrafico(desempenhos);
+
+  } catch(e) {
+    document.getElementById('heroNome').textContent = 'Atleta não encontrado';
+  }
+}
+
+function renderExames(list) {
+  const el = document.getElementById('listaExames');
+  if (!list.length) return;
+  el.innerHTML = list
+    .sort((a,b) => new Date(b.data_inicio_exame) - new Date(a.data_inicio_exame))
+    .map(e => `
+      <div class="exame-item">
+        <div>
+          <div style="font-size:14px;font-weight:600">${fmtData(e.data_inicio_exame)}</div>
+          <div class="exame-medidas">
+            ${e.peso_usuario ? e.peso_usuario+'kg' : ''}
+            ${e.altura_usuario ? ' · '+e.altura_usuario+'m' : ''}
+            ${e.taxa_gordura_usuario ? ' · '+e.taxa_gordura_usuario+'% gordura' : ''}
+            ${e.observacoes_exame ? '<br><span style="color:var(--cinza)">'+e.observacoes_exame+'</span>' : ''}
+          </div>
+        </div>
+        <span class="exame-status ${e.status_usuario===1?'st-apto':'st-inapto'}">
+          ${e.status_usuario===1?'Apto':'Inapto'}
+        </span>
+      </div>`).join('');
+}
+
+function renderAtividades(list) {
+  const el = document.getElementById('listaAtividades');
+  if (!list.length) return;
+  el.innerHTML = list
+    .sort((a,b) => new Date(b.data_atividade) - new Date(a.data_atividade))
+    .slice(0, 20)
+    .map(a => {
+      const cor = TIPO_COR[a.tipo_atividade] || '#8899BB';
+      const tipo = TIPO_ATV[a.tipo_atividade] || 'Outro';
+      return `
+        <div class="atv-item">
+          <div class="atv-dot" style="background:${cor}"></div>
+          <div style="flex:1">
+            <div class="atv-nome">${a.nome_atividade||'—'}</div>
+            <div class="atv-data">${fmtData(a.data_atividade)}${a.lugar_atividade?' · '+a.lugar_atividade:''}</div>
+          </div>
+          <span class="atv-tipo" style="background:${cor}22;color:${cor}">${tipo}</span>
+        </div>`;
+    }).join('');
+}
+
+function renderDesempenhos(list) {
+  const el = document.getElementById('listaDesempenhos');
+  if (!list.length) return;
+  el.innerHTML = list
+    .sort((a,b) => new Date(b.data_desempenho) - new Date(a.data_desempenho))
+    .map(d => `
+      <div class="desemp-item">
+        <div>
+          <div style="font-size:14px;font-weight:600">${fmtData(d.data_desempenho)}</div>
+          <div class="desemp-extra">
+            ${d.salto_horizontal ? 'Horiz: '+d.salto_horizontal+'m' : ''}
+            ${d.salto_vertical   ? ' · Vert: '+d.salto_vertical+'m' : ''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="desemp-pts">${d.pontuacao ?? '—'}</div>
+          <div class="desemp-data">pts</div>
+        </div>
+      </div>`).join('');
+}
+
+function renderGrafico(list) {
+  // Filtrar apenas desempenhos com pontuação, ordenar por data
+  const comPts = list
+    .filter(d => d.pontuacao != null && d.data_desempenho)
+    .sort((a,b) => new Date(a.data_desempenho) - new Date(b.data_desempenho))
+    .slice(-12); // últimos 12
+
+  const ctx = document.getElementById('chartPontuacao').getContext('2d');
+
+  if (chartRef) chartRef.destroy();
+
+  if (!comPts.length) {
+    ctx.canvas.parentElement.innerHTML = '<div class="empty-state"><div class="icon">📈</div>Sem pontuações registradas</div>';
+    return;
+  }
+
+  chartRef = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: comPts.map(d => fmtData(d.data_desempenho)),
+      datasets: [{
+        label: 'Pontuação',
+        data: comPts.map(d => d.pontuacao),
+        borderColor: '#00C97A',
+        backgroundColor: 'rgba(0,201,122,0.12)',
+        pointBackgroundColor: '#00C97A',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0D1E3C',
+          borderColor: 'rgba(0,201,122,0.3)',
+          borderWidth: 1,
+          titleColor: '#F0F4FF',
+          bodyColor: '#00C97A',
+          callbacks: { label: ctx => ' ' + ctx.raw + ' pts' }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color:'#8899BB', font:{size:10} },
+          grid:  { color:'rgba(255,255,255,0.04)' }
+        },
+        y: {
+          ticks: { color:'#8899BB', font:{size:10} },
+          grid:  { color:'rgba(255,255,255,0.04)' },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>

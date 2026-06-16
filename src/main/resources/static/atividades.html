@@ -293,6 +293,8 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
     <a href="escalacao.html"  class="nav-item">Escalação</a>
     <a href="calendario.html" class="nav-item">Calendário</a>
     <a href="visitantes.html" class="nav-item">Visitantes</a>
+    <div class="nav-section">IA</div>
+    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
  </nav>
  <!-- TIME SELECIONADO -->
  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
@@ -634,7 +636,7 @@ function esc(s){return(s||'').replace(/'/g,'\u2019');}
 
 function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
 
-fetch(apiU).then(r=>r.json()).then(data=>{
+fetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
  todosAtletas=data.filter(u=>u.tipo_usuario===3); // apenas atletas na escalação
  const sel=document.getElementById('selectResp');
  // Responsável só pode ser Admin ou Treinador (tipo 1 ou 2), não atleta

@@ -327,6 +327,8 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
     <a href="atividades.html" class="nav-item">Atividades</a>
     <a href="calendario.html" class="nav-item">Calendário</a>
     <a href="visitantes.html" class="nav-item">Visitantes</a>
+    <div class="nav-section">IA</div>
+    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
  </nav>
  <!-- TIME SELECIONADO -->
  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
@@ -598,7 +600,7 @@ function calcIMC(){
 }
 
 // CARREGAR ATLETAS (apenas tipo=3)
-fetch(apiUs).then(r=>r.json()).then(data=>{
+fetch(urlTime(apiUs)).then(r=>r.json()).then(data=>{
  const sel = document.getElementById('selectUsuario');
  data.filter(u => u.tipo_usuario === 3).forEach(u=>{
  const o = document.createElement('option');

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assistente IA — LAIVY</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --verde:#00C97A; --azul:#0A1628; --azul2:#112244;
+  --laranja:#FF6B1A; --branco:#F0F4FF; --cinza:#8899BB;
+  --sidebar-w:240px;
+  --card-bg:linear-gradient(135deg,#0D1E3C,#112244);
+  --card-border:rgba(255,255,255,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;}
+.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);flex-shrink:0;}
+.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
+.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
+nav{flex:1;padding:20px 0;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
+.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
+.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+.nav-icon{font-size:18px;width:20px;text-align:center;}
+.time-indicator{display:flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(0,201,122,0.05);border-top:1px solid rgba(0,201,122,0.1);border-bottom:1px solid rgba(0,201,122,0.1);text-decoration:none;transition:background 0.2s;cursor:pointer;}
+.time-indicator:hover{background:rgba(0,201,122,0.1);}
+.ti-dot{width:8px;height:8px;border-radius:50%;background:var(--verde);flex-shrink:0;box-shadow:0 0 8px var(--verde);}
+.ti-nome{font-size:12px;font-weight:700;color:var(--branco);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ti-trocar{font-size:10px;color:var(--cinza);flex-shrink:0;}
+.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);}
+.user-name{font-size:13px;font-weight:600;}
+.user-role{font-size:11px;color:var(--cinza);}
+.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-logout:hover{background:rgba(255,80,80,0.2);}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+/* ── TOPBAR ── */
+.topbar{padding:24px 32px 0;flex-shrink:0;}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.topbar-left h1{font-family:'Bebas Neue',cursive;font-size:32px;letter-spacing:2px;line-height:1;}
+.topbar-left h1 span{color:var(--verde);}
+.topbar-left p{font-size:13px;color:var(--cinza);margin-top:3px;}
+.badge-ia{display:inline-flex;align-items:center;gap:6px;background:rgba(0,201,122,0.12);border:1px solid rgba(0,201,122,0.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--verde);letter-spacing:1px;}
+.badge-ia::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--verde);box-shadow:0 0 8px var(--verde);animation:blink 2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── PERGUNTAS PRONTAS ── */
+.chips-wrap{padding:0 32px;margin-bottom:16px;flex-shrink:0;}
+.chips-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:10px;opacity:0.7;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:rgba(240,244,255,0.7);cursor:pointer;transition:all 0.2s;font-family:'Barlow',sans-serif;}
+.chip:hover{background:rgba(0,201,122,0.1);border-color:rgba(0,201,122,0.4);color:var(--verde);}
+
+/* ── CHAT AREA ── */
+.chat-container{flex:1;display:flex;flex-direction:column;padding:0 32px 24px;min-height:0;}
+.chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:20px;background:rgba(255,255,255,0.02);border:1px solid var(--card-border);border-radius:18px 18px 0 0;scrollbar-width:thin;scrollbar-color:rgba(0,201,122,0.3) transparent;}
+.chat-box::-webkit-scrollbar{width:4px;}
+.chat-box::-webkit-scrollbar-thumb{background:rgba(0,201,122,0.3);border-radius:4px;}
+
+/* Mensagens */
+.msg{display:flex;gap:10px;max-width:80%;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{align-self:flex-start;}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;}
+.msg-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;margin-top:2px;}
+.msg.bot .msg-avatar{background:linear-gradient(135deg,var(--verde),#00A865);}
+.msg.user .msg-avatar{background:linear-gradient(135deg,#3B82F6,#1D4ED8);}
+.msg-bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6;}
+.msg.bot .msg-bubble{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(0,201,122,0.15);border-top-left-radius:4px;color:var(--branco);}
+.msg.user .msg-bubble{background:linear-gradient(135deg,#1E3A5F,#1D4ED8);border:1px solid rgba(59,130,246,0.2);border-top-right-radius:4px;color:var(--branco);}
+.msg-time{font-size:10px;color:var(--cinza);margin-top:4px;padding:0 4px;}
+.msg.user .msg-time{text-align:right;}
+
+/* Digitando */
+.typing{display:flex;align-items:center;gap:4px;padding:14px 16px;}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--verde);animation:typing 1.2s ease infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes typing{0%,60%,100%{transform:translateY(0);opacity:0.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* Boas vindas */
+.msg-bv{text-align:center;padding:24px;color:var(--cinza);font-size:13px;}
+.msg-bv .ia-icon{font-size:40px;margin-bottom:10px;}
+.msg-bv h3{font-family:'Bebas Neue',cursive;font-size:22px;color:var(--verde);letter-spacing:1px;margin-bottom:6px;}
+
+/* ── INPUT ── */
+.input-wrap{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(0,201,122,0.2);border-top:none;border-radius:0 0 18px 18px;padding:16px 20px;display:flex;gap:12px;align-items:flex-end;flex-shrink:0;}
+.input-wrap textarea{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;resize:none;outline:none;min-height:46px;max-height:120px;line-height:1.5;transition:border 0.2s;}
+.input-wrap textarea::placeholder{color:var(--cinza);}
+.input-wrap textarea:focus{border-color:rgba(0,201,122,0.4);}
+.btn-send{width:46px;height:46px;background:linear-gradient(135deg,var(--verde),#00A865);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all 0.2s;flex-shrink:0;}
+.btn-send:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(0,201,122,0.4);}
+.btn-send:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.input-hint{font-size:11px;color:var(--cinza);margin-top:6px;text-align:center;opacity:0.6;}
+
+/* ── ERRO ── */
+.msg-erro .msg-bubble{background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#FCA5A5;}
+
+/* ── MODAL LOGOUT ── */
+#logoutModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;}
+#logoutModal.show{display:flex;}
+.logout-card{background:#0D1E3C;border:1px solid rgba(0,201,122,0.2);border-radius:20px;padding:32px;text-align:center;max-width:320px;width:90%;}
+.logout-icon{font-size:40px;margin-bottom:12px;}
+.logout-titulo{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;margin-bottom:8px;}
+.logout-msg{font-size:14px;color:var(--cinza);line-height:1.5;margin-bottom:24px;}
+.logout-btns{display:flex;gap:10px;}
+.btn-logout-cancel{flex:1;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-logout-confirm{flex:1;padding:10px;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);border-radius:10px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- MODAL LOGOUT -->
+<div id="logoutModal">
+  <div class="logout-card">
+    <div class="logout-icon">👋</div>
+    <div class="logout-titulo">Sair do Sistema?</div>
+    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
+    <div class="logout-btns">
+      <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
+      <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">L</div>
+    <div class="logo-texts"><div class="t1">LAIVY</div><div class="t2">TCC · ETEC 02/2026</div></div>
+  </div>
+  <nav>
+    <div class="nav-section">Principal</div>
+    <a href="dashboard.html"  class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a href="usuarios.html"   class="nav-item"><span class="nav-icon">👤</span> Usuários</a>
+    <div class="nav-section">Admin</div>
+    <a href="cadastrar-treinador.html" class="nav-item"><span class="nav-icon">🏋️</span> Treinadores</a>
+    <div class="nav-section">Gestão</div>
+    <a href="exames.html"     class="nav-item"><span class="nav-icon">🩺</span> Exames</a>
+    <a href="desempenho.html" class="nav-item"><span class="nav-icon">📊</span> Desempenho</a>
+    <a href="atividades.html" class="nav-item"><span class="nav-icon">🏀</span> Atividades</a>
+    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span> Calendário</a>
+    <a href="visitantes.html" class="nav-item"><span class="nav-icon">🏟️</span> Visitantes</a>
+    <div class="nav-section">IA</div>
+    <a href="assistente.html" class="nav-item active"><span class="nav-icon">🤖</span> Assistente</a>
+  </nav>
+  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
+    <div class="ti-dot"></div>
+    <div class="ti-nome" id="timeNomeSidebar">—</div>
+    <div class="ti-trocar">Trocar</div>
+  </a>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="avatarLetra">A</div>
+      <div>
+        <div class="user-name" id="nomeUsuario">—</div>
+        <div class="user-role" id="tipoUsuario">—</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="abrirLogout()">Sair do Sistema</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-left">
+        <h1>Assistente <span>IA</span></h1>
+        <p>Pergunte sobre o sistema ou os dados do seu time</p>
+      </div>
+      <div class="badge-ia">● IA Online</div>
+    </div>
+  </div>
+
+  <div class="chips-wrap">
+    <div class="chips-label">Perguntas rápidas</div>
+    <div class="chips">
+      <button class="chip" onclick="perguntaRapida('O que é o LAIVY?')">O que é o LAIVY?</button>
+      <button class="chip" onclick="perguntaRapida('Quais tecnologias foram usadas no projeto?')">Tecnologias usadas</button>
+      <button class="chip" onclick="perguntaRapida('Explique a arquitetura do sistema LAIVY')">Arquitetura do sistema</button>
+      <button class="chip" onclick="perguntaRapida('Quais são as funcionalidades principais do LAIVY?')">Funcionalidades</button>
+      <button class="chip" onclick="perguntaRapida('Como funciona o banco de dados do LAIVY?')">Banco de dados</button>
+      <button class="chip" onclick="perguntaRapida('Quais são as próximas atividades do time?')">Próximas atividades</button>
+      <button class="chip" onclick="perguntaRapida('Quem tem o melhor desempenho no time?')">Ranking desempenho</button>
+    </div>
+  </div>
+
+  <div class="chat-container">
+    <div class="chat-box" id="chatBox">
+      <div class="msg-bv">
+        <div class="ia-icon">🤖</div>
+        <h3>Assistente LAIVY</h3>
+        <p>Olá! Posso responder perguntas sobre o sistema,<br>a arquitetura do projeto ou os dados do seu time.</p>
+      </div>
+    </div>
+
+    <div class="input-wrap">
+      <textarea
+        id="inputPergunta"
+        placeholder="Digite sua pergunta..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="btn-send" id="btnSend" onclick="enviar()">➤</button>
+    </div>
+    <div class="input-hint">Enter para enviar · Shift+Enter para nova linha</div>
+  </div>
+
+</main>
+
+<script>
+const API = 'http://localhost:8080';
+let enviando = false;
+
+const usuario = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+const time    = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+
+if (!usuario.id_usuario) {
+  window.location.href = 'login.html';
+}
+
+document.getElementById('nomeUsuario').textContent = usuario.nome_usuario || '—';
+const tipos = { 1: 'Administrador', 2: 'Treinador', 3: 'Atleta' };
+document.getElementById('tipoUsuario').textContent = tipos[usuario.tipo_usuario] || '—';
+document.getElementById('avatarLetra').textContent = (usuario.nome_usuario || 'A')[0].toUpperCase();
+
+if (time && time.id) {
+  const el = document.getElementById('timeSidebarIndicator');
+  el.style.display = 'flex';
+  document.getElementById('timeNomeSidebar').textContent = time.nome || '—';
+}
+
+function agora() {
+  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function addMsg(texto, tipo) {
+  const box = document.getElementById('chatBox');
+  const bv = box.querySelector('.msg-bv');
+  if (bv) bv.remove();
+
+  const isBot  = tipo === 'bot';
+  const isErro = tipo === 'erro';
+  const avatar = isBot ? '🤖' : (usuario.nome_usuario || 'U')[0].toUpperCase();
+
+  const div = document.createElement('div');
+  div.className = `msg ${isBot || isErro ? 'bot' : 'user'} ${isErro ? 'msg-erro' : ''}`;
+  div.innerHTML = `
+    <div class="msg-avatar">${avatar}</div>
+    <div>
+      <div class="msg-bubble">${formatarTexto(texto)}</div>
+      <div class="msg-time">${agora()}</div>
+    </div>
+  `;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function formatarTexto(txt) {
+  return txt
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>');
+}
+
+function addTyping() {
+  const box = document.getElementById('chatBox');
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="msg-avatar">🤖</div>
+    <div class="msg-bubble">
+      <div class="typing">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+async function enviar() {
+  if (enviando) return;
+  const input = document.getElementById('inputPergunta');
+  const pergunta = input.value.trim();
+  if (!pergunta) return;
+
+  addMsg(pergunta, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+
+  enviando = true;
+  document.getElementById('btnSend').disabled = true;
+  addTyping();
+
+  try {
+    const res = await fetch(`${API}/assistente/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pergunta,
+        idUsuario:    usuario.id_usuario,
+        idTime:       time ? time.id : null,
+        tipo_usuario: usuario.tipo_usuario
+      })
+    });
+
+    removeTyping();
+    if (!res.ok) throw new Error('Erro');
+
+    const data = await res.json();
+    const resposta = data.output || data.resposta || data.erro || 'Não consegui gerar uma resposta.';
+    addMsg(resposta, 'bot');
+
+  } catch (err) {
+    removeTyping();
+    addMsg('Não consegui me conectar ao assistente. Verifique se o n8n está rodando em localhost:5678.', 'erro');
+  }
+
+  enviando = false;
+  document.getElementById('btnSend').disabled = false;
+  input.focus();
+}
+
+function perguntaRapida(texto) {
+  document.getElementById('inputPergunta').value = texto;
+  enviar();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    enviar();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function abrirLogout()   { document.getElementById('logoutModal').classList.add('show'); }
+function fecharLogout()  { document.getElementById('logoutModal').classList.remove('show'); }
+function confirmarLogout() {
+  sessionStorage.clear();
+  window.location.href = 'login.html';
+}
+</script>
+</body>
+</html>

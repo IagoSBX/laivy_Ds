@@ -379,6 +379,8 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
     <a href="escalacao.html"  class="nav-item">Escalação</a>
     <a href="calendario.html" class="nav-item">Calendário</a>
     <a href="visitantes.html" class="nav-item">Visitantes</a>
+    <div class="nav-section">IA</div>
+    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
  </nav>
  <!-- TIME SELECIONADO -->
  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
@@ -835,7 +837,12 @@ function mudarTab(id,btn){
 }
 
 function ver(id){
- const u=dados.find(x=>x.id_usuario===id);if(!u)return;
+  const u=dados.find(x=>x.id_usuario===id);
+  if(!u)return;
+  if(u.tipo_usuario===3){
+    location.href='perfil-atleta.html?id='+id;
+    return;
+  }
  idParaEditarDoModal=id;
  const ini=iniciais(u.nome_usuario),cor=TIPO_COR[u.tipo_usuario]||'#888',bg=TIPO_BG[u.tipo_usuario]||'rgba(136,136,136,0.2)';
  const nasc=u.data_nasc_usuario?new Date(u.data_nasc_usuario+' '):null;
