@@ -228,8 +228,8 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
             <!-- Senha -->
             <div class="col-md-6">
-              <label class="form-label">Senha Inicial</label>
-              <input type="password" class="form-control" id="inp-senha" name="senha_usuario" placeholder="Mín. 4 caracteres">
+              <label class="form-label">Senha Inicial <span class="required">*</span></label>
+              <input type="password" class="form-control" id="inp-senha" name="senha_usuario" placeholder="Mín. 8 caracteres, com letras e números" required minlength="8">
               <div class="field-hint ok show" style="font-size:10px">O treinador trocará a senha no primeiro acesso</div>
             </div>
 
@@ -295,8 +295,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // ── AUTH — admin only ──
-const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+const user = JSON.parse(localStorage.getItem('usuario') || '{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 if (user.tipo_usuario !== 1) window.location.href = 'dashboard.html';
 
@@ -307,7 +330,7 @@ if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList
 
 // Time indicator
 (function(){
-  var ts=JSON.parse(sessionStorage.getItem('timeSelecionado')||'null');
+  var ts=JSON.parse(localStorage.getItem('timeSelecionado')||'null');
   var el=document.getElementById('timeSidebarIndicator');
   if(!el)return;
   if(ts){el.style.display='flex';el.querySelector('.ti-dot').style.background=ts.cor||'#00C97A';el.querySelector('.ti-nome').textContent=ts.nome||'Time';}
@@ -317,7 +340,7 @@ if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList
 // ── LOGOUT / THEME ──
 function logout(){document.getElementById('logoutModal').classList.add('show');}
 function fecharLogout(){document.getElementById('logoutModal').classList.remove('show');}
-function confirmarLogout(){sessionStorage.clear();window.location.href='login.html';}
+function confirmarLogout(){_logout();}
 // ── HELPERS ──
 function ini(n){return(n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();}
 function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
@@ -333,8 +356,8 @@ let fotoBase64 = null;
 // ── CARREGAR DADOS ──
 async function carregar() {
   const [usuarios, times] = await Promise.all([
-    fetch(API_U).then(r=>r.json()).catch(()=>[]),
-    fetch(API_T).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_U).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_T).then(r=>r.json()).catch(()=>[]),
   ]);
   todosTimes = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
   renderTimeSelectorGrid('timeSelectorGrid', null);
@@ -421,10 +444,10 @@ async function confirmarTrocarTime() {
 async function removerDoTime() {
   if(!treinadorEditandoId) return;
   try {
-    await fetch(API_T+'/0/membros/'+treinadorEditandoId, {method:'DELETE'});
+    await authFetch(API_T+'/0/membros/'+treinadorEditandoId, {method:'DELETE'});
   } catch(_){}
   // Fallback: set time to null via PUT
-  await fetch(API_U+'/'+treinadorEditandoId, {
+  await authFetch(API_U+'/'+treinadorEditandoId, {
     method:'PUT',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({time: null})
@@ -436,7 +459,7 @@ async function removerDoTime() {
 
 async function salvarTimeDoTreinador(idUsuario, idTime) {
   try {
-    const r = await fetch(API_T+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'});
+    const r = await authFetch(API_T+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'});
     if(!r.ok) throw new Error();
     toast('Time atribuído com sucesso!');
     carregar();
@@ -499,12 +522,16 @@ document.getElementById('formTreinador').addEventListener('submit', async functi
   if(!okN||!okE||!timeId) return;
 
   const d = Object.fromEntries(new FormData(this).entries());
+  if (!d.senha_usuario || d.senha_usuario.length < 8) {
+    toast('Informe uma senha inicial com pelo menos 8 caracteres.', false);
+    return;
+  }
   const payload = {
     nome_usuario:    d.nome_usuario,
     email_usuario:   d.email_usuario,
     cel_usuario:     d.cel_usuario||'',
     login_usuario:   d.login_usuario,
-    senha_usuario:   d.senha_usuario||'1234',
+    senha_usuario:   d.senha_usuario,
     tipo_usuario:    2, // Treinador
     primeiro_login:  1, // Troca senha no primeiro acesso
     foto_usuario:    fotoBase64||null,
@@ -514,13 +541,16 @@ document.getElementById('formTreinador').addEventListener('submit', async functi
   const btn=document.getElementById('btnSubmit');
   btn.textContent='Salvando...'; btn.disabled=true;
   try {
-    const r = await fetch(API_U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!r.ok) throw new Error();
-    toast('Treinador cadastrado! Senha inicial: '+(d.senha_usuario||'1234'));
+    const r = await authFetch(API_U,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok) {
+      const erro = await r.json().catch(()=>({}));
+      throw new Error(erro.erro || 'Erro ao cadastrar. Verifique o servidor.');
+    }
+    toast('Treinador cadastrado com sucesso!');
     resetForm();
     carregar();
-  } catch(_){
-    toast('Erro ao cadastrar. Verifique o servidor.',false);
+  } catch(err){
+    toast(err.message || 'Erro ao cadastrar. Verifique o servidor.',false);
   } finally {
     btn.textContent='Cadastrar Treinador'; btn.disabled=false;
   }
@@ -545,7 +575,7 @@ carregar();
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

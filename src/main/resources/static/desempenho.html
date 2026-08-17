@@ -534,8 +534,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // AUTH
-const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 document.getElementById('nomeUsuario').textContent = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0].toUpperCase();
@@ -551,7 +574,7 @@ document.getElementById('tipoUsuario').textContent = ({1:'Administrador',2:'Trei
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
 // ── FILTRO POR TIME ──
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
 function urlTime(base) {
   return _idTime ? base + '?idTime=' + _idTime : base;
@@ -598,7 +621,7 @@ function posIcon(p){
 // PREVIEW PONTUAÇÃO
 
 // CARREGAR ATLETAS
-fetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
+authFetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
  // Selectors mostram apenas Atletas (tipo=3) — quem tem avaliação de desempenho
  const atletas = data.filter(u => u.tipo_usuario === 3);
  const sel1 = document.getElementById('selectAtleta');
@@ -637,12 +660,12 @@ function calcularMediaGlobal(){
 
 // CARREGAR
 function carregar(){
- console.log("[DESEMPENHO] timeSelecionado:", JSON.parse(sessionStorage.getItem("timeSelecionado")||"null"));
+ console.log("[DESEMPENHO] timeSelecionado:", JSON.parse(localStorage.getItem("timeSelecionado")||"null"));
  console.log("[DESEMPENHO] URL desempenhos:", urlTime(apiD));
  // Busca avaliações de desempenho e pontos de jogos em paralelo
  Promise.all([
- fetch(urlTime(apiD)).then(r=>r.json()).catch(()=>[]),
- fetch(urlTime(apiAtv)).then(r=>r.json()).catch(()=>[]),
+ authFetch(urlTime(apiD)).then(r=>r.json()).catch(()=>[]),
+ authFetch(urlTime(apiAtv)).then(r=>r.json()).catch(()=>[]),
  ]).then(([desempenhos, atividades]) => {
  if(isAtleta) dados = desempenhos.filter(x=>x.usuario?.id_usuario===user.id_usuario);
  else dados = desempenhos;
@@ -651,7 +674,7 @@ function carregar(){
 
  // Busca escalações de todos os jogos finalizados para pegar pontos
  const escFetches = jogosFinalizados.map(j=>
- fetch(apiEsc+'/atividade/'+j.id_atividade).then(r=>r.json()).catch(()=>[])
+ authFetch(apiEsc+'/atividade/'+j.id_atividade).then(r=>r.json()).catch(()=>[])
  );
  Promise.all(escFetches).then(escalacoes => {
  pontosJogosGlobal = escalacoes.flat().filter(e=>e.pontos_jogo!=null);
@@ -927,7 +950,7 @@ document.getElementById('formDesemp').addEventListener('submit', function(e){
  };
  const url = id ? `${apiD}/${id}` : apiD;
  const metodo = id ? 'PUT' : 'POST';
- fetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ authFetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
  .then(()=>{ toast(id?'Registro atualizado!':'Desempenho registrado!'); cancelarForm(); carregar(); })
  .catch(()=>toast('Erro ao salvar.', false));
 });
@@ -941,7 +964,7 @@ function confirmarDel(id, nome){
 }
 document.getElementById('btnConfDel').addEventListener('click',()=>{
  if(!idParaDel) return;
- fetch(`${apiD}/${idParaDel}`,{method:'DELETE'})
+ authFetch(`${apiD}/${idParaDel}`,{method:'DELETE'})
  .then(()=>{ toast('Registro excluído!'); bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide(); carregar(); })
  .catch(()=>toast('Erro ao excluir.', false));
 });
@@ -956,8 +979,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ══ FLATPICKR — date inputs ══
@@ -974,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -991,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

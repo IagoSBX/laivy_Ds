@@ -11,10 +11,13 @@ import br.com.gerenciador.projeto.model.Usuario;
 
 public interface IUsuario extends JpaRepository<Usuario, Integer> {
 
-    @Query("SELECT u FROM Usuario u WHERE u.login_usuario = :login AND u.senha_usuario = :senha AND u.tipo_usuario = :tipo")
-    Optional<Usuario> autenticar(
+    /**
+     * Busca por login + tipo sem checar senha.
+     * Usado pelo novo fluxo JWT: a senha é verificada no controller via BCrypt.
+     */
+    @Query("SELECT u FROM Usuario u WHERE u.login_usuario = :login AND u.tipo_usuario = :tipo")
+    Optional<Usuario> buscarPorLoginTipo(
         @Param("login") String login,
-        @Param("senha") String senha,
         @Param("tipo")  Integer tipo
     );
 

@@ -2,6 +2,7 @@ package br.com.gerenciador.projeto.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
@@ -35,7 +36,7 @@ public class Calendario {
     private Atividade atividade;
 
     @OneToMany(mappedBy = "calendario", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties("calendario")
+    @JsonIgnore   // coleção LAZY: serializar fora da sessão causa LazyInitializationException
     private List<Visitante> visitantes;
 
     public Calendario() {}

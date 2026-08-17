@@ -478,8 +478,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // AUTH
-const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 document.getElementById('nomeUsuario').textContent = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0].toUpperCase();
@@ -504,7 +527,7 @@ if(isAtleta){
 
 const apiV = '/visitantes';
 const apiC = '/calendarios';
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null;
 function urlTime(base){ return _idTime ? base + '?idTime=' + _idTime : base; }
 let dados = [];
@@ -527,7 +550,7 @@ function ini(nome){ return (nome||'?').split(' ').slice(0,2).map(n=>n[0]).join('
 
 // CARREGAR CALENDÁRIOS
 function carregarCalendarios(){
- return fetch(urlTime(apiC)).then(r=>r.json()).then(d=>{
+ return authFetch(urlTime(apiC)).then(r=>r.json()).then(d=>{
  calendarios = d;
  const sel = document.getElementById('selectCal');
  const filtro = document.getElementById('filtroEvento');
@@ -550,9 +573,9 @@ function atualizarStats(){
 
 // CARREGAR VISITANTES
 function carregar(){
- console.log("[VISITANTES] timeSelecionado:", JSON.parse(sessionStorage.getItem("timeSelecionado")||"null"));
+ console.log("[VISITANTES] timeSelecionado:", JSON.parse(localStorage.getItem("timeSelecionado")||"null"));
  console.log("[VISITANTES] URL:", urlTime(apiV));
- fetch(urlTime(apiV)).then(r=>r.json()).then(d=>{
+ authFetch(urlTime(apiV)).then(r=>r.json()).then(d=>{
  dados = d;
  atualizarStats();
  renderizar();
@@ -768,7 +791,7 @@ document.getElementById('formVis').addEventListener('submit', function(e){ if(is
  };
  const url = id ? `${apiV}/${id}` : apiV;
  const metodo = id ? 'PUT' : 'POST';
- fetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ authFetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
  .then(()=>{ toast(id?'Visitante atualizado!':'Visitante registrado!'); cancelarForm(); carregar(); })
  .catch(()=>toast('Erro ao salvar.', false));
 });
@@ -781,7 +804,7 @@ function confirmarDel(id, nome){
 }
 document.getElementById('btnConfDel').addEventListener('click',()=>{
  if(!idParaDel) return;
- fetch(`${apiV}/${idParaDel}`,{method:'DELETE'})
+ authFetch(`${apiV}/${idParaDel}`,{method:'DELETE'})
  .then(()=>{ toast('Visitante excluído!'); bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide(); carregar(); })
  .catch(()=>toast('Erro ao excluir.', false));
 });
@@ -797,8 +820,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ══ FLATPICKR — date inputs ══
@@ -815,7 +837,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -832,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

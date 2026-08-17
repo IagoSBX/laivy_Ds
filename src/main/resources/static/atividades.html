@@ -589,7 +589,30 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const user=JSON.parse(sessionStorage.getItem('usuario')||'{}');
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
+const user=JSON.parse(localStorage.getItem('usuario')||'{}');
 if(!user.id_usuario)window.location.href='login.html';
 document.getElementById('nomeUsuario').textContent=user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent=(user.nome_usuario||'U')[0].toUpperCase();
@@ -599,7 +622,7 @@ document.getElementById('tipoUsuario').textContent=({1:'Administrador',2:'Treina
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
 // ── FILTRO POR TIME ──
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
 function urlTime(base) {
   return _idTime ? base + '?idTime=' + _idTime : base;
@@ -636,7 +659,7 @@ function esc(s){return(s||'').replace(/'/g,'\u2019');}
 
 function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
 
-fetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
+authFetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
  todosAtletas=data.filter(u=>u.tipo_usuario===3); // apenas atletas na escalação
  const sel=document.getElementById('selectResp');
  // Responsável só pode ser Admin ou Treinador (tipo 1 ou 2), não atleta
@@ -651,7 +674,7 @@ fetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
 
 function atualizarStats(){document.getElementById('st-total').textContent=dados.length;document.getElementById('st-t1').textContent=dados.filter(a=>a.tipo_atividade===1).length;document.getElementById('st-t2').textContent=dados.filter(a=>a.tipo_atividade===2).length;document.getElementById('st-t4').textContent=dados.filter(a=>a.tipo_atividade===4).length;}
 function filtrarTipo(v){document.getElementById('filtroTipo').value=v;mudarTab('lista',document.querySelectorAll('.tab')[0]);renderizar();}
-function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(sessionStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));fetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();if(calRef)calRef.refetchEvents();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
+function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(localStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));authFetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();if(calRef)calRef.refetchEvents();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
 
 function renderizar(){
  const busca=document.getElementById('busca').value.toLowerCase();
@@ -724,7 +747,7 @@ document.getElementById('formAtiv').addEventListener('submit',function(e){
  const d=Object.fromEntries(new FormData(this).entries());
  const payload={nome_atividade:d.nome_atividade,lugar_atividade:d.lugar_atividade,data_atividade:d.data_atividade,tipo_atividade:parseInt(d.tipo_atividade),status_atividade:parseInt(d.status_atividade),time_oponente:d.time_oponente||null,usuario:{id_usuario:parseInt(d.usuario_id)}};
  const id=document.getElementById('editId').value;
- fetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ authFetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
  .then(()=>{toast(id?'Atualizada!':'Cadastrada!');cancelarForm();carregar();}).catch(()=>toast('Erro.',false));
 });
 
@@ -749,10 +772,10 @@ function abrirEdicao(id){ if(isAtleta){ toast('Acesso restrito.', false); return
  toggleOponente(a.tipo_atividade||1);document.getElementById('selectResp').value=a.usuario?.id_usuario||'';document.getElementById('editId').value=a.id_atividade;document.getElementById('formTitulo').textContent=' Editar Atividade';document.getElementById('btnSubmit').textContent='Salvar Alterações';mudarTab('form',document.querySelectorAll('.tab')[1]);window.scrollTo({top:0,behavior:'smooth'});}
 
 function confirmarDel(id){ if(isAtleta){ toast('Acesso restrito.', false); return; } idParaDel=id;new bootstrap.Modal(document.getElementById('modalDel')).show();}
-document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDel)return;fetch(api+'/'+idParaDel,{method:'DELETE'}).then(()=>{toast('Excluída!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();}).catch(()=>toast('Erro.',false));});
+document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDel)return;authFetch(api+'/'+idParaDel,{method:'DELETE'}).then(()=>{toast('Excluída!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();}).catch(()=>toast('Erro.',false));});
 
 document.addEventListener('DOMContentLoaded',function(){
- calRef=new FullCalendar.Calendar(document.getElementById('calendar'),{initialView:'dayGridMonth',locale:'pt-br',height:'auto',dayMaxEvents:3,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listMonth'},buttonText:{today:'Hoje',month:'Mês',week:'Semana',list:'Lista'},events:function(info,ok,fail){fetch(urlTime(api)).then(r=>r.json()).then(data=>{ok(data.map(a=>{const t=TIPO[a.tipo_atividade]||TIPO[1];return{title:t.emoji+' '+a.nome_atividade,start:a.data_atividade,color:t.cor,textColor:'#0A1628',extendedProps:{raw:a}};}));}).catch(()=>ok([]))},eventClick:function(info){verDetalhes(info.event.extendedProps.raw.id_atividade);}});
+ calRef=new FullCalendar.Calendar(document.getElementById('calendar'),{initialView:'dayGridMonth',locale:'pt-br',height:'auto',dayMaxEvents:3,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listMonth'},buttonText:{today:'Hoje',month:'Mês',week:'Semana',list:'Lista'},events:function(info,ok,fail){authFetch(urlTime(api)).then(r=>r.json()).then(data=>{ok(data.map(a=>{const t=TIPO[a.tipo_atividade]||TIPO[1];return{title:t.emoji+' '+a.nome_atividade,start:a.data_atividade,color:t.cor,textColor:'#0A1628',extendedProps:{raw:a}};}));}).catch(()=>ok([]))},eventClick:function(info){verDetalhes(info.event.extendedProps.raw.id_atividade);}});
  calRef.render();carregar();
 });
 
@@ -760,7 +783,7 @@ document.addEventListener('DOMContentLoaded',function(){
 function abrirEscalacao(idAtiv,nomeAtiv){
  escAtivId=idAtiv;
  document.getElementById('escAtivNome').textContent=nomeAtiv;
- fetch(apiEsc+'/atividade/'+idAtiv).then(r=>r.json()).then(d=>{escDados=d;renderEsc();}).catch(()=>{escDados=[];renderEsc();});
+ authFetch(apiEsc+'/atividade/'+idAtiv).then(r=>r.json()).then(d=>{escDados=d;renderEsc();}).catch(()=>{escDados=[];renderEsc();});
  new bootstrap.Modal(document.getElementById('modalEscalacao')).show();
 }
 
@@ -841,14 +864,14 @@ function confirmarAddEsc(){ if(isAtleta){ toast("Acesso restrito.", false); retu
  const num=parseInt(document.getElementById('addNumCamisa').value)||null;
  const tit=parseInt(document.getElementById('addTitular').value);
  const payload={atividade:{id_atividade:escAtivId},usuario:{id_usuario:escAtletaSel.id_usuario},posicao:pos||null,numero_camisa:num,titular:tit};
- fetch(apiEsc,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+ authFetch(apiEsc,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
  .then(r=>{if(!r.ok)throw new Error();return r.json();})
  .then(d=>{escDados.push(d);voltarEscalacao();})
  .catch(()=>{escDados.push({id_escalacao:Date.now(),usuario:escAtletaSel,posicao:pos,numero_camisa:num,titular:tit});voltarEscalacao();});
 }
 
 function voltarEscalacao(){bootstrap.Modal.getInstance(document.getElementById('modalAddJog'))?.hide();escAtletaSel=null;setTimeout(()=>{renderEsc();new bootstrap.Modal(document.getElementById('modalEscalacao')).show();},350);}
-function removerEsc(id){ if(isAtleta){ toast("Acesso restrito.", false); return; } fetch(apiEsc+'/'+id,{method:'DELETE'}).catch(()=>{});escDados=escDados.filter(e=>e.id_escalacao!==id);renderEsc();}
+function removerEsc(id){ if(isAtleta){ toast("Acesso restrito.", false); return; } authFetch(apiEsc+'/'+id,{method:'DELETE'}).catch(()=>{});escDados=escDados.filter(e=>e.id_escalacao!==id);renderEsc();}
 
 // ── LOGOUT COM CONFIRMAÇÃO ──
 function logout(){
@@ -858,8 +881,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ── TOGGLE OPONENTE ──
@@ -885,7 +907,7 @@ async function abrirFinalizarJogo(idAtiv){
 
  // Carregar escalação
  try {
- const r = await fetch('/escalacoes/atividade/'+idAtiv);
+ const r = await authFetch('/escalacoes/atividade/'+idAtiv);
  jogoEscalacao = await r.json();
  } catch(e){ jogoEscalacao=[]; }
 
@@ -936,7 +958,7 @@ async function confirmarFinalizarJogo(){
 
  // 1. Atualizar placar e status da atividade
  try {
- await fetch(api+'/atividades/'+jogoFinalizandoId,{
+ await authFetch(api+'/atividades/'+jogoFinalizandoId,{
  method:'PUT',
  headers:{'Content-Type':'application/json'},
  body:JSON.stringify({placar_pro:placarPro, placar_contra:placarContra, status_atividade:2})
@@ -947,7 +969,7 @@ async function confirmarFinalizarJogo(){
  const promises = jogoEscalacao.map(e=>{
  const inp = document.getElementById('pts_'+e.id_escalacao);
  const pts = inp ? (parseInt(inp.value)||0) : 0;
- return fetch(api+'/escalacoes/'+e.id_escalacao,{
+ return authFetch(api+'/escalacoes/'+e.id_escalacao,{
  method:'PUT',
  headers:{'Content-Type':'application/json'},
  body:JSON.stringify({pontos_jogo:pts})
@@ -975,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -1043,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

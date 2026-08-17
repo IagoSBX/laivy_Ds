@@ -391,8 +391,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // ── AUTH ──
-const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+const user = JSON.parse(localStorage.getItem('usuario') || '{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 if (user.tipo_usuario !== 1) { window.location.href = 'times.html'; } // só admin
 
@@ -403,7 +426,7 @@ if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList
 
 // ── TIME INDICATOR ──
 (function(){
-  var ts=JSON.parse(sessionStorage.getItem('timeSelecionado')||'null');
+  var ts=JSON.parse(localStorage.getItem('timeSelecionado')||'null');
   var el=document.getElementById('timeSidebarIndicator');
   if(!el)return;
   if(ts){el.style.display='flex';var dot=el.querySelector('.ti-dot');var nome=el.querySelector('.ti-nome');if(dot)dot.style.background=ts.cor||'#00C97A';if(nome)nome.textContent=ts.nome||'Time';}else{el.style.display='none';}
@@ -412,7 +435,7 @@ if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList
 // ── LOGOUT ──
 function logout(){ document.getElementById('logoutModal').classList.add('show'); }
 function fecharLogout(){ document.getElementById('logoutModal').classList.remove('show'); }
-function confirmarLogout(){ sessionStorage.clear(); window.location.href='login.html'; }
+function confirmarLogout(){ _logout(); }
 
 // ── THEME ──
 // ── HELPERS ──
@@ -424,7 +447,7 @@ const API_U = '/usuarios';
 let treinadorSelecionadoId = null;
 
 // ── CARREGAR TREINADORES ──
-fetch(API_U).then(r=>r.json()).then(usuarios=>{
+authFetch(API_U).then(r=>r.json()).then(usuarios=>{
   const responsaveis = usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2);
   const grid = document.getElementById('treinadorGrid');
   if(!responsaveis.length){
@@ -540,7 +563,7 @@ document.getElementById('formTime').addEventListener('submit', function(e){
   };
   document.getElementById('btnSubmit').textContent = 'Salvando...';
   document.getElementById('btnSubmit').disabled = true;
-  fetch(API, {
+  authFetch(API, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(payload)
@@ -561,7 +584,7 @@ document.getElementById('formTime').addEventListener('submit', function(e){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

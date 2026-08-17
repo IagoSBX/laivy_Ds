@@ -401,8 +401,31 @@ nav { flex: 1; padding: 20px 0; }
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // AUTH
-const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+const user = JSON.parse(localStorage.getItem('usuario') || '{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 document.getElementById('nomeUsuario').textContent = user.nome_usuario || '—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0].toUpperCase();
@@ -413,12 +436,12 @@ document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0]
     av.innerHTML='<img src="'+user.foto_usuario+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
   }
 document.getElementById('tipoUsuario').textContent = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario]||'—';
-function logout(){ sessionStorage.clear(); window.location.href = 'login.html'; }
+function logout(){ _logout(); }
 
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
 // ── FILTRO POR TIME ──
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
 function urlTime(base) {
   return _idTime ? base + '?idTime=' + _idTime : base;
@@ -574,7 +597,7 @@ document.addEventListener('DOMContentLoaded', function () {
  buttonText: { today:'Hoje', month:'Mês', week:'Semana', list:'Lista' },
 
  events: function (info, ok, fail) {
- fetch(urlTime('/atividades'))
+ authFetch(urlTime('/atividades'))
  .then(r => r.json())
  .then(data => {
  // Todos os usuários veem todas as atividades no calendário (informativo)
@@ -627,8 +650,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ══ FLATPICKR — date inputs ══
@@ -645,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -662,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

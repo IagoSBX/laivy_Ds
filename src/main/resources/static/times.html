@@ -310,8 +310,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // ── AUTH ──
-const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href='login.html';
 document.getElementById('nomeUsuario').textContent  = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent  = (user.nome_usuario||'U')[0].toUpperCase();
@@ -325,7 +348,7 @@ if(isAtleta){ document.getElementById('tabNovoBtn').style.display='none'; docume
 // ── LOGOUT ──
 function logout(){ document.getElementById('logoutModal').classList.add('show'); }
 function fecharLogout(){ document.getElementById('logoutModal').classList.remove('show'); }
-function confirmarLogout(){ sessionStorage.clear(); window.location.href='login.html'; }
+function confirmarLogout(){ _logout(); }
 
 // ── THEME ──
 const API   = '/times';
@@ -353,9 +376,9 @@ function mudarTab(id, btn){
 // ── CARREGAR ──
 function carregar(){
   Promise.all([
-    fetch(API).then(r=>r.json()).catch(()=>[]),
-    fetch(API_U).then(r=>r.json()).catch(()=>[]),
-    fetch(API_A).then(r=>r.json()).catch(()=>[]),
+    authFetch(API).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_U).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_A).then(r=>r.json()).catch(()=>[]),
   ]).then(([times, usuarios, atividades]) => {
     dados = times;
     todosUsuarios = usuarios;
@@ -578,14 +601,14 @@ function filtrarAtletasDisp(){
 }
 
 function adicionarMembro(idTime, idUsuario){
-  fetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'})
+  authFetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'})
     .then(r=>r.json())
     .then(()=>{ toast('Atleta adicionado ao time!'); carregar(); setTimeout(()=>verTime(idTime),600); })
     .catch(()=>toast('Erro ao adicionar.',false));
 }
 
 function removerMembro(idTime, idUsuario){
-  fetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'DELETE'})
+  authFetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'DELETE'})
     .then(()=>{ toast('Membro removido do time!'); carregar(); setTimeout(()=>verTime(idTime),600); })
     .catch(()=>toast('Erro ao remover.',false));
 }
@@ -608,7 +631,7 @@ document.getElementById('formTime').addEventListener('submit', function(e){
     ativo_time:      parseInt(d.ativo_time),
     treinador:       treinId ? {id_usuario: parseInt(treinId)} : null,
   };
-  fetch(id ? API+'/'+id : API, {
+  authFetch(id ? API+'/'+id : API, {
     method: id?'PUT':'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(payload)
@@ -633,7 +656,7 @@ function confirmarDel(id, nome){
 }
 document.getElementById('btnConfDel').addEventListener('click',()=>{
   if(!idParaDel) return;
-  fetch(API+'/'+idParaDel,{method:'DELETE'})
+  authFetch(API+'/'+idParaDel,{method:'DELETE'})
     .then(()=>{ toast('Time excluído!'); bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide(); carregar(); })
     .catch(()=>toast('Erro ao excluir.',false));
 });
@@ -666,7 +689,7 @@ function validarFormTime(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

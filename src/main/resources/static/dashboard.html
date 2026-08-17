@@ -449,6 +449,29 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 const api = '';
 const TIPO = {
   1:{label:'Treino',emoji:'🏋️',cor:'#00C97A',bg:'rgba(0,201,122,0.15)'},
@@ -458,7 +481,7 @@ const TIPO = {
 };
 
 // ── AUTH ──
-const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 const nomes = ['Admin','Treinador','Atleta'];
 document.getElementById('nomeUsuario').textContent = user.nome_usuario||'—';
@@ -479,7 +502,7 @@ document.getElementById('perfilMsg').textContent = msgPerfil[user.tipo_usuario]|
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
 // ── FILTRO POR TIME ──
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
 function urlTime(base) {
   return _idTime ? base + '?idTime=' + _idTime : base;
@@ -516,7 +539,7 @@ function toast(msg){
 
 // ── STATS ──
 function loadStat(endpoint, elId, mcId){
- fetch(urlTime(`${api}/${endpoint}`))
+ authFetch(urlTime(`${api}/${endpoint}`))
  .then(r => r.json())
  .then(d => {
  const n = Array.isArray(d) ? d.length : '—';
@@ -540,7 +563,7 @@ loadStat('calendarios', 'mc-cal', 'mc-cal');
 loadStat('visitantes', 'mc-vis', 'mc-vis');
 
 // ── PRÓXIMAS ATIVIDADES ──
-fetch(urlTime(`${api}/atividades`))
+authFetch(urlTime(`${api}/atividades`))
  .then(r=>r.json())
  .then(data=>{
  const agora = new Date();
@@ -580,7 +603,7 @@ fetch(urlTime(`${api}/atividades`))
  });
 
 // ── STATUS SISTEMA ──
-fetch(`${api}/usuarios`)
+authFetch(`${api}/usuarios`)
  .then(()=>{
  document.getElementById('statusApi').textContent = ' Online';
  document.getElementById('statusApi').style.cssText = 'font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(0,201,122,0.15);color:#00C97A';
@@ -602,8 +625,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ══ FLATPICKR — date inputs ══
@@ -620,7 +642,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -637,7 +659,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

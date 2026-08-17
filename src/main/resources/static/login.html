@@ -553,7 +553,7 @@
 </div>
 
 <script>
-function fazerLogin(e) {
+async function fazerLogin(e) {
   e.preventDefault();
   const login = document.getElementById('loginInput').value.trim();
   const senha = document.getElementById('senhaInput').value;
@@ -571,44 +571,41 @@ function fazerLogin(e) {
     if(shakeSenha){ si.value=''; si.focus(); }
   }
 
-  fetch('/usuarios')
-    .then(res => res.json())
-    .then(usuarios => {
-      const byLogin      = usuarios.find(u => u.login_usuario === login);
-      const byLoginSenha = byLogin && byLogin.senha_usuario === senha ? byLogin : null;
-      const user         = byLoginSenha && String(byLoginSenha.tipo_usuario) === tipo ? byLoginSenha : null;
-
-      if (user) {
-        fetch('/usuarios/' + user.id_usuario)
-          .then(r => r.json())
-          .then(fresh => {
-            const u = fresh || user;
-            sessionStorage.setItem('usuario', JSON.stringify(u));
-            if (u.primeiro_login === 1 || u.primeiro_login === '1') { psAbrir(u); }
-            else { mostrarLoginLoading(); }
-          })
-          .catch(() => {
-            sessionStorage.setItem('usuario', JSON.stringify(user));
-            if (user.primeiro_login === 1) { psAbrir(user); }
-            else { mostrarLoginLoading(); }
-          });
-      } else if (!byLogin) {
-        showError('Usuário não encontrado. Verifique o login.', true, false);
-      } else if (!byLoginSenha) {
-        showError('Senha incorreta. Tente novamente.', false, true);
-      } else {
-        showError('Perfil incorreto para este usuário.', false, false);
-      }
-    })
-    .catch(() => {
-      if (login === 'admin' && senha === 'admin') {
-        const demoUser = { id_usuario:1, nome_usuario:'Administrador', login_usuario:'admin', tipo_usuario:1, primeiro_login:0 };
-        sessionStorage.setItem('usuario', JSON.stringify(demoUser));
-        mostrarLoginLoading();
-      } else {
-        showError('Servidor offline. Verifique a conexão com o backend.', true, true);
-      }
+  try {
+    const res = await fetch('/usuarios/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login_usuario: login, senha_usuario: senha, tipo_usuario: tipo })
     });
+
+    if (res.status === 401) {
+      const data = await res.json().catch(() => ({}));
+      const msg = data.erro || 'Credenciais inválidas.';
+      if (msg.includes('não encontrado') || msg.includes('perfil'))
+        showError(msg, true, false);
+      else
+        showError(msg, false, true);
+      return;
+    }
+    if (!res.ok) {
+      showError('Erro no servidor. Tente novamente.', false, false);
+      return;
+    }
+
+    const data = await res.json();
+    const u = data.usuario;
+
+    // O token vai em cookie HttpOnly (setado pelo backend) — aqui só guardamos
+    // os dados do usuário para exibição na UI.
+    localStorage.setItem('usuario', JSON.stringify(u));
+
+    if (u.primeiro_login === 1 || u.primeiro_login === '1') { psAbrir(u); }
+    else { mostrarLoginLoading(); }
+
+  } catch (err) {
+    showError('Servidor offline. Verifique a conexão com o backend.', true, true);
+  }
 }
 
 // ── LOADING SCREEN ──
@@ -694,26 +691,28 @@ async function psConfirmar() {
 
  try {
  const res = await fetch(
- '/usuarios/' + _userPendente.id_usuario + '/senha',
- {
- method: 'PUT',
- headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ senha_usuario: nova })
- }
+   '/usuarios/' + _userPendente.id_usuario + '/senha',
+   {
+     method: 'PUT',
+     credentials: 'include',
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify({ senha_usuario: nova })
+   }
  );
  if (res.ok) {
- const userAtualizado = await res.json();
- // Atualiza sessionStorage com dados novos (primeiro_login=0)
- sessionStorage.setItem('usuario', JSON.stringify(userAtualizado));
- document.getElementById('popupSenha').classList.remove('show');
- mostrarLoginLoading();
+    const data = await res.json();
+    // /senha renova o cookie do token no backend; aqui só atualizamos os dados exibidos
+    const userAtualizado = data.usuario || data;
+    localStorage.setItem('usuario', JSON.stringify(userAtualizado));
+    document.getElementById('popupSenha').classList.remove('show');
+    mostrarLoginLoading();
  } else {
  alert('Erro ao salvar a senha. Tente novamente.');
  }
  } catch (err) {
  // Fallback offline: salva localmente e prossegue
  _userPendente.primeiro_login = 0;
- sessionStorage.setItem('usuario', JSON.stringify(_userPendente));
+ localStorage.setItem('usuario', JSON.stringify(_userPendente));
  document.getElementById('popupSenha').classList.remove('show');
  mostrarLoginLoading();
  }

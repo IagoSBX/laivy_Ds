@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -27,6 +28,9 @@ public class Usuario {
     @Column(name = "login_usuario", nullable = false, unique = true, length = 45)
     private String login_usuario;
 
+    // WRITE_ONLY: aceita a senha no corpo de POST/PUT (deserialização),
+    // mas NUNCA a devolve nas respostas JSON (serialização).
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "senha_usuario", nullable = false, length = 100)
     private String senha_usuario;
 

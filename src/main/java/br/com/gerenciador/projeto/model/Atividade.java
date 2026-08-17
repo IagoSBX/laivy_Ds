@@ -3,6 +3,7 @@ package br.com.gerenciador.projeto.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.*;
@@ -51,7 +52,7 @@ public class Atividade {
     private Time time;
 
     @OneToMany(mappedBy = "atividade", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties("atividade")
+    @JsonIgnore   // coleção LAZY: serializar fora da sessão causa LazyInitializationException
     private List<Calendario> calendario;
 
     public Atividade() {}
@@ -89,6 +90,8 @@ public class Atividade {
     public Time getTime() { return time; }
     public void setTime(Time time) { this.time = time; }
 
+    @JsonIgnore   // o nome do getter (calendarios) difere do campo (calendario):
+                  // para o Jackson são DUAS propriedades — precisa ignorar aqui também
     public List<Calendario> getCalendarios() { return calendario; }
     public void setCalendarios(List<Calendario> calendario) { this.calendario = calendario; }
 }

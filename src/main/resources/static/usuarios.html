@@ -594,8 +594,31 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <div class="toast-wrap" id="toastWrap"></div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // ── AUTH + CONTROLE DE ACESSO ──
-const user = JSON.parse(sessionStorage.getItem('usuario')||'{}');
+const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 document.getElementById('nomeUsuario').textContent = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario||'U')[0].toUpperCase();
@@ -613,7 +636,7 @@ const isAtleta = user.tipo_usuario === 3;
 const isTreina  = user.tipo_usuario === 2;
 const isAdmin   = user.tipo_usuario === 1;
 // ── FILTRO POR TIME ──
-const _ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
 function urlTime(base) {
   return _idTime ? base + '?idTime=' + _idTime : base;
@@ -725,7 +748,7 @@ function buscarCEP(el){
  if(cep.length!==8)return;
  ld.classList.add('show');
  el.classList.remove('is-valid','is-invalid');
- fetch('https://viacep.com.br/ws/'+cep+'/json/')
+ authFetch('https://viacep.com.br/ws/'+cep+'/json/')
  .then(r=>r.json())
  .then(d=>{
  ld.classList.remove('show');
@@ -742,7 +765,7 @@ function buscarCEP(el){
 
 // ── CARREGAR ──
 function carregar(){
- fetch(urlTime(api)).then(r=>r.json()).then(d=>{
+ authFetch(urlTime(api)).then(r=>r.json()).then(d=>{
  // Atleta vê apenas o próprio perfil
  if(isAtleta) dados = d.filter(u=>u.id_usuario===user.id_usuario);
  else dados = d;
@@ -933,7 +956,7 @@ document.getElementById('formCadastro').addEventListener('submit',function(e){
    }
  }
 
- fetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
+ authFetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
  .then(()=>{toast(id?'Usuário atualizado!':'Usuário cadastrado! O usuário deverá trocar a senha no primeiro acesso. ');cancelarForm();carregar();})
  .catch(()=>toast('Erro ao salvar.',false));
 });
@@ -946,7 +969,7 @@ function confirmarDel(id,nome){
 }
 document.getElementById('btnConfDel').addEventListener('click',()=>{
  if(!idParaDel)return;
- fetch(api+'/'+idParaDel,{method:'DELETE'})
+ authFetch(api+'/'+idParaDel,{method:'DELETE'})
  .then(()=>{toast('Usuário excluído!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();})
  .catch(()=>toast('Erro ao excluir.',false));
 });
@@ -961,8 +984,7 @@ function fecharLogout(){
  document.getElementById('logoutModal').classList.remove('show');
 }
 function confirmarLogout(){
- sessionStorage.clear();
- window.location.href='login.html';
+ _logout();
 }
 
 // ══ FLATPICKR — date inputs ══
@@ -1007,7 +1029,7 @@ function removerFoto(){
 
 // ── TIME SELECIONADO — exibir na sidebar ──
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   var el = document.getElementById('timeSidebarIndicator');
   if (!el) return;
   if (ts) {
@@ -1025,7 +1047,7 @@ function removerFoto(){
 let todosTimes = [];
 
 function carregarTimesForm(){
-  fetch('/times')
+  authFetch('/times')
     .then(r=>r.json())
     .then(times=>{
       todosTimes = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
@@ -1094,7 +1116,7 @@ const _origMudarTab = typeof mudarTab !== 'undefined' ? mudarTab : null;
 
 <script>
 (function(){
-  var ts = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   if (!ts) return;
   var icon = document.getElementById('sidebarLogoIcon');
   var nome = document.getElementById('sidebarNomeTime');

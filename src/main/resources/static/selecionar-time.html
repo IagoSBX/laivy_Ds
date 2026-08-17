@@ -353,7 +353,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
     <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
     <div class="logout-btns">
       <button class="btn-cancel-l" onclick="document.getElementById('logoutModal').classList.remove('show')">Cancelar</button>
-      <button class="btn-confirm-l" onclick="sessionStorage.clear();window.location.href='login.html'">Sair</button>
+      <button class="btn-confirm-l" onclick="_logout()">Sair</button>
     </div>
   </div>
 </div>
@@ -483,8 +483,31 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 </div>
 
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 // ── AUTH ──
-const user = JSON.parse(sessionStorage.getItem('usuario') || '{}');
+const user = JSON.parse(localStorage.getItem('usuario') || '{}');
 if (!user.id_usuario) window.location.href = 'login.html';
 
 // Preencher pill
@@ -511,7 +534,7 @@ function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toU
 
 function selecionarTime(timeId, timeNome, timeCor, timeLogo) {
   // Salva na sessão a cada login
-  sessionStorage.setItem('timeSelecionado', JSON.stringify({
+  localStorage.setItem('timeSelecionado', JSON.stringify({
     id: timeId, nome: timeNome, cor: timeCor || '#00C97A', logo: timeLogo || null
   }));
   // Loading antes de entrar
@@ -523,9 +546,9 @@ function selecionarTime(timeId, timeNome, timeCor, timeLogo) {
 async function carregarTimes() {
   try {
     const [times, usuarios, atividades] = await Promise.all([
-      fetch(API_TIMES).then(r => r.json()),
-      fetch(API_USERS).then(r => r.json()),
-      fetch(API_ATIV).then(r => r.json()),
+      authFetch(API_TIMES).then(r => r.json()),
+      authFetch(API_USERS).then(r => r.json()),
+      authFetch(API_ATIV).then(r => r.json()),
     ]);
 
     // Filtrar por perfil
@@ -672,7 +695,7 @@ function fecharFormPanel() {
 }
 
 function carregarTreinadores() {
-  fetch(API_USERS).then(r=>r.json()).then(usuarios=>{
+  authFetch(API_USERS).then(r=>r.json()).then(usuarios=>{
     todosUsuariosGlobal = usuarios;
     const resp = usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2);
     const grid = document.getElementById('fp-treinador-grid');
@@ -755,7 +778,7 @@ document.addEventListener('DOMContentLoaded', function(){
     };
     const btn = document.getElementById('fp-btn-submit');
     btn.textContent='Criando...'; btn.disabled=true;
-    fetch('/times', {
+    authFetch('/times', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify(payload)
@@ -854,9 +877,11 @@ function ptValidar() {
   const nome  = document.getElementById('ptNome');
   const email = document.getElementById('ptEmail');
   const login = document.getElementById('ptLogin');
+  const senha = document.getElementById('ptSenha');
   const hN = document.getElementById('ptHintNome');
   const hE = document.getElementById('ptHintEmail');
   const hL = document.getElementById('ptHintLogin');
+  const hS = document.getElementById('ptHintSenha');
   const hT = document.getElementById('ptHintTime');
 
   if (nome.value.trim().length < 3) {
@@ -870,6 +895,17 @@ function ptValidar() {
   if (login.value.trim().length < 3) {
     login.classList.add('err'); hL.textContent = 'Login obrigatório'; hL.className = 'pt-hint show err'; ok = false;
   } else { login.classList.remove('err'); hL.className = 'pt-hint'; }
+
+  if (senha.value.length < 8) {
+    senha.classList.add('err');
+    hS.textContent = 'Mínimo 8 caracteres, com letras e números';
+    hS.className = 'pt-hint show err';
+    ok = false;
+  } else {
+    senha.classList.remove('err');
+    hS.textContent = 'O treinador troca no primeiro acesso';
+    hS.className = 'pt-hint show ok';
+  }
 
   if (!ptTimeId) {
     hT.textContent = 'Selecione um time'; hT.className = 'pt-hint show err'; ok = false;
@@ -886,24 +922,27 @@ async function ptSubmit() {
     email_usuario:  document.getElementById('ptEmail').value.trim(),
     cel_usuario:    document.getElementById('ptCel').value || '',
     login_usuario:  document.getElementById('ptLogin').value.trim(),
-    senha_usuario:  document.getElementById('ptSenha').value || '1234',
+    senha_usuario:  document.getElementById('ptSenha').value,
     tipo_usuario:   2,
     primeiro_login: 1,
     foto_usuario:   ptFotoB64 || null,
     time:           ptTimeId ? { id_time: ptTimeId } : null,
   };
   try {
-    const r = await fetch('/usuarios', {
+    const r = await authFetch('/usuarios', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!r.ok) throw new Error();
+    if (!r.ok) {
+      const erro = await r.json().catch(() => ({}));
+      throw new Error(erro.erro || 'Erro ao cadastrar. Verifique o servidor.');
+    }
     fecharPopupTreinador();
     ptToast('Treinador cadastrado com sucesso!');
     carregarTimes(); // refresh grid
-  } catch (_) {
-    ptToast('Erro ao cadastrar. Verifique o servidor.', false);
+  } catch (err) {
+    ptToast(err.message || 'Erro ao cadastrar. Verifique o servidor.', false);
   } finally {
     btn.textContent = 'Cadastrar Treinador'; btn.disabled = false;
   }
@@ -1010,9 +1049,9 @@ function fpAtualizarPreview(nome){
           <div class="pt-hint" id="ptHintLogin"></div>
         </div>
         <div class="col-md-6">
-          <label class="pt-label">Senha Inicial</label>
-          <input type="password" class="pt-input" id="ptSenha" placeholder="Padrão: 1234">
-          <div style="font-size:10px;color:#00C97A;margin-top:4px">O treinador troca no primeiro acesso</div>
+          <label class="pt-label">Senha Inicial <span style="color:#FF6B6B">*</span></label>
+          <input type="password" class="pt-input" id="ptSenha" placeholder="Mín. 8 caracteres, com letras e números" minlength="8">
+          <div class="pt-hint show ok" id="ptHintSenha">O treinador troca no primeiro acesso</div>
         </div>
         <div class="col-12">
           <label class="pt-label">Time Responsável <span style="color:#FF6B6B">*</span></label>

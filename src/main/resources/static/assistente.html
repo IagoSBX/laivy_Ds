@@ -222,11 +222,34 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
 </main>
 
 <script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+// ────────────────────────────────────────────────────────────────────────
+
 const API = 'http://localhost:8080';
 let enviando = false;
 
-const usuario = JSON.parse(sessionStorage.getItem('usuario') || '{}');
-const time    = JSON.parse(sessionStorage.getItem('timeSelecionado') || 'null');
+const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+const time    = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 
 if (!usuario.id_usuario) {
   window.location.href = 'login.html';
@@ -316,7 +339,7 @@ async function enviar() {
   addTyping();
 
   try {
-    const res = await fetch(`${API}/assistente/chat`, {
+    const res = await authFetch(`${API}/assistente/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -364,8 +387,7 @@ function autoResize(el) {
 function abrirLogout()   { document.getElementById('logoutModal').classList.add('show'); }
 function fecharLogout()  { document.getElementById('logoutModal').classList.remove('show'); }
 function confirmarLogout() {
-  sessionStorage.clear();
-  window.location.href = 'login.html';
+  _logout();
 }
 </script>
 </body>
