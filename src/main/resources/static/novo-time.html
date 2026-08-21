@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Novo Time — LAIVY</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 :root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;
@@ -13,23 +14,23 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
 /* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;; overflow-y: auto; }
-.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
-.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
-.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
-.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
-nav{flex:1;padding:20px 0;overflow-y:auto;}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:.6;}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);transition:all .2s;border-left:3px solid transparent;text-decoration:none;}
-.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
-.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
-.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
-.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);overflow:hidden;}
-.user-avatar.has-foto{background:none!important;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-.user-name{font-size:13px;font-weight:600;}.user-role{font-size:11px;color:var(--cinza);}
-.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+
 /* MAIN */
 .main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
 /* PAGE HEADER */
@@ -86,25 +87,25 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .btn-cancelar-form{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:12px 24px;border-radius:10px;cursor:pointer;transition:all .2s;}
 .btn-cancelar-form:hover{background:rgba(255,255,255,0.1);}
 /* TIME INDICATOR */
-.time-indicator{margin:0 12px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .2s;text-decoration:none;}
-.time-indicator:hover{background:rgba(255,255,255,0.08);}
-.ti-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.ti-nome{font-size:12px;font-weight:700;color:var(--branco);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
-.ti-trocar{font-size:10px;color:var(--cinza);font-weight:600;white-space:nowrap;}
+
+
+
+
+
 /* TOAST */
 .toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
 .toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn .3s ease;color:var(--branco);}
 .toast-item.erro{border-color:rgba(255,80,80,0.3);}
 @keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
 /* LOGOUT MODAL */
-#logoutModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:99998;display:none;align-items:center;justify-content:center;}
-#logoutModal.show{display:flex;}
-.logout-card{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,80,80,.25);border-radius:20px;padding:36px 40px;text-align:center;max-width:360px;width:90%;}
-.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;margin-bottom:8px;}
-.logout-msg{font-size:14px;color:var(--cinza);margin-bottom:28px;line-height:1.6;}
-.logout-btns{display:flex;gap:12px;justify-content:center;}
-.btn-logout-cancel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:16px;padding:11px 28px;border-radius:10px;cursor:pointer;}
-.btn-logout-confirm{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.35);color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;padding:11px 28px;border-radius:10px;cursor:pointer;}
+
+
+
+
+
+
+
+
 /* LIGHT THEME */
 /* THEME BTN */
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -202,54 +203,9 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <body>
 
 <!-- LOGOUT MODAL -->
-<div id="logoutModal">
-  <div class="logout-card">
-    <div style="font-size:40px;margin-bottom:16px">👋</div>
-    <div class="logout-titulo">Sair do Sistema?</div>
-    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
-    <div class="logout-btns">
-      <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
-      <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
-    </div>
-  </div>
-</div>
+<div id="sidebar-placeholder"></div>
+<script src="js/sidebar.js"></script>
 
-<!-- THEME TOGGLE -->
-<aside class="sidebar">
-  <div class="sidebar-logo" id="sidebarLogo">
- <div class="logo-icon" id="sidebarLogoIcon">L</div>
- <div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>
-</div>
-  <nav>
-    <div class="nav-section">Principal</div>
-    <a href="dashboard.html"  class="nav-item">Dashboard</a>
-    <a href="usuarios.html"   class="nav-item">Usuários</a>
-    <div class="nav-section">Admin</div>
-    <a href="cadastrar-treinador.html" class="nav-item">Treinadores</a>
-    <div class="nav-section">Gestão</div>
-    <a href="exames.html"     class="nav-item">Exames</a>
-    <a href="desempenho.html" class="nav-item">Desempenho</a>
-    <a href="atividades.html" class="nav-item">Atividades</a>
-    <a href="escalacao.html"  class="nav-item">Escalação</a>
-    <a href="calendario.html" class="nav-item">Calendário</a>
-    <a href="visitantes.html" class="nav-item">Visitantes</a>
-     <div class="nav-section">IA</div>
-    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
- </nav>
-  <!-- TIME SELECIONADO -->
-  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
-    <div class="ti-dot"></div>
-    <div class="ti-nome">—</div>
-    <div class="ti-trocar">Trocar</div>
-  </a>
-  <div class="sidebar-footer">
-    <div class="user-info">
-      <div class="user-avatar" id="avatarLetra">A</div>
-      <div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>
-    </div>
-    <button class="btn-logout" onclick="logout()">Sair do Sistema</button>
-  </div>
-</aside>
 
 <main class="main">
   <div class="page-header">
@@ -422,7 +378,7 @@ if (user.tipo_usuario !== 1) { window.location.href = 'times.html'; } // só adm
 document.getElementById('nomeUsuario').textContent = user.nome_usuario || '—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario || 'U')[0].toUpperCase();
 document.getElementById('tipoUsuario').textContent = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario] || '—';
-if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList.add('has-foto');av.innerHTML='<img src="'+user.foto_usuario+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';}
+if(user.foto_usuario){var av=document.getElementById('avatarLetra');av.classList.add('has-foto');av.innerHTML='<img src="'+esc(user.foto_usuario)+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';}
 
 // ── TIME INDICATOR ──
 (function(){
@@ -440,7 +396,8 @@ function confirmarLogout(){ _logout(); }
 // ── THEME ──
 // ── HELPERS ──
 function ini(n){return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();}
-function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'✅':'❌')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
 
 const API   = '/times';
 const API_U = '/usuarios';
@@ -459,12 +416,12 @@ authFetch(API_U).then(r=>r.json()).then(usuarios=>{
     const cor = u.tipo_usuario===1?'#00C97A':'#4EC9FF';
     const lbl = u.tipo_usuario===1?'Administrador':'Treinador';
     const avHTML = u.foto_usuario
-      ? '<img src="'+u.foto_usuario+'" alt="">'
-      : '<span style="color:'+cor+'">'+ini(u.nome_usuario)+'</span>';
-    return '<div class="tr-option" data-tid="'+u.id_usuario+'" data-tnome="'+u.nome_usuario.replace(/"/g,'&quot;')+'" onclick="selecionarTreinador(this.dataset.tid,this.dataset.tnome)">'
+      ? '<img src="'+esc(u.foto_usuario)+'" alt="">'
+      : '<span style="color:'+cor+'">'+esc(ini(u.nome_usuario))+'</span>';
+    return '<div class="tr-option" data-tid="'+u.id_usuario+'" data-tnome="'+esc(u.nome_usuario)+'" onclick="selecionarTreinador(this.dataset.tid,this.dataset.tnome)">'
       +'<div class="tr-av" style="background:'+bg+'">'+avHTML+'</div>'
       +'<div style="flex:1;min-width:0">'
-        +'<div class="tr-nome">'+u.nome_usuario+'</div>'
+        +'<div class="tr-nome">'+esc(u.nome_usuario)+'</div>'
         +'<div class="tr-tipo">'+lbl+'</div>'
       +'</div>'
       +'<div class="tr-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
@@ -503,7 +460,7 @@ function previewAtualizar(){
   const logo = document.getElementById('pvLogo');
   const ini2 = nome ? ini(nome) : '—';
   if(logoBase64){
-    logo.innerHTML = '<img src="'+logoBase64+'" style="width:100%;height:100%;object-fit:cover;border-radius:12px">';
+    logo.innerHTML = '<img src="'+esc(logoBase64)+'" style="width:100%;height:100%;object-fit:cover;border-radius:12px">';
     logo.style.background = 'none'; logo.style.border = '2px solid '+cor+'44';
   } else {
     logo.textContent = ini2;
@@ -593,7 +550,7 @@ document.getElementById('formTime').addEventListener('submit', function(e){
     if (ts.logo) {
       icon.style.background = 'none';
       icon.style.padding = '0';
-      icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+      icon.innerHTML = '<img src="' + esc(ts.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
     } else {
       var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
       icon.textContent = ini;

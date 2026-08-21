@@ -63,17 +63,51 @@ public class UsuarioController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
+    /** Remove dados sensíveis (CPF, endereço, dados de responsáveis, etc.)
+     *  para quem não é Admin/Treinador nem o próprio usuário. */
+    private static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
+        boolean privilegiado = authTipo != null && authTipo <= 2;
+        boolean ehDono = authId != null && authId.equals(u.getId_usuario());
+        if (privilegiado || ehDono) return u;
+
+        u.setEmail_usuario(null);
+        u.setLogin_usuario(null);
+        u.setData_nasc_usuario(null);
+        u.setEndereco_usuario(null);
+        u.setBairro_usuario(null);
+        u.setCep_usuario(null);
+        u.setCidade_usuario(null);
+        u.setEstado_usuario(null);
+        u.setCel_usuario(null);
+        u.setCpf_usuario(null);
+        u.setRg_responsavel_1(null);
+        u.setRg_responsavel_2(null);
+        u.setCpf_responsavel_1(null);
+        u.setCpf_responsavel_2(null);
+        u.setCel_responsavel_1(null);
+        u.setCel_responsavel_2(null);
+        return u;
+    }
+
     // ── GET /usuarios ────────────────────────────────────────────────────
     @GetMapping
-    public List<Usuario> listarTodos(@RequestParam(required = false) Integer idTime) {
-        if (idTime != null) return dao.buscarPorTime(idTime);
-        return dao.findAll();
+    public List<Usuario> listarTodos(
+            @RequestParam(required = false) Integer idTime,
+            HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+        List<Usuario> lista = idTime != null ? dao.buscarPorTime(idTime) : dao.findAll();
+        lista.forEach(u -> sanitizarParaListagem(u, authId, authTipo));
+        return lista;
     }
 
     // ── GET /usuarios/{id} ───────────────────────────────────────────────
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> buscarPorId(@PathVariable Integer id) {
+    public ResponseEntity<Usuario> buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
         return dao.findById(id)
+            .map(u -> sanitizarParaListagem(u, authId, authTipo))
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
@@ -180,7 +214,24 @@ public class UsuarioController {
 
     // ── PUT /usuarios/{id} ────────────────────────────────────────────────
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(@PathVariable Integer id, @RequestBody Usuario dados) {
+    public ResponseEntity<?> atualizar(
+            @PathVariable Integer id,
+            @RequestBody Usuario dados,
+            HttpServletRequest request) {
+
+        // Identidade injetada pelo JwtFilter após validar o token
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+
+        boolean ehDono       = authId != null && authId.equals(id);
+        boolean ehAdmin      = authTipo != null && authTipo == 1;
+        boolean ehTreinador  = authTipo != null && authTipo == 2;
+
+        // Só o próprio usuário, um Admin ou um Treinador podem editar este cadastro
+        if (!ehDono && !ehAdmin && !ehTreinador)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("erro", "Sem permissao para editar este usuario."));
+
         boolean trocandoSenha = dados.getSenha_usuario() != null && !dados.getSenha_usuario().isBlank();
         if (trocandoSenha && senhaFraca(dados.getSenha_usuario()))
             return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
@@ -189,12 +240,14 @@ public class UsuarioController {
             if (dados.getNome_usuario()      != null) u.setNome_usuario(dados.getNome_usuario());
             if (dados.getEmail_usuario()     != null) u.setEmail_usuario(dados.getEmail_usuario());
             if (dados.getLogin_usuario()     != null) u.setLogin_usuario(dados.getLogin_usuario());
-            if (dados.getTipo_usuario()      != null) u.setTipo_usuario(dados.getTipo_usuario());
+            // Somente Admin pode alterar o perfil (tipo_usuario) de um cadastro —
+            // evita que o próprio usuário ou um Treinador se autopromovam.
+            if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
             if (dados.getCel_usuario()       != null) u.setCel_usuario(dados.getCel_usuario());
-            if (dados.getCpf_usuario()       != null) u.setCpf_usuario(dados.getCpf_usuario());
+            if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) u.setCpf_usuario(dados.getCpf_usuario());
             if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
             if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
-            if (dados.getCep_usuario()       != null) u.setCep_usuario(dados.getCep_usuario());
+            if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
             if (dados.getCidade_usuario()    != null) u.setCidade_usuario(dados.getCidade_usuario());
             if (dados.getEstado_usuario()    != null) u.setEstado_usuario(dados.getEstado_usuario());
             if (dados.getFoto_usuario()      != null) u.setFoto_usuario(dados.getFoto_usuario());
@@ -246,7 +299,12 @@ public class UsuarioController {
 
     // ── DELETE /usuarios/{id} ─────────────────────────────────────────────
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Integer id) {
+    public ResponseEntity<?> excluir(@PathVariable Integer id, HttpServletRequest request) {
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+        if (authTipo == null || authTipo > 2)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("erro", "Somente Admin ou Treinador podem excluir usuarios."));
+
         if (!dao.existsById(id)) return ResponseEntity.notFound().build();
         dao.deleteById(id);
         return ResponseEntity.noContent().build();

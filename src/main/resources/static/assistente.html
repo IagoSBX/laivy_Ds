@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Assistente IA — LAIVY</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
 <style>
 :root {
   --verde:#00C97A; --azul:#0A1628; --azul2:#112244;
@@ -17,29 +18,29 @@
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
 
 /* ── SIDEBAR ── */
-.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;}
-.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
-.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);flex-shrink:0;}
-.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
-.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
-nav{flex:1;padding:20px 0;overflow-y:auto;}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
-.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
-.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
+
+
+
+
+
+
+
+
+
+
 .nav-icon{font-size:18px;width:20px;text-align:center;}
-.time-indicator{display:flex;align-items:center;gap:8px;padding:12px 24px;background:rgba(0,201,122,0.05);border-top:1px solid rgba(0,201,122,0.1);border-bottom:1px solid rgba(0,201,122,0.1);text-decoration:none;transition:background 0.2s;cursor:pointer;}
-.time-indicator:hover{background:rgba(0,201,122,0.1);}
-.ti-dot{width:8px;height:8px;border-radius:50%;background:var(--verde);flex-shrink:0;box-shadow:0 0 8px var(--verde);}
-.ti-nome{font-size:12px;font-weight:700;color:var(--branco);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ti-trocar{font-size:10px;color:var(--cinza);flex-shrink:0;}
-.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
-.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);}
-.user-name{font-size:13px;font-weight:600;}
-.user-role{font-size:11px;color:var(--cinza);}
-.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;}
-.btn-logout:hover{background:rgba(255,80,80,0.2);}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── MAIN ── */
 .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
@@ -107,69 +108,23 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
 .msg-erro .msg-bubble{background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.3);color:#FCA5A5;}
 
 /* ── MODAL LOGOUT ── */
-#logoutModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;}
-#logoutModal.show{display:flex;}
-.logout-card{background:#0D1E3C;border:1px solid rgba(0,201,122,0.2);border-radius:20px;padding:32px;text-align:center;max-width:320px;width:90%;}
-.logout-icon{font-size:40px;margin-bottom:12px;}
-.logout-titulo{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;margin-bottom:8px;}
-.logout-msg{font-size:14px;color:var(--cinza);line-height:1.5;margin-bottom:24px;}
-.logout-btns{display:flex;gap:10px;}
-.btn-logout-cancel{flex:1;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
-.btn-logout-confirm{flex:1;padding:10px;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);border-radius:10px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+
+
+
+
+
+
+
+
+
 </style>
 </head>
 <body>
 
 <!-- MODAL LOGOUT -->
-<div id="logoutModal">
-  <div class="logout-card">
-    <div class="logout-icon">👋</div>
-    <div class="logout-titulo">Sair do Sistema?</div>
-    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
-    <div class="logout-btns">
-      <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
-      <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
-    </div>
-  </div>
-</div>
+<div id="sidebar-placeholder"></div>
+<script src="js/sidebar.js"></script>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">L</div>
-    <div class="logo-texts"><div class="t1">LAIVY</div><div class="t2">TCC · ETEC 02/2026</div></div>
-  </div>
-  <nav>
-    <div class="nav-section">Principal</div>
-    <a href="dashboard.html"  class="nav-item"><span class="nav-icon">🏠</span> Dashboard</a>
-    <a href="usuarios.html"   class="nav-item"><span class="nav-icon">👤</span> Usuários</a>
-    <div class="nav-section">Admin</div>
-    <a href="cadastrar-treinador.html" class="nav-item"><span class="nav-icon">🏋️</span> Treinadores</a>
-    <div class="nav-section">Gestão</div>
-    <a href="exames.html"     class="nav-item"><span class="nav-icon">🩺</span> Exames</a>
-    <a href="desempenho.html" class="nav-item"><span class="nav-icon">📊</span> Desempenho</a>
-    <a href="atividades.html" class="nav-item"><span class="nav-icon">🏀</span> Atividades</a>
-    <a href="calendario.html" class="nav-item"><span class="nav-icon">📅</span> Calendário</a>
-    <a href="visitantes.html" class="nav-item"><span class="nav-icon">🏟️</span> Visitantes</a>
-    <div class="nav-section">IA</div>
-    <a href="assistente.html" class="nav-item active"><span class="nav-icon">🤖</span> Assistente</a>
-  </nav>
-  <a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">
-    <div class="ti-dot"></div>
-    <div class="ti-nome" id="timeNomeSidebar">—</div>
-    <div class="ti-trocar">Trocar</div>
-  </a>
-  <div class="sidebar-footer">
-    <div class="user-info">
-      <div class="user-avatar" id="avatarLetra">A</div>
-      <div>
-        <div class="user-name" id="nomeUsuario">—</div>
-        <div class="user-role" id="tipoUsuario">—</div>
-      </div>
-    </div>
-    <button class="btn-logout" onclick="abrirLogout()">Sair do Sistema</button>
-  </div>
-</aside>
 
 <!-- MAIN -->
 <main class="main">
@@ -200,7 +155,7 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
   <div class="chat-container">
     <div class="chat-box" id="chatBox">
       <div class="msg-bv">
-        <div class="ia-icon">🤖</div>
+        <div class="ia-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00C97A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></div>
         <h3>Assistente LAIVY</h3>
         <p>Olá! Posso responder perguntas sobre o sistema,<br>a arquitetura do projeto ou os dados do seu time.</p>
       </div>
@@ -277,7 +232,7 @@ function addMsg(texto, tipo) {
 
   const isBot  = tipo === 'bot';
   const isErro = tipo === 'erro';
-  const avatar = isBot ? '🤖' : (usuario.nome_usuario || 'U')[0].toUpperCase();
+  const avatar = isBot ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>' : (usuario.nome_usuario || 'U')[0].toUpperCase();
 
   const div = document.createElement('div');
   div.className = `msg ${isBot || isErro ? 'bot' : 'user'} ${isErro ? 'msg-erro' : ''}`;
@@ -306,7 +261,7 @@ function addTyping() {
   div.className = 'msg bot';
   div.id = 'typing';
   div.innerHTML = `
-    <div class="msg-avatar">🤖</div>
+    <div class="msg-avatar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></div>
     <div class="msg-bubble">
       <div class="typing">
         <div class="typing-dot"></div>

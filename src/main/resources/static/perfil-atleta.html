@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perfil do Atleta — LAIVY</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;}
@@ -13,23 +14,23 @@
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
 
 /* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
-.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
-.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
-.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
-.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
-nav{flex:1;padding:20px 0;overflow-y:auto;}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:0.6;}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);cursor:pointer;transition:all 0.2s;border-left:3px solid transparent;text-decoration:none;}
-.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
-.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
-.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
+
+
+
+
+
+
+
+
+
+
+
 .ti-info{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(0,201,122,0.06);border-radius:10px;margin-bottom:12px;border:1px solid rgba(0,201,122,0.1);}
 .ti-avatar{width:32px;height:32px;border-radius:8px;background:rgba(0,201,122,0.2);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:14px;color:var(--verde);overflow:hidden;flex-shrink:0;}
 .ti-avatar img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
-.ti-nome{font-size:12px;font-weight:700;color:var(--branco);}
+
 .ti-sub{font-size:10px;color:var(--cinza);}
-.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
 
 /* MAIN */
 .main{margin-left:var(--sidebar-w);flex:1;padding:36px 40px;min-height:100vh;}
@@ -100,45 +101,20 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
 /* EMPTY */
 .empty-state{text-align:center;padding:32px 0;color:var(--cinza);font-size:13px;}
 .empty-state .icon{font-size:28px;margin-bottom:8px;opacity:0.4;}
+
+
+
+
+
+
 </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-icon">L</div>
-    <div class="logo-texts">
-      <div class="t1" id="sidebarNomeTime">LAIVY</div>
-      <div class="t2">Sistema Esportivo</div>
-    </div>
-  </div>
-  <nav>
-    <div class="nav-section">Menu</div>
-    <a href="dashboard.html"  class="nav-item">Dashboard</a>
-    <a href="atividades.html" class="nav-item">Atividades</a>
-    <a href="calendario.html" class="nav-item">Calendário</a>
-    <a href="exames.html"     class="nav-item">Exames</a>
-    <a href="desempenho.html" class="nav-item">Desempenho</a>
-    <a href="visitantes.html" class="nav-item">Visitantes</a>
-    <div class="nav-section">Gestão</div>
-    <a href="usuarios.html"   class="nav-item active">Usuários</a>
-    <a href="times.html"      class="nav-item">Times</a>
-    <a href="escalacao.html"  class="nav-item">Escalação</a>
-     <div class="nav-section">IA</div>
-    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
- </nav>
-  <div class="sidebar-footer">
-    <div class="ti-info">
-      <div class="ti-avatar" id="sidebarAvatar">L</div>
-      <div>
-        <div class="ti-nome" id="sidebarTime">—</div>
-        <div class="ti-sub">Time selecionado</div>
-      </div>
-    </div>
-    <button class="btn-logout" onclick="logout()">Sair</button>
-  </div>
-</aside>
+<div id="sidebar-placeholder"></div>
+<script src="js/sidebar.js"></script>
+
 
 <!-- MAIN -->
 <main class="main">
@@ -212,7 +188,7 @@ nav{flex:1;padding:20px 0;overflow-y:auto;}
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ── JWT Auth Helper ─────────────────────────────────────────────────────
 function _authHeaders(extra) {
@@ -258,7 +234,7 @@ if (_session && _session.tipo_usuario === 3 && _session.id_usuario !== idAtleta)
     document.getElementById('sidebarTime').textContent = _ts.nome || '—';
     const av = document.getElementById('sidebarAvatar');
     if (_ts.logo) {
-      av.innerHTML = '<img src="'+_ts.logo+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">';
+      av.innerHTML = '<img src="'+esc(_ts.logo)+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">';
     } else {
       av.textContent = (_ts.nome||'L')[0].toUpperCase();
     }
@@ -283,6 +259,8 @@ function iniciais(nome) {
   const p = nome.trim().split(' ');
   return p.length >= 2 ? (p[0][0]+p[p.length-1][0]).toUpperCase() : p[0][0].toUpperCase();
 }
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function calcIdade(dataNasc) {
   if (!dataNasc) return '—';
@@ -317,7 +295,7 @@ async function init() {
     const ini = iniciais(u.nome_usuario);
     const av = document.getElementById('heroAvatar');
     if (u.foto_usuario) {
-      av.innerHTML = '<img src="'+u.foto_usuario+'" alt="">';
+      av.innerHTML = '<img src="'+esc(u.foto_usuario)+'" alt="">';
     } else {
       av.textContent = ini;
     }
@@ -365,7 +343,7 @@ function renderExames(list) {
             ${e.peso_usuario ? e.peso_usuario+'kg' : ''}
             ${e.altura_usuario ? ' · '+e.altura_usuario+'m' : ''}
             ${e.taxa_gordura_usuario ? ' · '+e.taxa_gordura_usuario+'% gordura' : ''}
-            ${e.observacoes_exame ? '<br><span style="color:var(--cinza)">'+e.observacoes_exame+'</span>' : ''}
+            ${e.observacoes_exame ? '<br><span style="color:var(--cinza)">'+esc(e.observacoes_exame)+'</span>' : ''}
           </div>
         </div>
         <span class="exame-status ${e.status_usuario===1?'st-apto':'st-inapto'}">
@@ -387,8 +365,8 @@ function renderAtividades(list) {
         <div class="atv-item">
           <div class="atv-dot" style="background:${cor}"></div>
           <div style="flex:1">
-            <div class="atv-nome">${a.nome_atividade||'—'}</div>
-            <div class="atv-data">${fmtData(a.data_atividade)}${a.lugar_atividade?' · '+a.lugar_atividade:''}</div>
+            <div class="atv-nome">${esc(a.nome_atividade||'—')}</div>
+            <div class="atv-data">${fmtData(a.data_atividade)}${a.lugar_atividade?' · '+esc(a.lugar_atividade):''}</div>
           </div>
           <span class="atv-tipo" style="background:${cor}22;color:${cor}">${tipo}</span>
         </div>`;

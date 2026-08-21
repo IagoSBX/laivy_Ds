@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Times — Sistema Esportivo</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -18,24 +19,24 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
 /* SIDEBAR */
-.sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0D1E3C,#091525);border-right:1px solid rgba(0,201,122,0.1);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;; overflow-y: auto; }
-.sidebar-logo{padding:0 24px 28px;border-bottom:1px solid rgba(0,201,122,0.1);display:flex;align-items:center;gap:12px;}
-.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:22px;color:var(--azul);}
-.logo-texts .t1{font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;}
-.logo-texts .t2{font-size:10px;color:var(--cinza);letter-spacing:1px;}
-nav{flex:1;padding:20px 0;overflow-y:auto;}
-.nav-section{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--cinza);padding:10px 24px 6px;opacity:.6;}
-.nav-item{display:flex;align-items:center;gap:12px;padding:12px 24px;font-size:14px;font-weight:600;color:rgba(240,244,255,0.6);transition:all .2s;border-left:3px solid transparent;text-decoration:none;}
-.nav-item:hover{color:var(--branco);background:rgba(0,201,122,0.06);border-left-color:rgba(0,201,122,0.4);}
-.nav-item.active{color:var(--verde);background:rgba(0,201,122,0.1);border-left-color:var(--verde);}
-.sidebar-footer{padding:20px 24px;border-top:1px solid rgba(0,201,122,0.1);}
-.user-info{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--verde),#00A865);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--azul);}
-.user-avatar.has-foto{background:none!important;overflow:hidden;padding:0;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-.user-name{font-size:13px;font-weight:600;}.user-role{font-size:11px;color:var(--cinza);}
-.btn-logout{width:100%;padding:9px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);border-radius:8px;color:#FF6B6B;font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;}
-.btn-logout:hover{background:rgba(255,80,80,0.2);}
+
+
+
 /* MAIN */
 .main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
 /* PAGE HEADER */
@@ -73,7 +74,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 /* TOOLBAR */
 .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
 .search-wrap{position:relative;}
-.search-wrap::before{content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;}
+.search-wrap::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238899BB' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center/contain;}
 .search-bar{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 16px 9px 36px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;width:240px;outline:none;transition:border-color .2s;}
 .search-bar:focus{border-color:var(--verde);}
 .search-bar::placeholder{color:rgba(136,153,187,0.4);}
@@ -145,16 +146,16 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 @keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
 /* THEME TOGGLE */
 /* LOGOUT MODAL */
-#logoutModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:99998;display:none;align-items:center;justify-content:center;}
-#logoutModal.show{display:flex;}
-.logout-card{background:linear-gradient(135deg,#0D1E3C,#112244);border:1px solid rgba(255,80,80,.25);border-radius:20px;padding:36px 40px;text-align:center;max-width:360px;width:90%;animation:slideUp .25s ease;}
+
+
+
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.logout-icon{font-size:48px;margin-bottom:16px;}
-.logout-titulo{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;margin-bottom:8px;}
-.logout-msg{font-size:14px;color:var(--cinza);margin-bottom:28px;line-height:1.6;}
-.logout-btns{display:flex;gap:12px;justify-content:center;}
-.btn-logout-cancel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;}
-.btn-logout-confirm{background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.35);color:#FF6B6B;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:2px;padding:11px 28px;border-radius:10px;cursor:pointer;}
+
+
+
+
+
+
 /* LIGHT THEME */
 /* ── FORM UX — Novo Time ── */
 .field-hint{font-size:11px;margin-top:4px;display:none;}
@@ -203,53 +204,20 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .tr-check{width:18px;height:18px;border-radius:50%;
   background:var(--verde);display:none;align-items:center;justify-content:center;flex-shrink:0;}
 .tr-option.selected .tr-check{display:flex;}
+
+
+
+
+
+
 </style>
 </head>
 <body>
 
 <!-- LOGOUT MODAL -->
-<div id="logoutModal">
-  <div class="logout-card">
-    <div class="logout-icon">👋</div>
-    <div class="logout-titulo">Sair do Sistema?</div>
-    <div class="logout-msg">Sua sessão será encerrada.<br>Deseja realmente sair?</div>
-    <div class="logout-btns">
-      <button class="btn-logout-cancel" onclick="fecharLogout()">Cancelar</button>
-      <button class="btn-logout-confirm" onclick="confirmarLogout()">Sair</button>
-    </div>
-  </div>
-</div>
+<div id="sidebar-placeholder"></div>
+<script src="js/sidebar.js"></script>
 
-<!-- THEME TOGGLE -->
-<aside class="sidebar">
-  <div class="sidebar-logo" id="sidebarLogo">
- <div class="logo-icon" id="sidebarLogoIcon">L</div>
- <div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>
-</div>
-  <nav>
-    <div class="nav-section">Principal</div>
-    <a href="dashboard.html" class="nav-item">Dashboard</a>
-    <a href="usuarios.html"  class="nav-item">Usuários</a>
-    <div class="nav-section">Admin</div>
-    <a href="cadastrar-treinador.html" class="nav-item">Treinadores</a>
-    <div class="nav-section">Gestão</div>
-    <a href="exames.html"     class="nav-item">Exames</a>
-    <a href="desempenho.html" class="nav-item">Desempenho</a>
-    <a href="atividades.html" class="nav-item">Atividades</a>
-    <a href="escalacao.html"  class="nav-item">Escalação</a>
-    <a href="calendario.html" class="nav-item">Calendário</a>
-    <a href="visitantes.html" class="nav-item">Visitantes</a>
-     <div class="nav-section">IA</div>
-    <a href="assistente.html" class="nav-item"><span class="nav-icon">🤖</span> Assistente</a>
- </nav>
-  <div class="sidebar-footer">
-    <div class="user-info">
-      <div class="user-avatar" id="avatarLetra">A</div>
-      <div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>
-    </div>
-    <button class="btn-logout" onclick="logout()">Sair do Sistema</button>
-  </div>
-</aside>
 
 <main class="main">
   <div class="page-header">
@@ -339,7 +307,7 @@ if (!user.id_usuario) window.location.href='login.html';
 document.getElementById('nomeUsuario').textContent  = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent  = (user.nome_usuario||'U')[0].toUpperCase();
 document.getElementById('tipoUsuario').textContent  = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario]||'—';
-if(user.foto_usuario){ var av=document.getElementById('avatarLetra'); av.classList.add('has-foto'); av.innerHTML='<img src="'+user.foto_usuario+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+if(user.foto_usuario){ var av=document.getElementById('avatarLetra'); av.classList.add('has-foto'); av.innerHTML='<img src="'+esc(user.foto_usuario)+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
 
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin  = user.tipo_usuario === 1 || user.tipo_usuario === 2;
@@ -359,10 +327,11 @@ let dados = [], todosUsuarios = [], todasAtividades = [];
 let idParaDel = null, idParaEditarModal = null, timeAtualModal = null;
 
 // ── TOAST ──
-function toast(msg, ok=true){ const el=document.createElement('div'); el.className='toast-item'+(ok?'':' erro'); el.innerHTML=(ok?'✅':'❌')+' '+msg; document.getElementById('toastWrap').appendChild(el); setTimeout(()=>el.remove(),3200); }
+function toast(msg, ok=true){ const el=document.createElement('div'); el.className='toast-item'+(ok?'':' erro'); el.innerHTML=(ok?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>')+' '+msg; document.getElementById('toastWrap').appendChild(el); setTimeout(()=>el.remove(),3200); }
 
 // ── INICIAIS ──
 function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 // ── TABS ──
 function mudarTab(id, btn){
@@ -426,12 +395,12 @@ function carregarSelectTreinador(usuarios){
     const cor = u.tipo_usuario===1 ? '#00C97A' : '#4EC9FF';
     const label = u.tipo_usuario===1 ? 'Admin' : 'Treinador';
     const avHTML = u.foto_usuario
-      ? '<img src="'+u.foto_usuario+'" alt="">'
-      : '<span style="color:'+cor+'">'+ini(u.nome_usuario)+'</span>';
-    return '<div class="tr-option" id="tr-opt-'+u.id_usuario+'" data-tid="'+u.id_usuario+'" data-tnome="'+u.nome_usuario.replace(/"/g,'&quot;')+'" onclick="selecionarTreinador(this.dataset.tid,this.dataset.tnome)">'
+      ? '<img src="'+esc(u.foto_usuario)+'" alt="">'
+      : '<span style="color:'+cor+'">'+esc(ini(u.nome_usuario))+'</span>';
+    return '<div class="tr-option" id="tr-opt-'+u.id_usuario+'" data-tid="'+u.id_usuario+'" data-tnome="'+esc(u.nome_usuario)+'" onclick="selecionarTreinador(this.dataset.tid,this.dataset.tnome)">'
       +'<div class="tr-av" style="background:'+bg+'">'+avHTML+'</div>'
       +'<div style="flex:1;min-width:0">'
-        +'<div class="tr-nome">'+u.nome_usuario+'</div>'
+        +'<div class="tr-nome">'+esc(u.nome_usuario)+'</div>'
         +'<div class="tr-tipo">'+label+'</div>'
       +'</div>'
       +'<div class="tr-check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
@@ -482,13 +451,13 @@ function renderGrid(lista){
     const treinos = ativs.filter(a=>a.tipo_atividade===1).length;
     const jogos   = ativs.filter(a=>a.tipo_atividade===2).length;
     const logoHTML = t.logo_time
-      ? '<img src="'+t.logo_time+'" alt="">'
-      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+ini(t.nome_time)+'</span>';
+      ? '<img src="'+esc(t.logo_time)+'" alt="">'
+      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+esc(ini(t.nome_time))+'</span>';
     const ativo = t.ativo_time===1||t.ativo_time==='1';
-    const treinNome = t.treinador?.nome_usuario || '—';
+    const treinNome = esc(t.treinador?.nome_usuario || '—');
     const btnAdmin = isAdmin
       ? '<a href="editar-time.html?id='+t.id_time+'" class="btn-acao-sm btn-edit" onclick="event.stopPropagation()" style="text-decoration:none">Editar</a>'
-        +'<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel('+t.id_time+',\''+t.nome_time+'\')">Excluir</button>'
+        +'<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel('+t.id_time+',\''+esc(t.nome_time)+'\')">Excluir</button>'
       : '';
     return '<div class="time-card" onclick="verTime('+t.id_time+')">'
       +'<div class="time-card-banner" style="background:'+cor+'"></div>'
@@ -497,10 +466,10 @@ function renderGrid(lista){
           +'<div class="time-logo" style="background:'+cor+'22;border:2px solid '+cor+'44">'+logoHTML+'</div>'
           +'<div style="flex:1;min-width:0">'
             +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-              +'<div class="time-nome">'+t.nome_time+'</div>'
+              +'<div class="time-nome">'+esc(t.nome_time)+'</div>'
               +(ativo?'<span class="badge-ativo">Ativo</span>':'<span class="badge-inativo">Inativo</span>')
             +'</div>'
-            +'<div class="time-modalidade">'+(t.modalidade_time||'—')+' &bull; '+(t.categoria_time||'—')+'</div>'
+            +'<div class="time-modalidade">'+esc(t.modalidade_time||'—')+' &bull; '+esc(t.categoria_time||'—')+'</div>'
           +'</div>'
         +'</div>'
         +'<div class="time-stats">'
@@ -530,8 +499,8 @@ function verTime(id){
   logo.style.background = cor+'22';
   logo.style.border = '2px solid '+cor+'44';
   logo.innerHTML = t.logo_time
-    ? '<img src="'+t.logo_time+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px">'
-    : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+ini(t.nome_time)+'</span>';
+    ? '<img src="'+esc(t.logo_time)+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px">'
+    : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+esc(ini(t.nome_time))+'</span>';
 
   document.getElementById('modalTimeNome').textContent = t.nome_time;
   document.getElementById('modalTimeSub').textContent  = (t.modalidade_time||'—')+' · '+(t.categoria_time||'—')+' · '+(t.treinador?.nome_usuario||'—');
@@ -551,14 +520,14 @@ function verTime(id){
       const avBg = {1:'rgba(0,201,122,0.2)',2:'rgba(78,201,255,0.2)',3:'rgba(255,176,32,0.2)'}[u.tipo_usuario]||'rgba(136,136,136,0.2)';
       const avCor= {1:'#00C97A',2:'#4EC9FF',3:'#FFB020'}[u.tipo_usuario]||'#888';
       const avHTML = u.foto_usuario
-        ? '<img src="'+u.foto_usuario+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
-        : ini(u.nome_usuario);
+        ? '<img src="'+esc(u.foto_usuario)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : esc(ini(u.nome_usuario));
       const rmBtn = isAdmin
         ? '<button class="membro-remove" onclick="removerMembro('+id+','+u.id_usuario+')">Remover</button>'
         : '';
       return '<div class="membro-row">'
         +'<div class="membro-av" style="background:'+avBg+';color:'+avCor+'">'+avHTML+'</div>'
-        +'<div style="flex:1;min-width:0"><div class="membro-nome">'+u.nome_usuario+'</div>'
+        +'<div style="flex:1;min-width:0"><div class="membro-nome">'+esc(u.nome_usuario)+'</div>'
         +'<div class="membro-tipo">'+({1:'Administrador',2:'Treinador',3:'Atleta'}[u.tipo_usuario]||'—')+'</div></div>'
         +rmBtn
       +'</div>';
@@ -588,9 +557,9 @@ function renderAtletasDisp(timeId){
   ad.innerHTML = semTime.map(u =>
     '<div class="atleta-add-row">'
     +'<div class="membro-av" style="background:rgba(255,176,32,0.2);color:#FFB020">'
-    +(u.foto_usuario?'<img src="'+u.foto_usuario+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">':ini(u.nome_usuario))
+    +(u.foto_usuario?'<img src="'+esc(u.foto_usuario)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">':esc(ini(u.nome_usuario)))
     +'</div>'
-    +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+u.nome_usuario+'</div></div>'
+    +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.nome_usuario)+'</div></div>'
     +'<button class="add-btn" onclick="adicionarMembro('+timeId+','+u.id_usuario+')">+ Add</button>'
     +'</div>'
   ).join('');
@@ -698,7 +667,7 @@ function validarFormTime(){
     if (ts.logo) {
       icon.style.background = 'none';
       icon.style.padding = '0';
-      icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+      icon.innerHTML = '<img src="' + esc(ts.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
     } else {
       var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
       icon.textContent = ini;

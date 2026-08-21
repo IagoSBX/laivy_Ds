@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Selecionar Time — LAIVY</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
 <style>
 :root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -516,7 +517,7 @@ document.getElementById('pillTipo').textContent = ({1:'Administrador',2:'Treinad
 
 const pillAv = document.getElementById('pillAv');
 if (user.foto_usuario) {
-  pillAv.innerHTML = '<img src="' + user.foto_usuario + '" alt="">';
+  pillAv.innerHTML = '<img src="' + esc(user.foto_usuario) + '" alt="">';
 } else {
   pillAv.textContent = (user.nome_usuario || 'U')[0].toUpperCase();
 }
@@ -531,6 +532,7 @@ const API_USERS = '/usuarios';
 const API_ATIV  = '/atividades';
 
 function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function selecionarTime(timeId, timeNome, timeCor, timeLogo) {
   // Salva na sessão a cada login
@@ -539,7 +541,7 @@ function selecionarTime(timeId, timeNome, timeCor, timeLogo) {
   }));
   // Loading antes de entrar
   document.getElementById('timesContainer').innerHTML =
-    '<div class="loading-state"><div class="loading-spin"></div><div>Entrando em ' + timeNome + '...</div></div>';
+    '<div class="loading-state"><div class="loading-spin"></div><div>Entrando em ' + esc(timeNome) + '...</div></div>';
   setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
 }
 
@@ -556,16 +558,15 @@ async function carregarTimes() {
     todosTimes = lista; // expose to popup
 
     if (isAtleta) {
-      // Atleta só vê seu próprio time e é redirecionado automaticamente
-      const meuTime = lista.find(t =>
+      // Atleta só vê e seleciona o próprio time
+      lista = lista.filter(t =>
         usuarios.find(u => u.id_usuario === user.id_usuario && u.time && u.time.id_time === t.id_time)
       );
-      if (meuTime) {
-        selecionarTime(meuTime.id_time, meuTime.nome_time, meuTime.cor_time, meuTime.logo_time);
+      if (!lista.length) {
+        renderSemTime();
         return;
       }
-      // Atleta sem time
-      renderSemTime();
+      renderGrid(lista, usuarios, atividades);
       return;
     }
 
@@ -582,11 +583,6 @@ async function carregarTimes() {
       });
       if (lista.length === 0) {
         renderSemTime();
-        return;
-      }
-      if (lista.length === 1) {
-        // Só um time — entra direto sem escolher
-        selecionarTime(lista[0].id_time, lista[0].nome_time, lista[0].cor_time, lista[0].logo_time);
         return;
       }
     }
@@ -628,17 +624,17 @@ function renderGrid(times, usuarios, atividades) {
     const jogos    = atividTs.filter(a => a.tipo_atividade === 2).length;
 
     const logoHTML = t.logo_time
-      ? '<img src="' + t.logo_time + '" alt="">'
-      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:20px">' + ini(t.nome_time) + '</span>';
+      ? '<img src="' + esc(t.logo_time) + '" alt="">'
+      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:20px">' + esc(ini(t.nome_time)) + '</span>';
     const logoEncoded = t.logo_time ? encodeURIComponent(t.logo_time) : '';
 
-    return '<div class="time-card" onclick="selecionarTime(' + t.id_time + ',\'' + t.nome_time.replace(/'/g,"\\u2019") + '\',\'' + cor + '\',decodeURIComponent(\'' + logoEncoded + '\'))">'
+    return '<div class="time-card" onclick="selecionarTime(' + t.id_time + ',\'' + esc(t.nome_time) + '\',\'' + esc(cor) + '\',decodeURIComponent(\'' + logoEncoded + '\'))">'
       + '<div class="tc-banner" style="background:' + cor + '"></div>'
       + '<div class="tc-body">'
         + '<div class="tc-top">'
           + '<div class="tc-logo" style="background:' + cor + '22;border:2px solid ' + cor + '44">' + logoHTML + '</div>'
-          + '<div><div class="tc-nome">' + t.nome_time + '</div>'
-          + '<div class="tc-sub">' + (t.modalidade_time || '—') + ' &bull; ' + (t.categoria_time || '—') + '</div></div>'
+          + '<div><div class="tc-nome">' + esc(t.nome_time) + '</div>'
+          + '<div class="tc-sub">' + esc(t.modalidade_time || '—') + ' &bull; ' + esc(t.categoria_time || '—') + '</div></div>'
         + '</div>'
         + '<div class="tc-stats">'
           + '<div class="tc-stat"><div class="tc-stat-num" style="color:' + cor + '">' + atletas + '</div><div class="tc-stat-label">Atletas</div></div>'
@@ -648,7 +644,7 @@ function renderGrid(times, usuarios, atividades) {
         + '<div class="tc-treinador">'
           + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/></svg>'
           + ' Treinador: <strong>'
-          + (t.treinador
+          + esc(t.treinador
               ? t.treinador.nome_usuario
               : (membros.find(u => u.tipo_usuario === 2)?.nome_usuario || '—'))
           + '</strong>'
@@ -709,11 +705,11 @@ function carregarTreinadores() {
       const lbl = u.tipo_usuario===1?'Admin':'Treinador';
       const ini2 = (u.nome_usuario||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
       const avHTML = u.foto_usuario
-        ? '<img src="'+u.foto_usuario+'" alt="">'
-        : '<span style="color:'+cor+'">'+ini2+'</span>';
-      return '<div class="tr-option" data-tid="'+u.id_usuario+'" data-tnome="'+u.nome_usuario.replace(/"/g,'&quot;')+'" onclick="fpSelecionarTrein(this.dataset.tid,this.dataset.tnome)">'
+        ? '<img src="'+esc(u.foto_usuario)+'" alt="">'
+        : '<span style="color:'+cor+'">'+esc(ini2)+'</span>';
+      return '<div class="tr-option" data-tid="'+u.id_usuario+'" data-tnome="'+esc(u.nome_usuario)+'" onclick="fpSelecionarTrein(this.dataset.tid,this.dataset.tnome)">'
         +'<div class="tr-av" style="background:'+bg+'">'+avHTML+'</div>'
-        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+u.nome_usuario+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(u.nome_usuario)+'</div>'
         +'<div style="font-size:10px;color:var(--cinza)">'+lbl+'</div></div>'
         +'<div class="tr-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
       +'</div>';
@@ -820,8 +816,8 @@ function ptRenderTimeGrid() {
     const cor = t.cor_time || '#00C97A';
     return '<div class="pt-ts" data-tid="' + t.id_time + '" onclick="ptSelecionarTime(this)">'
       + '<div class="pt-ts-dot" style="background:' + cor + '"></div>'
-      + '<div style="flex:1;min-width:0"><div class="pt-ts-nome">' + t.nome_time + '</div>'
-      + '<div class="pt-ts-cat">' + (t.categoria_time || '—') + '</div></div>'
+      + '<div style="flex:1;min-width:0"><div class="pt-ts-nome">' + esc(t.nome_time) + '</div>'
+      + '<div class="pt-ts-cat">' + esc(t.categoria_time || '—') + '</div></div>'
       + '<div class="pt-ts-chk"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
       + '</div>';
   }).join('');
@@ -970,7 +966,7 @@ if (isAdmin) {
 
 // ── POLÍTICA: filtrar times por perfil ──
 // (já está em carregarTimes mas reforçar aqui)
-// Treinador: já é redirecionado direto se tem 1 time → lógica existente ok
+// Treinador: vê os times aos quais está vinculado (mesmo que seja só um) e escolhe
 // Admin: vê todos e pode criar treinadores → botão acima
 
 // ── FP LOGO UPLOAD ──
