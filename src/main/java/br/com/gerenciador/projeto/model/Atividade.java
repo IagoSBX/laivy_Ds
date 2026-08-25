@@ -1,5 +1,6 @@
 package br.com.gerenciador.projeto.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,6 +41,12 @@ public class Atividade {
 
     @Column(name = "placar_contra")
     private Integer placar_contra;
+
+    @Column(name = "recorrente")
+    private Boolean recorrente; // true = repete semanalmente no mesmo dia/hora de data_atividade
+
+    @Column(name = "fim_recorrencia")
+    private LocalDate fim_recorrencia; // opcional: data até quando a recorrência se repete
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_usuario")
@@ -83,6 +90,12 @@ public class Atividade {
 
     public Integer getPlacar_contra() { return placar_contra; }
     public void setPlacar_contra(Integer placar_contra) { this.placar_contra = placar_contra; }
+
+    public Boolean getRecorrente() { return recorrente; }
+    public void setRecorrente(Boolean recorrente) { this.recorrente = recorrente; }
+
+    public LocalDate getFim_recorrencia() { return fim_recorrencia; }
+    public void setFim_recorrencia(LocalDate fim_recorrencia) { this.fim_recorrencia = fim_recorrencia; }
 
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }

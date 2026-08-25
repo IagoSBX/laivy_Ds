@@ -6,8 +6,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <style>
 :root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;
  --t1:#00C97A;--t2:#FFB020;--t3:#A78FFF;--t4:#4EC9FF;}
@@ -90,7 +88,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .cards-wrapper{display:none;}.cards-wrapper.visible{display:block;}
 .empty-state{text-align:center;padding:48px 24px;color:var(--cinza);}
 .empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
-#calendar{width:100%;}
 .fc-theme-standard td,.fc-theme-standard th{border-color:rgba(255,255,255,0.05)!important;}
 .fc-scrollgrid{border:none!important;}
 .fc-col-header-cell{background:rgba(9,21,37,0.8)!important;padding:10px 0!important;}
@@ -255,13 +252,11 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="stat-card" onclick="filtrarTipo('')"><div class="stat-dot" style="background:var(--cinza)"></div><div><div class="stat-num" id="st-total" style="color:var(--branco)">—</div><div class="stat-label">Total</div></div></div>
  <div class="stat-card" onclick="filtrarTipo('1')"><div class="stat-dot" style="background:var(--t1)"></div><div><div class="stat-num" id="st-t1" style="color:var(--t1)">—</div><div class="stat-label">Treinos</div></div></div>
  <div class="stat-card" onclick="filtrarTipo('2')"><div class="stat-dot" style="background:var(--t2)"></div><div><div class="stat-num" id="st-t2" style="color:var(--t2)">—</div><div class="stat-label">Jogos</div></div></div>
- <div class="stat-card" onclick="filtrarTipo('4')"><div class="stat-dot" style="background:var(--t4)"></div><div><div class="stat-num" id="st-t4" style="color:var(--t4)">—</div><div class="stat-label">Competições</div></div></div>
  </div>
 
  <div class="tabs">
  <button class="tab active" onclick="mudarTab('lista',this)"> Lista</button>
  <button class="tab" onclick="mudarTab('form',this)"> Nova Atividade</button>
- <button class="tab" onclick="mudarTab('cal',this)"> Calendário</button>
  </div>
 
  <div class="secao visible" id="tab-lista">
@@ -271,7 +266,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <select class="select-filtro" id="filtroTipo" onchange="renderizar()">
  <option value="">Todos os tipos</option>
  <option value="1"> Treino</option><option value="2"> Jogo</option>
- <option value="3"> Evento</option><option value="4"> Competição</option>
+ <option value="3"> Evento</option>
  </select>
  <select class="select-filtro" id="filtroStatus" onchange="renderizar()">
  <option value="">Qualquer status</option>
@@ -310,7 +305,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="col-md-2"><label class="form-label">Tipo</label>
  <select class="form-select" name="tipo_atividade" id="tipoAtividade" onchange="toggleOponente(this.value)">
  <option value="1"> Treino</option><option value="2"> Jogo</option>
- <option value="3"> Evento</option><option value="4"> Competição</option>
+ <option value="3"> Evento</option>
  </select>
  </div>
  <div class="col-md-2"><label class="form-label">Status</label>
@@ -321,6 +316,16 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <label class="form-label">Time Oponente / Adversário</label>
  <input class="form-control" name="time_oponente" id="inpOponente" placeholder="Ex: Escola Municipal ABC, Time Estrela...">
  </div>
+ <div class="col-12">
+ <div class="form-check" style="display:flex;align-items:center;gap:8px;">
+ <input type="checkbox" class="form-check-input" name="recorrente" id="chkRecorrente" style="margin:0;cursor:pointer;" onchange="toggleRecorrencia(this.checked)">
+ <label class="form-check-label" for="chkRecorrente" style="cursor:pointer;font-size:13px;">🔁 Repetir toda semana no mesmo dia e horário</label>
+ </div>
+ </div>
+ <div class="col-md-4" id="campoFimRecorrencia" style="display:none">
+ <label class="form-label">Repetir até (opcional)</label>
+ <input type="date" class="form-control" name="fim_recorrencia">
+ </div>
  <div class="col-12 d-flex gap-2 mt-2">
  <button type="submit" class="btn-cadastrar" id="btnSubmit">Cadastrar Atividade</button>
  <button type="button" class="btn-cancelar-form" onclick="cancelarForm()">Cancelar</button>
@@ -330,7 +335,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  </div>
  </div>
 
- <div class="secao" id="tab-cal"><div class="card-dark"><div id="calendar"></div></div></div>
 </main>
 
 <!-- MODAL VER -->
@@ -584,7 +588,7 @@ const TIPO={1:{label:'Treino',emoji:'🏋️',cor:'#00C97A',bg:'rgba(0,201,122,0
 const api='/atividades';
 const apiU='/usuarios';
 const apiEsc='/escalacoes';
-let dados=[],visao='cards',calRef=null,idParaDel=null;
+let dados=[],visao='cards',idParaDel=null;
 let todosAtletas=[],escAtivId=null,escDados=[],escAtletaSel=null;
 
 const POS_BASK={'Armador':{l:52,t:50},'Ala-Armador':{l:65,t:22},'Ala':{l:65,t:78},'Ala-Pivo':{l:78,t:28},'Pivo':{l:81,t:50}};
@@ -611,7 +615,7 @@ authFetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
 
 function atualizarStats(){document.getElementById('st-total').textContent=dados.length;document.getElementById('st-t1').textContent=dados.filter(a=>a.tipo_atividade===1).length;document.getElementById('st-t2').textContent=dados.filter(a=>a.tipo_atividade===2).length;document.getElementById('st-t4').textContent=dados.filter(a=>a.tipo_atividade===4).length;}
 function filtrarTipo(v){document.getElementById('filtroTipo').value=v;mudarTab('lista',document.querySelectorAll('.tab')[0]);renderizar();}
-function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(localStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));authFetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();if(calRef)calRef.refetchEvents();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
+function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(localStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));authFetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
 
 function renderizar(){
  const busca=document.getElementById('busca').value.toLowerCase();
@@ -634,7 +638,7 @@ function renderCards(lista){
  const stBg=a.status_atividade===2?'rgba(78,201,255,0.12)':a.status_atividade===1?'rgba(0,201,122,0.15)':'rgba(255,80,80,0.12)';
  const nE=esc(a.nome_atividade);
  return '<div class="ativ-card" style="border-left-color:'+t.cor+'" onclick="verDetalhes('+a.id_atividade+')">'
- +'<div class="ativ-card-top"><div class="ativ-card-nome">'+nE+'</div>'
+ +'<div class="ativ-card-top"><div class="ativ-card-nome">'+(a.recorrente?'🔁 ':'')+nE+'</div>'
  +'<span class="ativ-tipo-badge" style="background:'+t.bg+';color:'+t.cor+'">'+t.emoji+' '+t.label+'</span></div>'
  +'<div class="ativ-card-meta"><span> '+data+'</span><span> '+esc(a.lugar_atividade||'Sem local')+'</span><span> '+esc(a.usuario?.nome_usuario||'—')+'</span>'+(a.time_oponente?'<span> '+esc(a.time_oponente)+'</span>':'')+'</div>'
  +'<div class="ativ-card-footer">'
@@ -676,19 +680,20 @@ function renderTabela(lista){
 }
 
 function mudarVisao(v){visao=v;document.getElementById('cardsWrapper').classList.toggle('visible',v==='cards');document.getElementById('tabelaWrapper').classList.toggle('visible',v==='tabela');document.getElementById('vCards').classList.toggle('active',v==='cards');document.getElementById('vTabela').classList.toggle('active',v==='tabela');}
-function mudarTab(id,btn){if(id==='form'&&isAtleta){toast('Acesso restrito: você não tem permissão para criar atividades.',false);return;}document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('visible');btn.classList.add('active');if(id==='cal'&&calRef)calRef.updateSize();}
+function mudarTab(id,btn){if(id==='form'&&isAtleta){toast('Acesso restrito: você não tem permissão para criar atividades.',false);return;}document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('visible');btn.classList.add('active');}
 
 document.getElementById('formAtiv').addEventListener('submit',function(e){
  e.preventDefault();
  if(isAtleta){ toast('Acesso restrito.', false); return; }
  const d=Object.fromEntries(new FormData(this).entries());
- const payload={nome_atividade:d.nome_atividade,lugar_atividade:d.lugar_atividade,data_atividade:d.data_atividade,tipo_atividade:parseInt(d.tipo_atividade),status_atividade:parseInt(d.status_atividade),time_oponente:d.time_oponente||null,usuario:{id_usuario:parseInt(d.usuario_id)}};
+ const recorrente=document.getElementById('chkRecorrente').checked;
+ const payload={nome_atividade:d.nome_atividade,lugar_atividade:d.lugar_atividade,data_atividade:d.data_atividade,tipo_atividade:parseInt(d.tipo_atividade),status_atividade:parseInt(d.status_atividade),time_oponente:d.time_oponente||null,usuario:{id_usuario:parseInt(d.usuario_id)},recorrente:recorrente,fim_recorrencia:recorrente?(d.fim_recorrencia||null):null};
  const id=document.getElementById('editId').value;
  authFetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
  .then(()=>{toast(id?'Atualizada!':'Cadastrada!');cancelarForm();carregar();}).catch(()=>toast('Erro.',false));
 });
 
-function cancelarForm(){document.getElementById('formAtiv').reset();document.getElementById('editId').value='';document.getElementById('formTitulo').textContent=' Nova Atividade';document.getElementById('btnSubmit').textContent='Cadastrar Atividade';mudarTab('lista',document.querySelectorAll('.tab')[0]);}
+function cancelarForm(){document.getElementById('formAtiv').reset();document.getElementById('editId').value='';document.getElementById('formTitulo').textContent=' Nova Atividade';document.getElementById('btnSubmit').textContent='Cadastrar Atividade';toggleRecorrencia(false);mudarTab('lista',document.querySelectorAll('.tab')[0]);}
 
 function verDetalhes(id){
  const a=dados.find(x=>x.id_atividade===id);if(!a)return;
@@ -697,6 +702,7 @@ function verDetalhes(id){
  const hora=a.data_atividade?new Date(a.data_atividade).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';
  document.getElementById('modalVerBody').innerHTML='<div style="background:'+t.bg+';border:1px solid '+t.cor+'33;border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px"><span style="font-size:28px">'+t.emoji+'</span><div><div style="font-family:\'Bebas Neue\',cursive;font-size:22px;color:'+t.cor+';letter-spacing:1px">'+t.label+'</div><div style="font-size:12px;color:'+t.cor+';opacity:0.7">'+esc(a.nome_atividade)+'</div></div></div><div class="detalhe-grid"><div class="detalhe-item full"><div class="detalhe-label">Nome</div><div class="detalhe-valor">'+esc(a.nome_atividade)+'</div></div><div class="detalhe-item"><div class="detalhe-label">Data</div><div class="detalhe-valor" style="font-size:12px">'+data+'</div></div><div class="detalhe-item"><div class="detalhe-label">Horário</div><div class="detalhe-valor">'+hora+'</div></div><div class="detalhe-item"><div class="detalhe-label">Local</div><div class="detalhe-valor">'+esc(a.lugar_atividade||'—')+'</div></div><div class="detalhe-item"><div class="detalhe-label">Responsável</div><div class="detalhe-valor">'+esc(a.usuario?.nome_usuario||'—')+'</div></div>'
  +'<div class="detalhe-item"><div class="detalhe-label">Status</div><div class="detalhe-valor">'+(a.status_atividade===2?' Finalizado':a.status_atividade===1?' Ativo':' Cancelado')+'</div></div>'
+ +(a.recorrente?'<div class="detalhe-item full" style="background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.15)"><div class="detalhe-label">Recorrência</div><div class="detalhe-valor">🔁 Toda '+(a.data_atividade?new Date(a.data_atividade).toLocaleDateString('pt-BR',{weekday:'long'}):'semana')+(a.fim_recorrencia?', até '+new Date(a.fim_recorrencia+'T00:00:00').toLocaleDateString('pt-BR'):'')+'</div></div>':'')
  +(a.tipo_atividade===2?'<div class="detalhe-item full" style="background:rgba(255,176,32,0.06);border-color:rgba(255,176,32,0.15)"><div class="detalhe-label">Adversário</div><div class="detalhe-valor">'+esc(a.time_oponente||'Não informado')+'</div></div>'
  +(a.status_atividade===2&&a.placar_pro!=null?'<div class="detalhe-item full" style="background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.15);text-align:center"><div class="detalhe-label">Placar Final</div><div class="detalhe-valor" style="font-family:Bebas Neue,cursive;font-size:26px;color:#00C97A">'+a.placar_pro+' × '+(a.placar_contra||0)+'</div></div>':'')
  :'')
@@ -706,14 +712,16 @@ function verDetalhes(id){
 
 function abrirEdicao(id){ if(isAtleta){ toast('Acesso restrito.', false); return; } const a=dados.find(x=>x.id_atividade===id);if(!a)return;const f=document.getElementById('formAtiv');f.nome_atividade.value=a.nome_atividade||'';f.lugar_atividade.value=a.lugar_atividade||'';f.data_atividade.value=a.data_atividade?a.data_atividade.slice(0,16):'';f.tipo_atividade.value=a.tipo_atividade||1;f.status_atividade.value=a.status_atividade||0;
  if(f.time_oponente) f.time_oponente.value=a.time_oponente||'';
+ document.getElementById('chkRecorrente').checked=!!a.recorrente;
+ f.fim_recorrencia.value=a.fim_recorrencia||'';
+ toggleRecorrencia(!!a.recorrente);
  toggleOponente(a.tipo_atividade||1);document.getElementById('selectResp').value=a.usuario?.id_usuario||'';document.getElementById('editId').value=a.id_atividade;document.getElementById('formTitulo').textContent=' Editar Atividade';document.getElementById('btnSubmit').textContent='Salvar Alterações';mudarTab('form',document.querySelectorAll('.tab')[1]);window.scrollTo({top:0,behavior:'smooth'});}
 
 function confirmarDel(id){ if(isAtleta){ toast('Acesso restrito.', false); return; } idParaDel=id;new bootstrap.Modal(document.getElementById('modalDel')).show();}
 document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDel)return;authFetch(api+'/'+idParaDel,{method:'DELETE'}).then(()=>{toast('Excluída!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();}).catch(()=>toast('Erro.',false));});
 
 document.addEventListener('DOMContentLoaded',function(){
- calRef=new FullCalendar.Calendar(document.getElementById('calendar'),{initialView:'dayGridMonth',locale:'pt-br',height:'auto',dayMaxEvents:3,headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,timeGridWeek,listMonth'},buttonText:{today:'Hoje',month:'Mês',week:'Semana',list:'Lista'},events:function(info,ok,fail){authFetch(urlTime(api)).then(r=>r.json()).then(data=>{ok(data.map(a=>{const t=TIPO[a.tipo_atividade]||TIPO[1];return{title:t.emoji+' '+a.nome_atividade,start:a.data_atividade,color:t.cor,textColor:'#0A1628',extendedProps:{raw:a}};}));}).catch(()=>ok([]))},eventClick:function(info){verDetalhes(info.event.extendedProps.raw.id_atividade);}});
- calRef.render();carregar();
+ carregar();
  if(new URLSearchParams(location.search).get('novo')==='1')mudarTab('form',document.querySelectorAll('.tab')[1]);
 });
 
@@ -826,6 +834,12 @@ function confirmarLogout(){
 function toggleOponente(tipo){
  const box = document.getElementById('campoOponente');
  if(box) box.style.display = (String(tipo)==='2') ? 'block' : 'none';
+}
+
+// ── TOGGLE RECORRÊNCIA ──
+function toggleRecorrencia(ativo){
+ const box = document.getElementById('campoFimRecorrencia');
+ if(box) box.style.display = ativo ? 'block' : 'none';
 }
 
 // ── FINALIZAR JOGO — modal de lançamento de pontos ──

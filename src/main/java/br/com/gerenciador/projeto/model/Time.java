@@ -2,6 +2,7 @@ package br.com.gerenciador.projeto.model;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 @Entity
@@ -37,6 +38,7 @@ public class Time {
     // Treinador responsável pelo time
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_treinador")
+    @JsonIgnoreProperties({"membros","treinador"})
     private Usuario treinador;
 
     @OneToMany(mappedBy = "time", cascade = CascadeType.ALL)

@@ -315,14 +315,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div><div class="stat-num" id="st-pts" style="color:#FFB020">—</div><div class="stat-label">Jogos Finalizados</div></div>
  </div>
  <div class="stat-card">
- <div class="stat-dot" style="background:#4EC9FF"></div>
- <div><div class="stat-num" id="st-sh" style="color:#4EC9FF">—</div><div class="stat-label">Maior Salto H (m)</div></div>
- </div>
- <div class="stat-card">
- <div class="stat-dot" style="background:#A78FFF"></div>
- <div><div class="stat-num" id="st-sv" style="color:#A78FFF">—</div><div class="stat-label">Maior Salto V (m)</div></div>
- </div>
- <div class="stat-card">
  <div class="stat-dot" style="background:#FF6B6B"></div>
  <div><div class="stat-num" id="st-media" style="color:#FF6B6B">—</div><div class="stat-label">Média de Pontos</div></div>
  </div>
@@ -361,7 +353,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="table-wrapper" id="tabelaWrapper">
  <div class="table-responsive">
  <table class="table">
- <thead><tr><th>ID</th><th>Atleta</th><th>Data</th><th>Posição</th><th>Salto H</th><th>Salto V</th><th>Pontuação</th><th>Ações</th></tr></thead>
+ <thead><tr><th>ID</th><th>Atleta</th><th>Data</th><th>Posição</th><th>Pontuação</th><th>Ações</th></tr></thead>
  <tbody id="tabelaDesemp"></tbody>
  </table>
  </div>
@@ -387,17 +379,9 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <input type="date" class="form-control" name="data_desempenho" required>
  </div>
  <div class="col-12"><div class="form-sep"></div></div>
- <div class="col-md-3">
+ <div class="col-md-4">
  <label class="form-label">Posição</label>
  <input type="number" class="form-control" name="posicao_usuario" placeholder="Ex: 1, 2, 3...">
- </div>
- <div class="col-md-3">
- <label class="form-label">Salto Horizontal (m)</label>
- <input type="number" step="0.01" class="form-control" name="salto_horizontal" placeholder="2.50">
- </div>
- <div class="col-md-3">
- <label class="form-label">Salto Vertical (m)</label>
- <input type="number" step="0.01" class="form-control" name="salto_vertical" placeholder="0.80">
  </div>
 
 
@@ -415,14 +399,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="card-dark">
  <h4> Top 10 — Maior Pontuação</h4>
  <div class="ranking-wrap" id="rankingPts"></div>
- </div>
- <div class="card-dark">
- <h4> Top 10 — Melhor Salto Horizontal</h4>
- <div class="ranking-wrap" id="rankingSH"></div>
- </div>
- <div class="card-dark">
- <h4> Top 10 — Melhor Salto Vertical</h4>
- <div class="ranking-wrap" id="rankingSV"></div>
  </div>
  <div class="card-dark">
  <h4> Top 10 — Pontos em Jogos</h4>
@@ -574,11 +550,7 @@ authFetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
 function atualizarStats(){
  document.getElementById('st-total').textContent = dados.length;
  const pts = dados.filter(d=>d.pontuacao).map(d=>d.pontuacao);
- const sh = dados.filter(d=>d.salto_horizontal).map(d=>parseFloat(d.salto_horizontal));
- const sv = dados.filter(d=>d.salto_vertical).map(d=>parseFloat(d.salto_vertical));
  document.getElementById('st-pts').textContent = jogosFinalizados ? jogosFinalizados.length : '—';
- document.getElementById('st-sh').textContent = sh.length ? Math.max(...sh).toFixed(2) : '—';
- document.getElementById('st-sv').textContent = sv.length ? Math.max(...sv).toFixed(2) : '—';
  // Média inclui pontos de jogos escalação
  calcularMediaGlobal();
 }
@@ -683,15 +655,6 @@ function renderCards(lista){
  </div>
  <div class="metricas-mini">
  <div class="met-box">
- <div class="met-val" style="color:#4EC9FF">${d.salto_horizontal||'—'}</div>
- <div class="met-label">Salto H m</div>
- </div>
- <div class="met-box">
- <div class="met-val" style="color:#A78FFF">${d.salto_vertical||'—'}</div>
- <div class="met-label">Salto V m</div>
- </div>
-
- <div class="met-box">
  <div class="met-val" style="color:#FF6B6B" id="media-card-${d.id_desempenho}">${mediaAtleta(d.usuario?.id_usuario)}</div>
  <div class="met-label">Média Pts</div>
  </div>
@@ -713,7 +676,7 @@ function renderCards(lista){
 function renderTabela(lista){
  const tb = document.getElementById('tabelaDesemp');
  if(!lista.length){
- tb.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--cinza);padding:32px">Nenhuma avaliação encontrada</td></tr>`;
+ tb.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--cinza);padding:32px">Nenhuma avaliação encontrada</td></tr>`;
  return;
  }
  tb.innerHTML = lista.map(d=>{
@@ -723,8 +686,6 @@ function renderTabela(lista){
  <td style="font-weight:700">${esc(d.usuario?.nome_usuario||'—')}</td>
  <td style="color:var(--cinza)">${data}</td>
  <td style="font-size:16px">${posIcon(d.posicao_usuario)}</td>
- <td>${d.salto_horizontal?`<span style="color:#4EC9FF;font-weight:700">${d.salto_horizontal} m</span>`:'—'}</td>
- <td>${d.salto_vertical?`<span style="color:#A78FFF;font-weight:700">${d.salto_vertical} m</span>`:'—'}</td>
  <td><span style="font-family:'Bebas Neue',cursive;font-size:20px;color:#FFB020">${d.pontuacao||'—'}</span></td>
  <td>
  <button class="btn-acao-sm btn-ver" onclick="ver(${d.id_desempenho})">Ver</button>
@@ -760,8 +721,6 @@ function renderRankingLista(containerId, lista, campo, cor, unidade){
 
 function renderRanking(){
  renderRankingLista('rankingPts', dados, 'pontuacao', '#FFB020', ' pts');
- renderRankingLista('rankingSH', dados, 'salto_horizontal', '#4EC9FF', ' m');
- renderRankingLista('rankingSV', dados, 'salto_vertical', '#A78FFF', ' m');
  renderRankingJogos();
 }
 
@@ -852,8 +811,6 @@ function abrirEdicao(id){ if(isAtleta){ toast("Acesso restrito.", false); return
  document.getElementById('selectAtleta').value = d.usuario?.id_usuario||'';
  f.data_desempenho.value = d.data_desempenho||'';
  f.posicao_usuario.value = d.posicao_usuario||'';
- f.salto_horizontal.value = d.salto_horizontal||'';
- f.salto_vertical.value = d.salto_vertical||'';
  f.pontuacao.value = d.pontuacao||'';
  document.getElementById('editId').value = d.id_desempenho;
  document.getElementById('formTitulo').textContent = ' Editar Registro de Desempenho';
@@ -882,8 +839,6 @@ document.getElementById('formDesemp').addEventListener('submit', function(e){
  usuario:{ id_usuario: parseInt(d.usuario_id) },
  data_desempenho: d.data_desempenho,
  posicao_usuario: parseInt(d.posicao_usuario)||null,
- salto_horizontal: parseFloat(d.salto_horizontal)||null,
- salto_vertical: parseFloat(d.salto_vertical)||null,
  pontuacao: null // pontuação agora vem dos jogos
  };
  const url = id ? `${apiD}/${id}` : apiD;

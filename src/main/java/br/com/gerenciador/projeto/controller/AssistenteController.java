@@ -2,6 +2,9 @@ package br.com.gerenciador.projeto.controller;
 
 import br.com.gerenciador.projeto.DAO.*;
 import br.com.gerenciador.projeto.model.*;
+import br.com.gerenciador.projeto.security.AuthUtil;
+import br.com.gerenciador.projeto.security.JwtFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -30,6 +33,15 @@ public class AssistenteController {
     @Autowired private TimeDAO timeDAO;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    /** Admin acessa qualquer time; demais papéis, somente o próprio time. */
+    private boolean autorizadoParaTime(Integer idTimeAlvo, HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+        if (AuthUtil.ehAdmin(authTipo)) return true;
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        return meuTime != null && idTimeAlvo != null && meuTime.equals(idTimeAlvo);
+    }
 
     // ── POST /assistente/chat ─────────────────────────────────────
     @PostMapping("/chat")
@@ -74,7 +86,9 @@ public class AssistenteController {
 
     // ── GET /assistente/resumo-time?idTime=1 ─────────────────────
     @GetMapping("/resumo-time")
-    public ResponseEntity<Map<String, Object>> resumoTime(@RequestParam Integer idTime) {
+    public ResponseEntity<Map<String, Object>> resumoTime(@RequestParam Integer idTime, HttpServletRequest request) {
+        if (!autorizadoParaTime(idTime, request))
+            return ResponseEntity.status(403).body(Map.of("erro", "Sem permissao para ver este time."));
         try {
             Map<String, Object> r = new HashMap<>();
             timeDAO.findById(idTime).ifPresent(t -> {
@@ -100,7 +114,9 @@ public class AssistenteController {
     // ── GET /assistente/ranking-desempenho?idTime=1 ───────────────
     @GetMapping("/ranking-desempenho")
     public ResponseEntity<List<Map<String, Object>>> rankingDesempenho(
-            @RequestParam Integer idTime) {
+            @RequestParam Integer idTime, HttpServletRequest request) {
+        if (!autorizadoParaTime(idTime, request))
+            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver este time.")));
         try {
             List<Desempenho> lista = desempenhoDAO.buscarPorTime(idTime);
 
@@ -134,7 +150,12 @@ public class AssistenteController {
     // ── GET /assistente/ranking-pontos?idAtividade=5 ──────────────
     @GetMapping("/ranking-pontos")
     public ResponseEntity<List<Map<String, Object>>> rankingPontos(
-            @RequestParam Integer idAtividade) {
+            @RequestParam Integer idAtividade, HttpServletRequest request) {
+        Integer idTimeDaAtividade = atividadeDAO.findById(idAtividade)
+            .map(a -> a.getTime() != null ? a.getTime().getId_time() : null)
+            .orElse(null);
+        if (!autorizadoParaTime(idTimeDaAtividade, request))
+            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver esta atividade.")));
         try {
             List<Map<String, Object>> ranking = escalacaoDAO
                 .buscarPorAtividade(idAtividade).stream()
@@ -160,7 +181,9 @@ public class AssistenteController {
     // ── GET /assistente/proximas-atividades?idTime=1 ──────────────
     @GetMapping("/proximas-atividades")
     public ResponseEntity<List<Map<String, Object>>> proximasAtividades(
-            @RequestParam Integer idTime) {
+            @RequestParam Integer idTime, HttpServletRequest request) {
+        if (!autorizadoParaTime(idTime, request))
+            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver este time.")));
         try {
             LocalDateTime agora = LocalDateTime.now();
             Map<Integer, String> tipos = Map.of(
@@ -192,7 +215,9 @@ public class AssistenteController {
     }
  // ── GET /assistente/dados-time?idTime=1 ──────────────────────────
     @GetMapping("/dados-time")
-    public ResponseEntity<Map<String, Object>> dadosTime(@RequestParam Integer idTime) {
+    public ResponseEntity<Map<String, Object>> dadosTime(@RequestParam Integer idTime, HttpServletRequest request) {
+        if (!autorizadoParaTime(idTime, request))
+            return ResponseEntity.status(403).body(Map.of("erro", "Sem permissao para ver este time."));
         try {
             LocalDateTime agora = LocalDateTime.now();
             Map<Integer, String> tipos = Map.of(

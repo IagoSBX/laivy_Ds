@@ -65,8 +65,6 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
 .filter-btn.t1.on { background: var(--treino); color: var(--azul); }
 .filter-btn.t2 { border-color: var(--jogo); color: var(--jogo); background: transparent; }
 .filter-btn.t2.on { background: var(--jogo); color: var(--azul); }
-.filter-btn.t3 { border-color: var(--evento); color: var(--evento); background: transparent; }
-.filter-btn.t3.on { background: var(--evento); color: var(--azul); }
 .filter-btn.t4 { border-color: var(--competicao); color: var(--competicao); background: transparent; }
 .filter-btn.t4.on { background: var(--competicao); color: var(--azul); }
 
@@ -262,7 +260,6 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
  <button class="filter-btn all on" onclick="filtrar(0,this)">Todos</button>
  <button class="filter-btn t1" onclick="filtrar(1,this)"> Treino</button>
  <button class="filter-btn t2" onclick="filtrar(2,this)"> Jogo</button>
- <button class="filter-btn t3" onclick="filtrar(3,this)"> Evento</button>
  <button class="filter-btn t4" onclick="filtrar(4,this)"> Competição</button>
  </div>
  </div>
@@ -398,6 +395,38 @@ let todosEventos = [];
 let filtroAtivo = 0;
 let calendarRef = null;
 
+// ── RECORRÊNCIA (ALARME SEMANAL) ──
+function sameDay(d1, d2) {
+ return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+}
+function toLocalIso(d) {
+ const p = n => String(n).padStart(2,'0');
+ return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':00';
+}
+function addDaysStr(dateStr, n) {
+ const d = new Date(dateStr+'T00:00:00');
+ d.setDate(d.getDate()+n);
+ return d.toISOString().slice(0,10);
+}
+// Retorna a ocorrência (Date) de uma atividade no dia `dataRef`, ou null se não houver.
+// Atividades recorrentes repetem semanalmente no mesmo dia da semana/horário de data_atividade.
+function ocorrenciaEm(a, dataRef) {
+ if (!a.data_atividade) return null;
+ const anchor = new Date(a.data_atividade);
+ if (!a.recorrente) return sameDay(anchor, dataRef) ? anchor : null;
+ const anchorDia = new Date(anchor); anchorDia.setHours(0,0,0,0);
+ const ref = new Date(dataRef); ref.setHours(0,0,0,0);
+ if (ref < anchorDia || ref.getDay() !== anchor.getDay()) return null;
+ if (a.fim_recorrencia && ref > new Date(a.fim_recorrencia+'T23:59:59')) return null;
+ const occ = new Date(ref);
+ occ.setHours(anchor.getHours(), anchor.getMinutes(), 0, 0);
+ return occ;
+}
+// Cria uma cópia da atividade com data_atividade ajustada para a ocorrência clicada.
+function comOcorrencia(a, occ) {
+ return Object.assign({}, a, { data_atividade: toLocalIso(occ) });
+}
+
 // FILTRO
 function filtrar(tipo, btn) {
  filtroAtivo = tipo;
@@ -414,26 +443,37 @@ function atualizarStats(data) {
  document.getElementById('st-comp').textContent = data.filter(a=>a.tipo_atividade===4).length;
 }
 
-// SIDEBAR PRÓXIMOS
+// SIDEBAR PRÓXIMOS (considera ocorrências futuras de atividades recorrentes)
 function renderProximos(data) {
  const agora = new Date();
- const proximos = data
- .filter(a => a.data_atividade && new Date(a.data_atividade) > agora)
- .sort((a,b) => new Date(a.data_atividade) - new Date(b.data_atividade))
- .slice(0, 5);
+ const ocorrencias = [];
+ data.forEach(a => {
+ if (!a.data_atividade) return;
+ if (a.recorrente) {
+ for (let i = 0; i < 90; i++) {
+ const d = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + i);
+ const occ = ocorrenciaEm(a, d);
+ if (occ && occ > agora) { ocorrencias.push({ a, occ }); break; }
+ }
+ } else {
+ const occ = new Date(a.data_atividade);
+ if (occ > agora) ocorrencias.push({ a, occ });
+ }
+ });
+ ocorrencias.sort((x, y) => x.occ - y.occ);
+ const proximos = ocorrencias.slice(0, 5);
 
  const el = document.getElementById('proximosEventos');
  if (!proximos.length) { el.innerHTML = '<div class="no-events">Nenhum evento futuro</div>'; return; }
 
- el.innerHTML = proximos.map(a => {
+ el.innerHTML = proximos.map(({ a, occ }) => {
  const t = TIPO[a.tipo_atividade] || TIPO[1];
- const d = new Date(a.data_atividade);
- const dataStr = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
- const hora = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+ const dataStr = occ.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+ const hora = occ.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  return `
- <div class="event-card" style="border-left-color:${t.cor}" onclick='abrirModal(${esc(JSON.stringify(a))})'>
+ <div class="event-card" style="border-left-color:${t.cor}" onclick='abrirModal(${esc(JSON.stringify(comOcorrencia(a, occ)))})'>
  <div class="event-card-top">
- <div class="event-name">${esc(a.nome_atividade)}</div>
+ <div class="event-name">${a.recorrente?'🔁 ':''}${esc(a.nome_atividade)}</div>
  <span class="event-badge" style="background:${t.bg};color:${t.cor}">${t.emoji} ${t.label}</span>
  </div>
  <div class="event-meta">
@@ -444,20 +484,21 @@ function renderProximos(data) {
  }).join('');
 }
 
-// SIDEBAR HOJE
+// SIDEBAR HOJE (considera ocorrências de hoje de atividades recorrentes)
 function renderHoje(data) {
  const hoje = new Date();
- const hojeStr = hoje.toISOString().slice(0,10);
- const events = data.filter(a => a.data_atividade && a.data_atividade.slice(0,10) === hojeStr);
+ const events = data
+ .map(a => ({ a, occ: ocorrenciaEm(a, hoje) }))
+ .filter(x => x.occ);
  const el = document.getElementById('hojeEventos');
  if (!events.length) { el.innerHTML = '<div class="no-events">Nenhum evento hoje</div>'; return; }
- el.innerHTML = events.map(a => {
+ el.innerHTML = events.map(({ a, occ }) => {
  const t = TIPO[a.tipo_atividade] || TIPO[1];
- const hora = new Date(a.data_atividade).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+ const hora = occ.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  return `
- <div class="event-card" style="border-left-color:${t.cor}" onclick='abrirModal(${esc(JSON.stringify(a))})'>
+ <div class="event-card" style="border-left-color:${t.cor}" onclick='abrirModal(${esc(JSON.stringify(comOcorrencia(a, occ)))})'>
  <div class="event-card-top">
- <div class="event-name">${esc(a.nome_atividade)}</div>
+ <div class="event-name">${a.recorrente?'🔁 ':''}${esc(a.nome_atividade)}</div>
  <span class="event-badge" style="background:${t.bg};color:${t.cor}">${t.emoji}</span>
  </div>
  <div class="event-meta"><span> ${hora}${a.lugar_atividade?' · '+esc(a.lugar_atividade):''}</span></div>
@@ -513,6 +554,11 @@ function abrirModal(a) {
  <span style="background:${t.bg};color:${t.cor};padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700">${t.emoji} ${t.label}</span>
  </div>
  </div>
+ ${a.recorrente ? `
+ <div class="detalhe-item full">
+ <div class="detalhe-label">Recorrência</div>
+ <div class="detalhe-valor">🔁 Toda ${d ? d.toLocaleDateString('pt-BR',{weekday:'long'}) : 'semana'}${a.fim_recorrencia ? ', até '+new Date(a.fim_recorrencia+'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
+ </div>` : ''}
  </div>
  `;
  new bootstrap.Modal(document.getElementById('modalInfo')).show();
@@ -546,10 +592,25 @@ document.addEventListener('DOMContentLoaded', function () {
  renderHoje(data);
 
  const filtrados = filtroAtivo === 0 ? data : data.filter(a => a.tipo_atividade === filtroAtivo);
- ok(filtrados.map(a => {
+ ok(filtrados.filter(a => a.data_atividade).map(a => {
  const t = TIPO[a.tipo_atividade] || TIPO[1];
+ const titulo = `${a.recorrente ? '🔁 ' : ''}${t.emoji} ${a.nome_atividade}`;
+ if (a.recorrente) {
+ const anchor = new Date(a.data_atividade);
+ const p = n => String(n).padStart(2,'0');
  return {
- title: `${t.emoji} ${a.nome_atividade}`,
+ title: titulo,
+ daysOfWeek: [anchor.getDay()],
+ startTime: `${p(anchor.getHours())}:${p(anchor.getMinutes())}`,
+ startRecur: a.data_atividade.slice(0,10),
+ endRecur: a.fim_recorrencia ? addDaysStr(a.fim_recorrencia, 1) : undefined,
+ color: t.cor,
+ textColor: t.textCor,
+ extendedProps: { raw: a, recorrente: true }
+ };
+ }
+ return {
+ title: titulo,
  start: a.data_atividade,
  color: t.cor,
  textColor: t.textCor,
@@ -569,7 +630,12 @@ document.addEventListener('DOMContentLoaded', function () {
  },
 
  eventClick: function (info) {
- abrirModal(info.event.extendedProps.raw);
+ const raw = info.event.extendedProps.raw;
+ if (info.event.extendedProps.recorrente && info.event.start) {
+ abrirModal(comOcorrencia(raw, info.event.start));
+ } else {
+ abrirModal(raw);
+ }
  },
 
  eventDidMount: function (info) {

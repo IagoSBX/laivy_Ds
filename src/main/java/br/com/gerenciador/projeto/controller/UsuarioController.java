@@ -20,6 +20,7 @@ import br.com.gerenciador.projeto.DAO.IUsuario;
 import br.com.gerenciador.projeto.DAO.TimeDAO;
 import br.com.gerenciador.projeto.model.Exame;
 import br.com.gerenciador.projeto.model.Usuario;
+import br.com.gerenciador.projeto.security.AuthUtil;
 import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.security.JwtUtil;
 
@@ -114,10 +115,19 @@ public class UsuarioController {
 
     // ── GET /usuarios/{id}/exames ────────────────────────────────────────
     @GetMapping("/{id}/exames")
-    public ResponseEntity<List<Exame>> listarExames(@PathVariable Integer id) {
-        return dao.findById(id)
-            .map(u -> ResponseEntity.ok(u.getExames()))
-            .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<List<Exame>> listarExames(@PathVariable Integer id, HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+
+        return dao.findById(id).map(u -> {
+            boolean ehDono = authId != null && authId.equals(id);
+            Integer idTimeAlvo = u.getTime() != null ? u.getTime().getId_time() : null;
+            boolean autorizado = ehDono || AuthUtil.ehAdmin(authTipo)
+                || AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
+            if (!autorizado)
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).<List<Exame>>build();
+            return ResponseEntity.ok(u.getExames());
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     // ── GET /usuarios/treinadores ─────────────────────────────────────────
@@ -130,12 +140,30 @@ public class UsuarioController {
 
     // ── POST /usuarios ────────────────────────────────────────────────────
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody Usuario usuario) {
+    public ResponseEntity<?> criar(@RequestBody Usuario usuario, HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
+        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
+
+        // Somente Admin ou Treinador podem cadastrar novos usuarios.
+        if (!AuthUtil.ehAdmin(authTipo) && !AuthUtil.ehTreinador(authTipo))
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("erro", "Somente Admin ou Treinador podem cadastrar usuarios."));
+
         if (senhaFraca(usuario.getSenha_usuario()))
             return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
 
-        if (usuario.getTime() != null && usuario.getTime().getId_time() != null)
+        // Somente Admin pode definir o perfil (tipo_usuario) do novo cadastro —
+        // Treinador sempre cadastra Atleta, evitando autopromoção/promoção indevida.
+        if (!AuthUtil.ehAdmin(authTipo) || usuario.getTipo_usuario() == null)
+            usuario.setTipo_usuario(3);
+
+        if (AuthUtil.ehTreinador(authTipo)) {
+            // Treinador só pode vincular o novo cadastro ao próprio time.
+            Integer meuTime = AuthUtil.timeDoUsuario(authId, dao);
+            usuario.setTime(meuTime != null ? timeDAO.findById(meuTime).orElse(null) : null);
+        } else if (usuario.getTime() != null && usuario.getTime().getId_time() != null) {
             timeDAO.findById(usuario.getTime().getId_time()).ifPresent(usuario::setTime);
+        }
 
         usuario.setSenha_usuario(hashSenha(usuario.getSenha_usuario()));
 
@@ -223,44 +251,57 @@ public class UsuarioController {
         Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
         Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
 
-        boolean ehDono       = authId != null && authId.equals(id);
-        boolean ehAdmin      = authTipo != null && authTipo == 1;
-        boolean ehTreinador  = authTipo != null && authTipo == 2;
+        Usuario alvo = dao.findById(id).orElse(null);
+        if (alvo == null) return ResponseEntity.notFound().build();
 
-        // Só o próprio usuário, um Admin ou um Treinador podem editar este cadastro
-        if (!ehDono && !ehAdmin && !ehTreinador)
+        boolean ehDono  = authId != null && authId.equals(id);
+        boolean ehAdmin = AuthUtil.ehAdmin(authTipo);
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        // Treinador só pode editar cadastros do próprio time — nunca de outro time ou sem time.
+        boolean ehTreinadorDoTime = AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
+
+        // Só o próprio usuário, um Admin ou o Treinador do time deste usuário podem editar este cadastro
+        if (!ehDono && !ehAdmin && !ehTreinadorDoTime)
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("erro", "Sem permissao para editar este usuario."));
 
         boolean trocandoSenha = dados.getSenha_usuario() != null && !dados.getSenha_usuario().isBlank();
         if (trocandoSenha && senhaFraca(dados.getSenha_usuario()))
             return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
+        // Só o próprio dono ou um Admin podem trocar a senha por aqui —
+        // um Treinador não pode sequestrar a conta de outro usuário via troca de senha.
+        if (trocandoSenha && !ehDono && !ehAdmin)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("erro", "Sem permissao para alterar a senha deste usuario."));
 
-        return dao.findById(id).map(u -> {
-            if (dados.getNome_usuario()      != null) u.setNome_usuario(dados.getNome_usuario());
-            if (dados.getEmail_usuario()     != null) u.setEmail_usuario(dados.getEmail_usuario());
-            if (dados.getLogin_usuario()     != null) u.setLogin_usuario(dados.getLogin_usuario());
-            // Somente Admin pode alterar o perfil (tipo_usuario) de um cadastro —
-            // evita que o próprio usuário ou um Treinador se autopromovam.
-            if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
-            if (dados.getCel_usuario()       != null) u.setCel_usuario(dados.getCel_usuario());
-            if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) u.setCpf_usuario(dados.getCpf_usuario());
-            if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
-            if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
-            if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
-            if (dados.getCidade_usuario()    != null) u.setCidade_usuario(dados.getCidade_usuario());
-            if (dados.getEstado_usuario()    != null) u.setEstado_usuario(dados.getEstado_usuario());
-            if (dados.getFoto_usuario()      != null) u.setFoto_usuario(dados.getFoto_usuario());
-            if (dados.getCpf_responsavel_1() != null) u.setCpf_responsavel_1(dados.getCpf_responsavel_1());
-            if (dados.getCpf_responsavel_2() != null) u.setCpf_responsavel_2(dados.getCpf_responsavel_2());
-            if (dados.getCel_responsavel_1() != null) u.setCel_responsavel_1(dados.getCel_responsavel_1());
-            if (dados.getCel_responsavel_2() != null) u.setCel_responsavel_2(dados.getCel_responsavel_2());
-            if (dados.getSenha_usuario() != null && !dados.getSenha_usuario().isBlank())
-                u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
-            if (dados.getTime() != null && dados.getTime().getId_time() != null)
-                timeDAO.findById(dados.getTime().getId_time()).ifPresent(u::setTime);
-            return ResponseEntity.ok(dao.save(u));
-        }).orElse(ResponseEntity.notFound().build());
+        Usuario u = alvo;
+        if (dados.getNome_usuario()      != null) u.setNome_usuario(dados.getNome_usuario());
+        if (dados.getEmail_usuario()     != null) u.setEmail_usuario(dados.getEmail_usuario());
+        if (dados.getLogin_usuario()     != null) u.setLogin_usuario(dados.getLogin_usuario());
+        // Somente Admin pode alterar o perfil (tipo_usuario) de um cadastro —
+        // evita que o próprio usuário ou um Treinador se autopromovam.
+        if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
+        if (dados.getCel_usuario()       != null) u.setCel_usuario(dados.getCel_usuario());
+        if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) u.setCpf_usuario(dados.getCpf_usuario());
+        if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
+        if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
+        if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
+        if (dados.getCidade_usuario()    != null) u.setCidade_usuario(dados.getCidade_usuario());
+        if (dados.getEstado_usuario()    != null) u.setEstado_usuario(dados.getEstado_usuario());
+        if (dados.getFoto_usuario()      != null) u.setFoto_usuario(dados.getFoto_usuario());
+        if (dados.getCpf_responsavel_1() != null) u.setCpf_responsavel_1(dados.getCpf_responsavel_1());
+        if (dados.getCpf_responsavel_2() != null) u.setCpf_responsavel_2(dados.getCpf_responsavel_2());
+        if (dados.getCel_responsavel_1() != null) u.setCel_responsavel_1(dados.getCel_responsavel_1());
+        if (dados.getCel_responsavel_2() != null) u.setCel_responsavel_2(dados.getCel_responsavel_2());
+        if (trocandoSenha) u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
+        // Admin move para qualquer time; Treinador só pode vincular ao próprio time.
+        if (dados.getTime() != null && dados.getTime().getId_time() != null) {
+            Integer novoTime = dados.getTime().getId_time();
+            boolean podeVincular = ehAdmin
+                || (ehTreinadorDoTime && novoTime.equals(AuthUtil.timeDoUsuario(authId, dao)));
+            if (podeVincular) timeDAO.findById(novoTime).ifPresent(u::setTime);
+        }
+        return ResponseEntity.ok(dao.save(u));
     }
 
     // ── PUT /usuarios/{id}/senha ──────────────────────────────────────────
@@ -300,12 +341,22 @@ public class UsuarioController {
     // ── DELETE /usuarios/{id} ─────────────────────────────────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluir(@PathVariable Integer id, HttpServletRequest request) {
+        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
         Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-        if (authTipo == null || authTipo > 2)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Somente Admin ou Treinador podem excluir usuarios."));
 
-        if (!dao.existsById(id)) return ResponseEntity.notFound().build();
+        Usuario alvo = dao.findById(id).orElse(null);
+        if (alvo == null) return ResponseEntity.notFound().build();
+
+        boolean ehAdmin = AuthUtil.ehAdmin(authTipo);
+        // Treinador só pode excluir Atleta/Treinador do próprio time — nunca um Admin.
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        boolean ehTreinadorDoTime = alvo.getTipo_usuario() != null && alvo.getTipo_usuario() != 1
+            && AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
+
+        if (!ehAdmin && !ehTreinadorDoTime)
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("erro", "Sem permissao para excluir este usuario."));
+
         dao.deleteById(id);
         return ResponseEntity.noContent().build();
     }
