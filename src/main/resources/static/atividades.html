@@ -682,6 +682,26 @@ function renderTabela(lista){
 function mudarVisao(v){visao=v;document.getElementById('cardsWrapper').classList.toggle('visible',v==='cards');document.getElementById('tabelaWrapper').classList.toggle('visible',v==='tabela');document.getElementById('vCards').classList.toggle('active',v==='cards');document.getElementById('vTabela').classList.toggle('active',v==='tabela');}
 function mudarTab(id,btn){if(id==='form'&&isAtleta){toast('Acesso restrito: você não tem permissão para criar atividades.',false);return;}document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('visible');btn.classList.add('active');}
 
+// Enter avança apenas pelos campos visíveis; no último campo, confirma o envio.
+document.getElementById('formAtiv').addEventListener('keydown', function(e){
+ if(e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+
+ const campoAtual = e.target;
+ if(!campoAtual.matches('input, select')) return;
+
+ const campos = Array.from(this.querySelectorAll('input, select'))
+  .filter(campo => campo.type !== 'hidden' && campo.type !== 'checkbox' && !campo.disabled && campo.offsetParent !== null);
+ const indiceAtual = campos.indexOf(campoAtual);
+ if(indiceAtual === -1) return;
+
+ e.preventDefault();
+ if(!campoAtual.checkValidity()) return;
+
+ const proximoCampo = campos[indiceAtual + 1];
+ if(proximoCampo) proximoCampo.focus();
+ else this.requestSubmit();
+});
+
 document.getElementById('formAtiv').addEventListener('submit',function(e){
  e.preventDefault();
  if(isAtleta){ toast('Acesso restrito.', false); return; }

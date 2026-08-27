@@ -891,6 +891,45 @@ function cancelarForm(){
  mudarTab('lista',document.querySelectorAll('.tab')[0]);
 }
 
+// Ao pressionar Enter, avança para o próximo campo. No último campo, envia o formulário.
+function campoCadastroValido(campo){
+ const validadores = {
+   'inp-nome': validarNome,
+   'inp-email': validarEmail,
+   'inp-senha': validarSenha,
+   'inp-cpf': validarCPF,
+   'inp-cel': validarTelefone
+ };
+ const validar = validadores[campo.id];
+ if(validar && !validar(campo)) return false;
+
+ // Mantém a mesma regra de obrigatoriedade já usada pelo formulário.
+ const senhaOpcionalNaEdicao = campo.id === 'inp-senha' && document.getElementById('editId').value;
+ return !campo.required || senhaOpcionalNaEdicao || campo.value.trim() !== '';
+}
+
+document.getElementById('formCadastro').addEventListener('keydown', function(e){
+ if(e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+
+ const campoAtual = e.target;
+ if(!campoAtual.matches('input, select')) return;
+
+ const campos = Array.from(this.querySelectorAll('input, select'))
+   .filter(campo => campo.type !== 'hidden' && campo.type !== 'file' && !campo.disabled && campo.offsetParent !== null);
+ const indiceAtual = campos.indexOf(campoAtual);
+ if(indiceAtual === -1) return;
+
+ e.preventDefault();
+ if(!campoCadastroValido(campoAtual)) return;
+
+ const proximoCampo = campos[indiceAtual + 1];
+ if(proximoCampo){
+   proximoCampo.focus();
+ } else {
+   this.requestSubmit();
+ }
+});
+
 document.getElementById('formCadastro').addEventListener('submit',function(e){
  e.preventDefault();
  if(isAtleta)return;

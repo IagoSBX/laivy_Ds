@@ -108,6 +108,9 @@
     window.location.href = 'login.html';
     return;
   }
+  if (user.tipo_usuario !== 1) {
+    document.querySelectorAll('.nav-item[href="times.html"]').forEach(function (item) { item.remove(); });
+  }
 
   // ---------- DADOS DO USUÁRIO ----------
   const tipos = { 1: 'Administrador', 2: 'Treinador', 3: 'Atleta' };

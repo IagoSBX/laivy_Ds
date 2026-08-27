@@ -373,7 +373,7 @@ async function _logout() {
 // ── AUTH ──
 const user = JSON.parse(localStorage.getItem('usuario') || '{}');
 if (!user.id_usuario) window.location.href = 'login.html';
-if (user.tipo_usuario !== 1) { window.location.href = 'times.html'; } // só admin
+if (user.tipo_usuario !== 1) { window.location.href = 'dashboard.html'; } // só admin
 
 document.getElementById('nomeUsuario').textContent = user.nome_usuario || '—';
 document.getElementById('avatarLetra').textContent = (user.nome_usuario || 'U')[0].toUpperCase();

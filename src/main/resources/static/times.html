@@ -229,10 +229,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
   <!-- STATS -->
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-dot" style="background:var(--verde)"></div><div><div class="stat-num" id="st-total" style="color:var(--verde)">—</div><div class="stat-label">Times Ativos</div></div></div>
-    <div class="stat-card"><div class="stat-dot" style="background:#4EC9FF"></div><div><div class="stat-num" id="st-atletas" style="color:#4EC9FF">—</div><div class="stat-label">Atletas</div></div></div>
-    <div class="stat-card"><div class="stat-dot" style="background:#FFB020"></div><div><div class="stat-num" id="st-treinadores" style="color:#FFB020">—</div><div class="stat-label">Treinadores</div></div></div>
-    <div class="stat-card"><div class="stat-dot" style="background:#A78FFF"></div><div><div class="stat-num" id="st-sem-time" style="color:#A78FFF">—</div><div class="stat-label">Sem Time</div></div></div>
+    <div class="stat-card"><div class="stat-dot" style="background:var(--verde)"></div><div><div class="stat-num" id="st-total" style="color:var(--verde)">—</div><div class="stat-label">Times Cadastrados</div></div></div>
   </div>
 
   <!-- TABS -->
@@ -250,7 +247,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
           <option value="1">Ativos</option>
           <option value="0">Inativos</option>
         </select>
-        <a href="selecionar-time.html" class="btn-novo ml-auto" id="btnNovo" style="text-decoration:none">+ Novo Time</a>
+        <a href="novo-time.html" class="btn-novo ml-auto" id="btnNovo" style="text-decoration:none">+ Novo Time</a>
       </div>
       <div class="times-grid" id="timesGrid"></div>
     </div>
@@ -259,6 +256,32 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
   <!-- FORM NOVO/EDITAR TIME -->
 
   <!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="modal fade" id="modalTime" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="modalTimeLogo" style="width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
+          <div><h5 class="modal-title" id="modalTimeNome" style="font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:1px"></h5><div id="modalTimeSub" style="font-size:12px;color:var(--cinza)"></div></div>
+        </div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="time-stats" style="margin-bottom:20px">
+          <div class="ts-box"><div class="ts-num" id="mTotalAtletas" style="color:var(--verde)">0</div><div class="ts-label">Atletas</div></div>
+          <div class="ts-box"><div class="ts-num" id="mTotalTreinos" style="color:#4EC9FF">0</div><div class="ts-label">Treinos</div></div>
+          <div class="ts-box"><div class="ts-num" id="mTotalJogos" style="color:#FFB020">0</div><div class="ts-label">Jogos</div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="membros-header">Membros</div><div id="membrosList" style="max-height:280px;overflow-y:auto"></div></div>
+          <div class="col-md-6" id="colAddAtletas"><div class="membros-header">Adicionar atleta</div><input id="buscaAtleta" class="form-control mb-2" placeholder="Buscar atleta sem time..." oninput="filtrarAtletasDisp()"><div id="atletasDisp" style="max-height:230px;overflow-y:auto"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer" id="modalFooterBtns"><button class="btn-acao-sm btn-edit" onclick="editarDoModal()">Editar time</button><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="modalDel" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content">
@@ -304,6 +327,7 @@ async function _logout() {
 // ── AUTH ──
 const user = JSON.parse(localStorage.getItem('usuario')||'{}');
 if (!user.id_usuario) window.location.href='login.html';
+if (user.tipo_usuario !== 1) window.location.href='dashboard.html';
 document.getElementById('nomeUsuario').textContent  = user.nome_usuario||'—';
 document.getElementById('avatarLetra').textContent  = (user.nome_usuario||'U')[0].toUpperCase();
 document.getElementById('tipoUsuario').textContent  = ({1:'Administrador',2:'Treinador',3:'Atleta'})[user.tipo_usuario]||'—';
@@ -311,7 +335,8 @@ if(user.foto_usuario){ var av=document.getElementById('avatarLetra'); av.classLi
 
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin  = user.tipo_usuario === 1 || user.tipo_usuario === 2;
-if(isAtleta){ document.getElementById('tabNovoBtn').style.display='none'; document.getElementById('btnNovo').style.display='none'; }
+const isAdministrador = user.tipo_usuario === 1;
+if(!isAdministrador) document.getElementById('btnNovo').style.display='none';
 
 // ── LOGOUT ──
 function logout(){ document.getElementById('logoutModal').classList.add('show'); }
@@ -359,14 +384,7 @@ function carregar(){
 }
 
 function atualizarStats(){
-  const ativos    = dados.filter(t=>t.ativo_time===1||t.ativo_time==='1').length;
-  const atletas   = todosUsuarios.filter(u=>u.tipo_usuario===3).length;
-  const treinadores = todosUsuarios.filter(u=>u.tipo_usuario===2).length;
-  const semTime   = todosUsuarios.filter(u=>u.tipo_usuario===3&&!u.time).length;
-  document.getElementById('st-total').textContent      = ativos;
-  document.getElementById('st-atletas').textContent    = atletas;
-  document.getElementById('st-treinadores').textContent= treinadores;
-  document.getElementById('st-sem-time').textContent   = semTime;
+  document.getElementById('st-total').textContent = dados.length;
 }
 
 function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
@@ -374,6 +392,7 @@ function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toU
 function carregarSelectTreinador(usuarios){
   // Also update the hidden <select> for form compatibility
   const sel = document.getElementById('selectTreinador');
+  if(!sel) return;
   while(sel.options.length > 1) sel.remove(1);
   const responsaveis = usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2);
   responsaveis.forEach(u=>{
@@ -455,7 +474,7 @@ function renderGrid(lista){
       : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+esc(ini(t.nome_time))+'</span>';
     const ativo = t.ativo_time===1||t.ativo_time==='1';
     const treinNome = esc(t.treinador?.nome_usuario || '—');
-    const btnAdmin = isAdmin
+    const btnAdmin = isAdministrador
       ? '<a href="editar-time.html?id='+t.id_time+'" class="btn-acao-sm btn-edit" onclick="event.stopPropagation()" style="text-decoration:none">Editar</a>'
         +'<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel('+t.id_time+',\''+esc(t.nome_time)+'\')">Excluir</button>'
       : '';
@@ -522,7 +541,7 @@ function verTime(id){
       const avHTML = u.foto_usuario
         ? '<img src="'+esc(u.foto_usuario)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
         : esc(ini(u.nome_usuario));
-      const rmBtn = isAdmin
+      const rmBtn = podeGerenciarMembros(t)
         ? '<button class="membro-remove" onclick="removerMembro('+id+','+u.id_usuario+')">Remover</button>'
         : '';
       return '<div class="membro-row">'
@@ -536,10 +555,15 @@ function verTime(id){
 
   // Atletas disponíveis para adicionar
   renderAtletasDisp(id);
-  if(!isAdmin) document.getElementById('colAddAtletas').style.display='none';
-  document.getElementById('modalFooterBtns').style.display = isAdmin?'':'none';
+  const podeGerenciar = podeGerenciarMembros(t);
+  document.getElementById('colAddAtletas').style.display = podeGerenciar ? '' : 'none';
+  document.getElementById('modalFooterBtns').style.display = isAdministrador ? '' : 'none';
 
   new bootstrap.Modal(document.getElementById('modalTime')).show();
+}
+
+function podeGerenciarMembros(time){
+  return isAdministrador || (user.tipo_usuario === 2 && time?.treinador?.id_usuario === user.id_usuario);
 }
 
 function renderAtletasDisp(timeId){
@@ -571,46 +595,24 @@ function filtrarAtletasDisp(){
 
 function adicionarMembro(idTime, idUsuario){
   authFetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'})
-    .then(r=>r.json())
+    .then(r=>{
+      if(!r.ok) throw new Error();
+      return r.json();
+    })
     .then(()=>{ toast('Atleta adicionado ao time!'); carregar(); setTimeout(()=>verTime(idTime),600); })
     .catch(()=>toast('Erro ao adicionar.',false));
 }
 
 function removerMembro(idTime, idUsuario){
   authFetch(API+'/'+idTime+'/membros/'+idUsuario, {method:'DELETE'})
-    .then(()=>{ toast('Membro removido do time!'); carregar(); setTimeout(()=>verTime(idTime),600); })
+    .then(r=>{
+      if(!r.ok) throw new Error();
+      toast('Membro removido do time!'); carregar(); setTimeout(()=>verTime(idTime),600);
+    })
     .catch(()=>toast('Erro ao remover.',false));
 }
 
 // ── FORM ──
-document.getElementById('formTime').addEventListener('submit', function(e){
-  e.preventDefault();
-  if(isAtleta) return;
-  if(!validarFormTime()) return;
-  const d = Object.fromEntries(new FormData(this).entries());
-  const id = document.getElementById('editId').value;
-  // Use the visual selector value
-  const treinId = document.getElementById('inp-treinador-id').value || d.treinador_id;
-  const payload = {
-    nome_time:       d.nome_time,
-    modalidade_time: d.modalidade_time,
-    categoria_time:  d.categoria_time,
-    cor_time:        d.cor_time,
-    descricao_time:  d.descricao_time,
-    ativo_time:      parseInt(d.ativo_time),
-    treinador:       treinId ? {id_usuario: parseInt(treinId)} : null,
-  };
-  authFetch(id ? API+'/'+id : API, {
-    method: id?'PUT':'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  })
-  .then(r=>r.json())
-  .then(()=>{ toast(id?'Time atualizado!':'Time cadastrado!'); cancelarForm(); carregar(); })
-  .catch(()=>toast('Erro ao salvar.',false));
-});
-
-
 function editarDoModal(){
   bootstrap.Modal.getInstance(document.getElementById('modalTime'))?.hide();
   setTimeout(()=>{ window.location.href='editar-time.html?id='+idParaEditarModal; },300);

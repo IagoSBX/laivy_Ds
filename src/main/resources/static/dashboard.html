@@ -353,7 +353,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
  </div>
 
  <!-- STATUS DO SISTEMA -->
- <div class="card-dark">
+ <div class="card-dark" id="cardStatusSistema" style="display:none">
  <div class="card-header">
  <div class="card-titulo" style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Status do Sistema</div>
  </div>
@@ -435,6 +435,8 @@ document.getElementById('perfilMsg').textContent = msgPerfil[user.tipo_usuario]|
 
 const isAtleta = user.tipo_usuario === 3;
 const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+const isAdministrador = user.tipo_usuario === 1;
+if(isAdministrador) document.getElementById('cardStatusSistema').style.display = '';
 // ── FILTRO POR TIME ──
 const _ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
 const _idTime = _ts ? _ts.id : null; // todos os perfis filtrados pelo time selecionado
@@ -536,7 +538,7 @@ authFetch(urlTime(`${api}/atividades`))
  });
 
 // ── STATUS SISTEMA ──
-authFetch(`${api}/usuarios`)
+if(isAdministrador) authFetch(`${api}/usuarios`)
  .then(()=>{
  document.getElementById('statusApi').textContent = ' Online';
  document.getElementById('statusApi').style.cssText = 'font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(0,201,122,0.15);color:#00C97A';

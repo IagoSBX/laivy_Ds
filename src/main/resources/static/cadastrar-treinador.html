@@ -335,7 +335,7 @@ function renderTimeSelectorGrid(containerId, selectedId) {
   g.innerHTML = todosTimes.map(t=>{
     const cor = t.cor_time||'#00C97A';
     const sel = selectedId && (t.id_time==selectedId) ? ' selected' : '';
-    return '<div class="ts-option'+sel+'" data-tid="'+t.id_time+'" data-tname="'+esc(t.nome_time)+'" data-tcor="'+cor+'" onclick="selecionarTime(this,\''+containerId+'\')">'
+    return '<div class="ts-option'+sel+'" data-tid="'+t.id_time+'" data-tname="'+esc(t.nome_time)+'" data-tcor="'+cor+'" tabindex="0" role="button" onclick="selecionarTime(this,\''+containerId+'\')">'
       +'<div class="ts-dot" style="background:'+cor+'"></div>'
       +'<div style="flex:1;min-width:0">'
         +'<div class="ts-nome">'+esc(t.nome_time)+'</div>'
@@ -473,6 +473,48 @@ function mascaraTelefone(el) {
 }
 
 // ── SUBMIT ──
+// Ao pressionar Enter, avança para o próximo campo. No último, confirma o envio.
+function campoTreinadorValido(campo) {
+  const validadores = {
+    'inp-nome': validarNome,
+    'inp-email': validarEmail
+  };
+  const validar = validadores[campo.id];
+  return (!validar || validar(campo)) && campo.checkValidity();
+}
+
+document.getElementById('formTreinador').addEventListener('keydown', function(e) {
+  if(e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+
+  const campoAtual = e.target;
+  if(!campoAtual.matches('input, select')) return;
+
+  const campos = Array.from(this.querySelectorAll('input, select'))
+    .filter(campo => campo.type !== 'hidden' && campo.type !== 'file' && !campo.disabled && campo.offsetParent !== null);
+  const indiceAtual = campos.indexOf(campoAtual);
+  if(indiceAtual === -1) return;
+
+  e.preventDefault();
+  if(!campoTreinadorValido(campoAtual)) return;
+
+  const proximoCampo = campos[indiceAtual + 1];
+  if(proximoCampo) {
+    proximoCampo.focus();
+  } else {
+    const primeiroTime = document.querySelector('#timeSelectorGrid .ts-option');
+    if(primeiroTime) primeiroTime.focus();
+  }
+});
+
+document.getElementById('timeSelectorGrid').addEventListener('keydown', function(e) {
+  if(e.key !== 'Enter' || e.shiftKey || e.isComposing || !e.target.matches('.ts-option')) return;
+
+  e.preventDefault();
+  const jaSelecionado = e.target.classList.contains('selected');
+  selecionarTime(e.target, 'timeSelectorGrid');
+  if(jaSelecionado) document.getElementById('formTreinador').requestSubmit();
+});
+
 document.getElementById('formTreinador').addEventListener('submit', async function(e){
   e.preventDefault();
   const okN = validarNome(document.getElementById('inp-nome'));

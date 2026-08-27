@@ -829,6 +829,26 @@ function cancelarForm(){
  mudarTab('lista', document.querySelectorAll('.tab')[0]);
 }
 
+// Enter avança pelos campos válidos; no último campo, confirma o envio.
+document.getElementById('formDesemp').addEventListener('keydown', function(e){
+ if(e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+
+ const campoAtual = e.target;
+ if(!campoAtual.matches('input, select')) return;
+
+ const campos = Array.from(this.querySelectorAll('input, select'))
+  .filter(campo => campo.type !== 'hidden' && campo.type !== 'file' && !campo.disabled && campo.offsetParent !== null);
+ const indiceAtual = campos.indexOf(campoAtual);
+ if(indiceAtual === -1) return;
+
+ e.preventDefault();
+ if(!campoAtual.checkValidity()) return;
+
+ const proximoCampo = campos[indiceAtual + 1];
+ if(proximoCampo) proximoCampo.focus();
+ else this.requestSubmit();
+});
+
 // SUBMIT
 document.getElementById('formDesemp').addEventListener('submit', function(e){
  e.preventDefault();
