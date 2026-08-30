@@ -10,7 +10,7 @@
 :root {
  --verde:#00C97A; --azul:#0A1628; --azul2:#112244;
  --laranja:#FF6B1A; --branco:#F0F4FF; --cinza:#8899BB;
- --sidebar-w:240px;
+ --sidebar-w: 268px;
  --card-bg:linear-gradient(135deg,#0D1E3C,#112244);
  --card-border:rgba(255,255,255,0.06);
 }
@@ -324,7 +324,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
  <div style="display:flex;flex-direction:column;gap:16px;">
 
  <!-- ACESSO RÁPIDO -->
- <div class="card-dark">
+ <div class="card-dark" id="cardAcessoRapido">
  <div class="card-header">
  <div class="card-titulo" style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Acesso Rápido</div>
  </div>
@@ -410,8 +410,6 @@ const api = '';
 const TIPO = {
   1:{label:'Treino',emoji:'🏋️',cor:'#00C97A',bg:'rgba(0,201,122,0.15)'},
   2:{label:'Jogo',  emoji:'🏀',cor:'#FFB020',bg:'rgba(255,176,32,0.15)'},
-  3:{label:'Evento',emoji:'🎉',cor:'#A78FFF',bg:'rgba(167,143,255,0.15)'},
-  4:{label:'Comp.', emoji:'🏆',cor:'#4EC9FF',bg:'rgba(78,201,255,0.15)'},
 };
 
 // ── AUTH ──
@@ -451,6 +449,7 @@ if(isAtleta){
  if(t.textContent.includes('Novo')||t.textContent.includes('Nova'))t.style.display='none';
  });
  const bNovo=document.getElementById('btnNovo');if(bNovo)bNovo.style.display='none';
+ const cardAcesso=document.getElementById('cardAcessoRapido');if(cardAcesso)cardAcesso.style.display='none';
 }
 
 // ── DATA / HORA ──
@@ -474,11 +473,12 @@ function toast(msg){
 }
 
 // ── STATS ──
-function loadStat(endpoint, elId, mcId){
+function loadStat(endpoint, elId, mcId, filtro){
  authFetch(urlTime(`${api}/${endpoint}`))
  .then(r => r.json())
  .then(d => {
- const n = Array.isArray(d) ? d.length : '—';
+ const lista = Array.isArray(d) ? (filtro ? d.filter(filtro) : d) : null;
+ const n = lista ? lista.length : '—';
  const el = document.getElementById(elId);
  const mcEl = document.getElementById(mcId);
  if (el) el.textContent = n;
@@ -491,9 +491,18 @@ function loadStat(endpoint, elId, mcId){
  if (mcEl) mcEl.textContent = '—';
  });
 }
+// Contadores mostram apenas o que ainda vai acontecer/está válido — não conta
+// atividades já finalizadas/canceladas nem exames com validade vencida.
+// Recorrentes contam enquanto a recorrência não tiver terminado, mesmo com data-âncora no passado.
+function aindaVaiAcontecer(a){
+ if (a.status_atividade !== 1) return false;
+ const agora = new Date();
+ if (a.recorrente) return !a.fim_recorrencia || new Date(a.fim_recorrencia + 'T23:59:59') >= agora;
+ return !!a.data_atividade && new Date(a.data_atividade) >= agora;
+}
 loadStat('usuarios', 'totalUsuarios', 'mc-usuarios');
-loadStat('exames', 'totalExames', 'mc-exames');
-loadStat('atividades', 'totalAtividades', 'mc-ativ');
+loadStat('exames', 'totalExames', 'mc-exames', e => !e.data_fim_exame || new Date(e.data_fim_exame + ' ') >= new Date(new Date().toDateString()));
+loadStat('atividades', 'totalAtividades', 'mc-ativ', aindaVaiAcontecer);
 loadStat('desempenhos', 'totalDesempenhos','mc-desemp');
 loadStat('calendarios', 'mc-cal', 'mc-cal');
 

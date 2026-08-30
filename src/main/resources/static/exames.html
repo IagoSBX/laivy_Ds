@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-:root{--verde:#00C97A;--azul:#0A1628;--azul2:#112244;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;
+:root{--verde:#00C97A;--azul:#0A1628;--azul2:#112244;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w: 268px;
  --card-bg:linear-gradient(135deg,#0D1E3C,#112244);--card-border:rgba(255,255,255,0.06);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
@@ -606,11 +606,18 @@ authFetch(urlTime(apiUs)).then(r=>r.json()).then(data=>{
 }).catch(()=>{});
 
 // STATS
+// Contadores mostram apenas exames ainda válidos (não vencidos) — não conta os já concluídos/expirados.
+function exameValido(e){
+ if (!e.data_fim_exame) return true;
+ const hoje = new Date(); hoje.setHours(0,0,0,0);
+ return new Date(e.data_fim_exame+' ') >= hoje;
+}
 function atualizarStats(){
- document.getElementById('st-total').textContent = dados.length;
- document.getElementById('st-aptos').textContent = dados.filter(e=>e.status_usuario===1||e.status_usuario==='1').length;
- document.getElementById('st-inaptos').textContent = dados.filter(e=>e.status_usuario===0||e.status_usuario==='0').length;
- const pesos = dados.filter(e=>e.peso_usuario).map(e=>parseFloat(e.peso_usuario));
+ const validos = dados.filter(exameValido);
+ document.getElementById('st-total').textContent = validos.length;
+ document.getElementById('st-aptos').textContent = validos.filter(e=>e.status_usuario===1||e.status_usuario==='1').length;
+ document.getElementById('st-inaptos').textContent = validos.filter(e=>e.status_usuario===0||e.status_usuario==='0').length;
+ const pesos = validos.filter(e=>e.peso_usuario).map(e=>parseFloat(e.peso_usuario));
  document.getElementById('st-peso').textContent = pesos.length ? (pesos.reduce((a,b)=>a+b,0)/pesos.length).toFixed(1) : '—';
 }
 
@@ -734,7 +741,7 @@ function renderCards(lista){
  <span style="font-size:11px;color:var(--cinza)">#${e.id_exame}</span>
  <div class="exam-acoes">
  <button class="btn-acao-sm btn-ver" onclick="event.stopPropagation();ver(${e.id_exame})">Ver</button>
- ${isAdmin?`<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel(${e.id_exame})">Excluir</button>`:''}
+ ${isAdmin?`<button class="btn-acao-sm btn-edit" onclick="event.stopPropagation();abrirEdicao(${e.id_exame})">Editar</button><button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel(${e.id_exame})">Excluir</button>`:''}
  </div>
  </div>
  </div>`;
@@ -765,7 +772,7 @@ function renderTabela(lista){
  <td><span style="background:${stBg};color:${stCor};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700">${apto?'Apto':'Inapto'}</span></td>
  <td>
  <button class="btn-acao-sm btn-ver" onclick="ver(${e.id_exame})">Ver</button>
- ${isAdmin?'<button class="btn-acao-sm btn-del" onclick="confirmarDel(${e.id_exame})">Excluir</button>':''}
+ ${isAdmin?`<button class="btn-acao-sm btn-edit" onclick="abrirEdicao(${e.id_exame})">Editar</button><button class="btn-acao-sm btn-del" onclick="confirmarDel(${e.id_exame})">Excluir</button>`:''}
  </td>
  </tr>`;
  }).join('');
@@ -943,6 +950,37 @@ function carregarFotoExameVer(input){
  };
  reader.readAsDataURL(file);
  input.value = '';
+}
+
+// EDITAR
+function abrirEdicao(id){
+ if(isAtleta){ toast('Acesso restrito.', false); return; }
+ const e = dados.find(x=>x.id_exame===id);
+ if(!e) return;
+ const f = document.getElementById('formExame');
+ f.usuario_id.value = e.usuario?.id_usuario || '';
+ f.data_inicio_exame.value = e.data_inicio_exame || '';
+ f.data_fim_exame.value = e.data_fim_exame || '';
+ f.peso_usuario.value = e.peso_usuario ?? '';
+ f.altura_usuario.value = e.altura_usuario ?? '';
+ f.taxa_gordura_usuario.value = e.taxa_gordura_usuario ?? '';
+ f.status_usuario.value = e.status_usuario ?? 1;
+ f.observacoes_exame.value = e.observacoes_exame || '';
+ calcIMC();
+ if(e.foto_exame){
+ document.getElementById('inp-foto-exame').value = e.foto_exame;
+ document.getElementById('exFotoPreviewImg').src = e.foto_exame;
+ document.getElementById('exFotoPreviewImg').style.display = 'block';
+ document.getElementById('exFotoPlaceholder').style.display = 'none';
+ document.getElementById('exFotoBtnRemover').classList.add('visible');
+ } else {
+ removerFotoExame();
+ }
+ document.getElementById('editId').value = e.id_exame;
+ document.getElementById('formTitulo').textContent = ' Editar Exame';
+ document.getElementById('btnSubmit').textContent = 'Salvar Alterações';
+ mudarTab('form', document.querySelectorAll('.tab')[1]);
+ window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // CONFIRMAR DELETE

@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w:240px;
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w: 268px;
  --card-bg:linear-gradient(135deg,#0D1E3C,#112244);--card-border:rgba(255,255,255,0.06);}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
@@ -100,13 +100,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 /* TABELA */
 .table-wrapper{display:none;}.table-wrapper.visible{display:block;}
 .cards-wrapper{display:none;}.cards-wrapper.visible{display:block;}
-.table{color:var(--branco)!important;border-collapse:separate!important;border-spacing:0 6px!important;}
-.table thead th{background:rgba(9,21,37,0.8)!important;color:var(--cinza)!important;font-size:11px;letter-spacing:2px;text-transform:uppercase;border:none!important;font-weight:700;padding:12px 16px!important;}
-.table tbody tr{background:rgba(255,255,255,0.03);}
-.table tbody tr:hover{background:rgba(0,201,122,0.05);}
-.table tbody td{background:transparent!important;padding:12px 16px!important;vertical-align:middle;border:none!important;}
-.table tbody td:first-child{border-radius:10px 0 0 10px;}
-.table tbody td:last-child{border-radius:0 10px 10px 0;}
 /* BADGES */
 .badge-admin{background:rgba(0,201,122,0.15);color:var(--verde);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge-treinador{background:rgba(78,201,255,0.15);color:#4EC9FF;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
@@ -152,7 +145,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 /* ── BOTÃO TEMA ── */
 /* ── TABLE UX ── */
 .table-responsive{border-radius:14px;overflow:hidden;}
-.table{border-collapse:separate!important;border-spacing:0!important;width:100%;}
+.table{color:var(--branco)!important;border-collapse:separate!important;border-spacing:0!important;width:100%;}
 .table thead th{
   background:rgba(9,21,37,0.9)!important;color:var(--cinza)!important;
   font-size:10px;letter-spacing:2px;text-transform:uppercase;
@@ -287,7 +280,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .user-acoes, .exam-acoes, .desemp-acoes, .ativ-acoes, .bv-acoes,
 [class$="-acoes"], [class*="-acoes"] {
   display: flex !important;
-  gap: 5px !important;
+  gap: 10px !important;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
@@ -318,6 +311,8 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
   font-family: 'Barlow', sans-serif;
 }
 .btn-acao-sm:hover { transform: translateY(-1px); }
+/* modo tabela: botões ficam direto na célula, sem wrapper com gap — espaçamento manual entre eles */
+.table tbody td .btn-acao-sm + .btn-acao-sm { margin-left: 8px; }
 </style>
 </head>
 <body>
@@ -484,7 +479,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <label class="form-label">Estado</label>
  <input class="form-control" id="inp-estado" name="estado_usuario" placeholder="SP" required>
  </div>
- <div class="col-12 d-flex gap-2 mt-2">
+ <div class="col-12 d-flex gap-2 mt-4">
  <button type="submit" class="btn-cadastrar" id="btnSubmit">Cadastrar Usuário</button>
  <button type="button" class="btn-cancelar-form" onclick="cancelarForm()">Cancelar</button>
  </div>
@@ -794,8 +789,20 @@ function mudarTab(id,btn){
  btn.classList.add('active');
 }
 
-function ver(id){
-  const u=dados.find(x=>x.id_usuario===id);
+async function ver(id){
+  let u=dados.find(x=>x.id_usuario===id);
+  if(u&&u.tipo_usuario===3){
+    location.href='perfil-atleta.html?id='+id;
+    return;
+  }
+  try{
+    const r=await authFetch(api+'/'+id);
+    if(!r.ok)throw new Error();
+    u=await r.json();
+  }catch(e){
+    toast('Não foi possível carregar os dados deste usuário.',false);
+    return;
+  }
   if(!u)return;
   if(u.tipo_usuario===3){
     location.href='perfil-atleta.html?id='+id;
@@ -963,6 +970,14 @@ document.getElementById('formCadastro').addEventListener('submit',function(e){
      faltando.forEach(c => c.el && c.el.classList.add('is-invalid'));
      toast('Preencha todos os campos obrigatórios: '+faltando.map(c=>c.label).join(', ')+'.', false);
      okObrigatorios = false;
+   }
+   // Admin precisa escolher um time — sem isso o usuário fica "órfão" e some das listas filtradas por time
+   if(isAdmin){
+     const tId = document.getElementById('inp-time-form') ? document.getElementById('inp-time-form').value : '';
+     if(!tId){
+       toast('Selecione um time para o novo usuário.', false);
+       okObrigatorios = false;
+     }
    }
  }
 

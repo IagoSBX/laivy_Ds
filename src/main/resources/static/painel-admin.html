@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Admin — LAIVY</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/laivy-theme.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{
+  --verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;
+  --sidebar-w: 268px;--card-bg:linear-gradient(135deg,#0D1E3C,#112244);
+  --card-border:rgba(255,255,255,0.06);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+.main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:16px;}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;}
+.page-header p{font-size:14px;color:var(--cinza);margin-top:4px;}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.stat-num{font-family:'Bebas Neue',cursive;font-size:30px;line-height:1;}
+.stat-label{font-size:11px;color:var(--cinza);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+
+/* TOP-LEVEL TABS */
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:12px;padding:4px;margin-bottom:22px;width:fit-content;}
+.tab{padding:8px 22px;border-radius:9px;font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;cursor:pointer;border:none;background:transparent;color:var(--cinza);transition:all .2s;}
+.tab.active{background:linear-gradient(135deg,var(--verde),#00A865);color:var(--azul);}
+.tab:hover:not(.active){color:var(--branco);background:rgba(255,255,255,0.05);}
+.secao{display:none;}.secao.visible{display:block;}
+
+/* CARD DARK */
+.card-dark{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:24px;margin-bottom:22px;}
+.card-dark h4{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;margin-bottom:18px;color:var(--verde);}
+
+/* FORM */
+.form-control,.form-select{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--branco)!important;font-family:'Barlow',sans-serif;}
+.form-control:focus,.form-select:focus{border-color:var(--verde)!important;box-shadow:0 0 0 3px rgba(0,201,122,0.15)!important;}
+.form-control::placeholder{color:rgba(136,153,187,0.4)!important;}
+.form-select option{background:#0D1E3C;}
+label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;display:block;}
+.required{color:#FF6B6B;}
+.btn-cadastrar{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 32px;border-radius:10px;cursor:pointer;transition:all .2s;}
+.btn-cadastrar:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,201,122,0.3);}
+.btn-cadastrar:disabled{opacity:.5;pointer-events:none;}
+.btn-cancelar,.btn-cancelar-form{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--cinza);font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:11px 24px;border-radius:10px;cursor:pointer;}
+.field-hint{font-size:11px;margin-top:4px;display:none;}
+.field-hint.show{display:block;}
+.field-hint.ok{color:#00C97A;}
+.field-hint.err{color:#FF6B6B;}
+.cep-loading{display:none;font-size:11px;color:var(--verde);margin-top:4px;}
+.cep-loading.show{display:block;}
+.form-control.is-valid{border-color:#00C97A!important;}
+.form-control.is-invalid{border-color:#FF6B6B!important;background:rgba(255,80,80,0.04)!important;}
+
+/* COLOR PICKER */
+.color-picker-wrap{display:flex;align-items:center;gap:10px;}
+.color-swatch{width:36px;height:36px;border-radius:8px;border:2px solid rgba(255,255,255,0.15);cursor:pointer;flex-shrink:0;}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px;}
+.search-wrap{position:relative;}
+.search-wrap::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238899BB' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat center/contain;}
+.search-bar{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 16px 9px 36px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;width:240px;outline:none;transition:border-color .2s;}
+.search-bar:focus{border-color:var(--verde);}
+.search-bar::placeholder{color:rgba(136,153,187,0.4);}
+.select-filtro{background:rgba(255,255,255,0.05)!important;border:1.5px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;color:var(--cinza)!important;font-family:'Barlow',sans-serif;font-size:13px;padding:9px 14px;outline:none;cursor:pointer;}
+.ml-auto{margin-left:auto;}
+.btn-novo{background:linear-gradient(135deg,var(--verde),#00A865);border:none;color:var(--azul);font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;padding:9px 20px;border-radius:10px;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-block;}
+.btn-novo:hover{transform:translateY(-1px);}
+
+/* TIMES GRID */
+.times-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+.time-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;overflow:hidden;transition:all .25s;cursor:pointer;}
+.time-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,0.35);}
+.time-card-banner{height:7px;}
+.time-card-body{padding:20px;}
+.time-card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.time-logo{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:20px;color:#fff;flex-shrink:0;overflow:hidden;}
+.time-logo img{width:100%;height:100%;object-fit:cover;}
+.time-nome{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;line-height:1.1;}
+.time-modalidade{font-size:12px;color:var(--cinza);margin-top:3px;}
+.time-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.ts-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:9px;padding:9px 12px;text-align:center;}
+.ts-num{font-family:'Bebas Neue',cursive;font-size:22px;line-height:1;}
+.ts-label{font-size:9px;color:var(--cinza);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.time-treinador{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--cinza);margin-bottom:14px;}
+.time-treinador strong{color:var(--branco);font-size:13px;}
+.time-footer{display:flex;gap:6px;justify-content:flex-end;padding-top:12px;border-top:1px solid rgba(255,255,255,0.05);}
+.badge-ativo{background:rgba(0,201,122,0.12);color:var(--verde);padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+.badge-inativo{background:rgba(255,80,80,0.1);color:#FF6B6B;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;}
+
+/* MEMBROS */
+.membros-header{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:10px;}
+.membro-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:10px;transition:background .15s;}
+.membro-row:hover{background:rgba(255,255,255,0.06);}
+.membro-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;overflow:hidden;}
+.membro-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.membro-nome{font-size:13px;font-weight:700;flex:1;}
+.membro-tipo{font-size:10px;color:var(--cinza);}
+.membro-remove{background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:background .2s;white-space:nowrap;}
+.membro-remove:hover{background:rgba(255,80,80,0.25);}
+.atleta-add-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:9px;transition:all .15s;cursor:pointer;}
+.atleta-add-row:hover{background:rgba(0,201,122,0.07);border-color:rgba(0,201,122,0.2);}
+.atleta-add-row .add-btn{margin-left:auto;background:rgba(0,201,122,0.12);border:1px solid rgba(0,201,122,0.25);color:var(--verde);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+
+/* ACTION BUTTONS */
+.btn-acao-sm{padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:1px solid transparent;transition:all .18s;font-family:'Barlow',sans-serif;white-space:nowrap;}
+.btn-acao-sm:hover{transform:translateY(-1px);}
+.btn-ver{background:rgba(78,201,255,.1);color:#4EC9FF;border-color:rgba(78,201,255,.25);}
+.btn-ver:hover{background:rgba(78,201,255,.22);}
+.btn-edit{background:rgba(255,176,32,.1);color:#FFB020;border-color:rgba(255,176,32,.25);}
+.btn-edit:hover{background:rgba(255,176,32,.22);}
+.btn-del{background:rgba(255,80,80,.1);color:#FF6B6B;border-color:rgba(255,80,80,.25);}
+.btn-del:hover{background:rgba(255,80,80,.22);}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px 24px;color:var(--cinza);}
+.empty-state svg{opacity:.4;margin-bottom:12px;}
+.empty-state p{font-size:14px;}
+
+/* MODAL */
+.modal-content{background:#0D1E3C!important;color:var(--branco)!important;border:1px solid rgba(0,201,122,0.2)!important;border-radius:18px!important;}
+.modal-header{border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:20px 24px!important;}
+.modal-body{padding:20px 24px!important;}
+.modal-footer{border-top:1px solid rgba(255,255,255,0.08)!important;padding:16px 24px!important;}
+.btn-close{filter:invert(1)!important;}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn .3s ease;color:var(--branco);}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TREINADOR: FOTO */
+.foto-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;}
+.foto-circle{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,0.04);border:2px dashed rgba(0,201,122,0.3);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;}
+.foto-circle:hover{border-color:var(--verde);background:rgba(0,201,122,0.06);}
+.foto-circle img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.foto-circle .foto-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;}
+.foto-circle:hover .foto-ov{display:flex;}
+.foto-hint{font-size:11px;color:var(--cinza);text-align:center;}
+.btn-rm-foto{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.2);color:#FF6B6B;border-radius:7px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;display:none;}
+.btn-rm-foto.show{display:inline-block;}
+
+/* TREINADOR: TIME SELECTOR */
+.time-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;}
+.ts-option{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);border-radius:10px;cursor:pointer;transition:all .2s;}
+.ts-option:hover{background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.2);}
+.ts-option.selected{background:rgba(0,201,122,0.1);border-color:rgba(0,201,122,0.4);}
+.ts-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.ts-nome{font-size:13px;font-weight:700;flex:1;}
+.ts-cat{font-size:10px;color:var(--cinza);}
+.ts-check{width:18px;height:18px;border-radius:50%;background:var(--verde);display:none;align-items:center;justify-content:center;flex-shrink:0;}
+.ts-option.selected .ts-check{display:flex;}
+
+/* TREINADORES LIST */
+.trein-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;transition:background .15s;}
+.trein-row:hover{background:rgba(255,255,255,0.05);}
+.trein-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;background:rgba(78,201,255,0.15);color:#4EC9FF;}
+.trein-av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.trein-nome{font-size:14px;font-weight:700;flex:1;}
+.trein-time{display:flex;align-items:center;gap:6px;font-size:12px;}
+.trein-time-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.trein-sem-time{font-size:12px;color:var(--cinza);font-style:italic;}
+.btn-trocar-time{background:rgba(255,176,32,0.1);border:1px solid rgba(255,176,32,0.2);color:#FFB020;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-trocar-time:hover{background:rgba(255,176,32,0.2);}
+
+/* CTA visão geral */
+.cta-card{background:linear-gradient(135deg,#0D2A1A,#0A1F2E);border:1px solid rgba(0,201,122,0.2);border-radius:18px;padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.cta-card h3{font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:1px;margin-bottom:6px;}
+.cta-card p{font-size:13px;color:var(--cinza);max-width:460px;}
+.quick-grid-vg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+.quick-btn-vg{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;transition:all 0.2s;cursor:pointer;}
+.quick-btn-vg:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.12);transform:translateY(-2px);}
+.quick-nome-vg{font-size:13px;font-weight:700;color:var(--branco);}
+.quick-desc-vg{font-size:11px;color:var(--cinza);margin-top:1px;}
+</style>
+</head>
+<body>
+
+<div id="sidebar-placeholder"></div>
+<script src="js/sidebar.js"></script>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1>Painel Admin</h1>
+      <p>Visão consolidada de times e treinadores do sistema</p>
+    </div>
+  </div>
+
+  <!-- TABS PRINCIPAIS -->
+  <div class="tabs">
+    <button class="tab" data-tab="visao" onclick="mudarTabPrincipal('visao',this)">Visão Geral</button>
+    <button class="tab" data-tab="times" onclick="mudarTabPrincipal('times',this)">Times</button>
+    <button class="tab" data-tab="treinadores" onclick="mudarTabPrincipal('treinadores',this)">Treinadores</button>
+  </div>
+
+  <!-- ═══════════ VISÃO GERAL ═══════════ -->
+  <div class="secao" id="tab-visao">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-dot" style="background:var(--verde)"></div><div><div class="stat-num" id="vg-times" style="color:var(--verde)">—</div><div class="stat-label">Times</div></div></div>
+      <div class="stat-card"><div class="stat-dot" style="background:#4EC9FF"></div><div><div class="stat-num" id="vg-admins" style="color:#4EC9FF">—</div><div class="stat-label">Administradores</div></div></div>
+      <div class="stat-card"><div class="stat-dot" style="background:#FFB020"></div><div><div class="stat-num" id="vg-treinadores" style="color:#FFB020">—</div><div class="stat-label">Treinadores</div></div></div>
+      <div class="stat-card"><div class="stat-dot" style="background:#A78FFF"></div><div><div class="stat-num" id="vg-atletas" style="color:#A78FFF">—</div><div class="stat-label">Atletas</div></div></div>
+    </div>
+
+    <div class="cta-card" style="margin-bottom:22px">
+      <div>
+        <h3>Entrar no Sistema</h3>
+        <p>Clique em um time na aba Times para entrar no dashboard dele e gerenciar atividades, exames, desempenho e escalação.</p>
+      </div>
+      <button class="btn-cadastrar" onclick="mudarTabPrincipal('times', document.querySelector('.tab[data-tab=times]'))">Ver Times →</button>
+    </div>
+
+    <div class="card-dark">
+      <h4>Acesso Rápido</h4>
+      <div class="quick-grid-vg">
+        <a class="quick-btn-vg" onclick="mudarTabPrincipal('times', document.querySelector('.tab[data-tab=times]'))">
+          <div><div class="quick-nome-vg">Gerenciar Times</div><div class="quick-desc-vg">Criar, editar e administrar membros</div></div>
+        </a>
+        <a class="quick-btn-vg" onclick="mudarTabPrincipal('treinadores', document.querySelector('.tab[data-tab=treinadores]'))">
+          <div><div class="quick-nome-vg">Gerenciar Treinadores</div><div class="quick-desc-vg">Cadastrar e atribuir times</div></div>
+        </a>
+        <a class="quick-btn-vg" href="usuarios.html">
+          <div><div class="quick-nome-vg">Usuários</div><div class="quick-desc-vg">Ver todos os cadastros</div></div>
+        </a>
+        <a class="quick-btn-vg" href="dashboard.html">
+          <div><div class="quick-nome-vg">Dashboard</div><div class="quick-desc-vg">Voltar à tela inicial</div></div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TIMES ═══════════ -->
+  <div class="secao" id="tab-times">
+    <div class="card-dark" style="padding:18px 24px;">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input class="search-bar" id="busca" placeholder="Buscar por nome ou modalidade..." oninput="renderizarTimes()">
+        </div>
+        <select class="select-filtro" id="filtroStatus" onchange="renderizarTimes()">
+          <option value="">Todos</option>
+          <option value="1">Ativos</option>
+          <option value="0">Inativos</option>
+        </select>
+        <a href="novo-time.html" class="btn-novo ml-auto">+ Novo Time</a>
+      </div>
+      <div class="times-grid" id="timesGrid"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TREINADORES ═══════════ -->
+  <div class="secao" id="tab-treinadores">
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card-dark">
+          <h4>Novo Treinador</h4>
+          <form id="formTreinador" novalidate>
+            <div class="row g-3">
+              <div class="col-12">
+                <div class="foto-wrap">
+                  <div class="foto-circle" id="fotoCircle" onclick="document.getElementById('inputFoto').click()">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cinza)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <img id="fotoPreviewImg" style="display:none" alt="">
+                    <div class="foto-ov">Alterar</div>
+                  </div>
+                  <input type="file" id="inputFoto" accept="image/*" style="display:none" onchange="carregarFoto(this)">
+                  <div class="foto-hint">Foto opcional · JPG, PNG · máx 2MB</div>
+                  <button type="button" class="btn-rm-foto" id="btnRmFoto" onclick="removerFoto()">Remover foto</button>
+                  <input type="hidden" id="inp-foto" name="foto_usuario">
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Nome Completo <span class="required">*</span></label>
+                <input class="form-control" id="inp-nome" name="nome_usuario" placeholder="Nome do treinador" required oninput="validarNome(this)">
+                <div class="field-hint" id="hint-nome"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input class="form-control" id="inp-email" name="email_usuario" placeholder="email@exemplo.com" required oninput="validarEmail(this)">
+                <div class="field-hint" id="hint-email"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Celular <span class="required">*</span></label>
+                <input class="form-control" id="inp-cel" name="cel_usuario" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" maxlength="15" required>
+                <div class="field-hint" id="hint-cel"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">CPF <span class="required">*</span></label>
+                <input class="form-control" id="inp-cpf" name="cpf_usuario" placeholder="000.000.000-00" oninput="mascaraCPF(this)" maxlength="14" required>
+                <div class="field-hint" id="hint-cpf"></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Data de Nascimento <span class="required">*</span></label>
+                <input type="date" class="form-control" id="inp-nasc" name="data_nasc_usuario" required>
+              </div>
+              <div class="col-12"><div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div></div>
+              <div class="col-md-4">
+                <label class="form-label">CEP <span class="required">*</span></label>
+                <input class="form-control" id="inp-cep" name="cep_usuario" placeholder="00000-000" oninput="mascaraCEP(this)" onblur="buscarCEP(this)" maxlength="9" required>
+                <div class="cep-loading" id="cepLoading">Buscando endereço...</div>
+                <div class="field-hint" id="hint-cep"></div>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Endereço <span class="required">*</span></label>
+                <input class="form-control" id="inp-end" name="endereco_usuario" placeholder="Rua, número" required>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Bairro <span class="required">*</span></label>
+                <input class="form-control" id="inp-bairro" name="bairro_usuario" placeholder="Bairro" required>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Cidade <span class="required">*</span></label>
+                <input class="form-control" id="inp-cidade" name="cidade_usuario" placeholder="Cidade" required>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Estado <span class="required">*</span></label>
+                <input class="form-control" id="inp-estado" name="estado_usuario" placeholder="SP" required>
+              </div>
+              <div class="col-12"><div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div></div>
+              <div class="col-md-6">
+                <label class="form-label">Login <span class="required">*</span></label>
+                <input class="form-control" id="inp-login" name="login_usuario" placeholder="login de acesso" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Senha Inicial <span class="required">*</span></label>
+                <input type="password" class="form-control" id="inp-senha" name="senha_usuario" placeholder="Mín. 8 caracteres, com letras e números" required minlength="8">
+                <div class="field-hint ok show" style="font-size:10px">O treinador trocará a senha no primeiro acesso</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Time Responsável <span class="required">*</span></label>
+                <div class="field-hint" id="hint-time"></div>
+                <div class="time-selector" id="timeSelectorGrid">
+                  <div style="padding:16px;text-align:center;color:var(--cinza);font-size:13px;grid-column:1/-1">Carregando times...</div>
+                </div>
+                <input type="hidden" id="inp-time-id">
+              </div>
+              <div class="col-12 d-flex gap-3 mt-2">
+                <button type="submit" class="btn-cadastrar" id="btnSubmit">Cadastrar Treinador</button>
+                <button type="button" class="btn-cancelar" onclick="resetFormTreinador()">Limpar</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card-dark">
+          <h4>Treinadores Cadastrados</h4>
+          <div id="treinadoresList">
+            <div style="text-align:center;padding:32px;color:var(--cinza)">
+              <div style="width:28px;height:28px;border:3px solid rgba(0,201,122,0.2);border-top-color:var(--verde);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px"></div>
+              Carregando...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL VER TIME -->
+<div class="modal fade" id="modalTime" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="modalTimeLogo" style="width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden"></div>
+          <div><h5 class="modal-title" id="modalTimeNome" style="font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:1px"></h5><div id="modalTimeSub" style="font-size:12px;color:var(--cinza)"></div></div>
+        </div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="time-stats" style="margin-bottom:20px">
+          <div class="ts-box"><div class="ts-num" id="mTotalAtletas" style="color:var(--verde)">0</div><div class="ts-label">Atletas</div></div>
+          <div class="ts-box"><div class="ts-num" id="mTotalTreinos" style="color:#4EC9FF">0</div><div class="ts-label">Treinos</div></div>
+          <div class="ts-box"><div class="ts-num" id="mTotalJogos" style="color:#FFB020">0</div><div class="ts-label">Jogos</div></div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="membros-header">Membros</div><div id="membrosList" style="max-height:280px;overflow-y:auto"></div></div>
+          <div class="col-md-6" id="colAddAtletas"><div class="membros-header">Adicionar atleta</div><input id="buscaAtleta" class="form-control mb-2" placeholder="Buscar atleta sem time..." oninput="filtrarAtletasDisp()"><div id="atletasDisp" style="max-height:230px;overflow-y:auto"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer" id="modalFooterBtns"><button class="btn-acao-sm btn-edit" onclick="editarDoModal()">Editar time</button><button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fechar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUIR TIME -->
+<div class="modal fade" id="modalDel" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body" style="padding:28px;text-align:center">
+        <div style="font-size:38px;margin-bottom:12px">⚠️</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:20px;margin-bottom:8px">Excluir Time?</div>
+        <div style="font-size:13px;color:var(--cinza);margin-bottom:20px" id="nomeDel">Esta ação não pode ser desfeita.</div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button id="btnConfDel" style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#FF6B6B;padding:7px 20px;border-radius:8px;font-family:'Bebas Neue',cursive;font-size:15px;cursor:pointer">Excluir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TROCAR TIME DO TREINADOR -->
+<div class="modal fade" id="modalTrocarTime" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px">Atribuir Time ao Treinador</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:14px;font-size:13px;color:var(--cinza)">Selecionando time para: <strong id="modalTreinNome" style="color:var(--branco)">—</strong></div>
+        <div class="time-selector" id="modalTimeSel"></div>
+        <input type="hidden" id="modalTimeSelecionadoId">
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button id="btnRemoverDoTime" style="background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:8px;padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer" onclick="removerDoTime()">Remover do Time</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-cancelar" style="font-size:14px;padding:8px 20px" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn-cadastrar" style="font-size:14px;padding:8px 24px" onclick="confirmarTrocarTime()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── JWT Auth Helper ─────────────────────────────────────────────────────
+function _authHeaders(extra) {
+  return Object.assign({ 'Content-Type': 'application/json' }, extra || {});
+}
+async function authFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = _authHeaders(opts.headers);
+  opts.credentials = 'include';
+  const res = await fetch(url, opts);
+  if (res.status === 401 || res.status === 403) {
+    localStorage.clear();
+    window.location.href = 'login.html';
+    throw new Error('Sessão expirada');
+  }
+  return res;
+}
+async function _logout() {
+  try { await fetch('/usuarios/logout', { method: 'POST', credentials: 'include' }); } catch (e) {}
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+// ── HELPERS COMPARTILHADOS ──
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ini(n){ return (n||'?').split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase(); }
+function toast(msg,ok=true){const el=document.createElement('div');el.className='toast-item'+(ok?'':' erro');el.innerHTML=(ok?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 17.01"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>')+' '+msg;document.getElementById('toastWrap').appendChild(el);setTimeout(()=>el.remove(),3200);}
+
+// ── AUTH — somente Admin acessa este painel ──
+const user = JSON.parse(localStorage.getItem('usuario') || '{}');
+if (!user.id_usuario) window.location.href = 'login.html';
+if (user.tipo_usuario !== 1) window.location.href = 'dashboard.html';
+const isAdministrador = true;
+
+// ── Painel Admin é um hub global (todos os times). Entrar aqui limpa
+// qualquer time selecionado anteriormente — senão, ao voltar depois para
+// uma tela de time (sem clicar em nenhum time de novo), ela mostraria os
+// dados do time antigo em vez de não mostrar nada.
+localStorage.removeItem('timeSelecionado');
+(function resetarMarcaDaSidebar(){
+  const icon = document.getElementById('sidebarLogoIcon');
+  const nomeTimeEl = document.getElementById('sidebarNomeTime');
+  const tiEl = document.getElementById('timeSidebarIndicator');
+  if (icon) { icon.style.background = ''; icon.style.padding = ''; icon.textContent = 'L'; }
+  if (nomeTimeEl) nomeTimeEl.textContent = 'LAIVY';
+  if (tiEl) tiEl.style.display = 'none';
+})();
+
+const API_TIMES      = '/times';
+const API_USUARIOS   = '/usuarios';
+const API_ATIVIDADES = '/atividades';
+
+// ── TABS PRINCIPAIS ──
+function mudarTabPrincipal(id, btn){
+  document.querySelectorAll('.secao').forEach(s=>s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('visible');
+  if(btn) btn.classList.add('active');
+  const url = new URL(window.location);
+  url.searchParams.set('tab', id);
+  window.history.replaceState({}, '', url);
+}
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const tabInicial = params.get('tab') || 'visao';
+  const btn = document.querySelector('.tab[data-tab="'+tabInicial+'"]') || document.querySelector('.tab[data-tab="visao"]');
+  mudarTabPrincipal(tabInicial, btn);
+})();
+
+/* ════════════════════════════════════════════════════════════
+   TIMES — portado de times.html
+   ════════════════════════════════════════════════════════════ */
+let dados = [], todosUsuarios = [], todasAtividades = [];
+let idParaDel = null, idParaEditarModal = null, timeAtualModal = null;
+
+// Contadores mostram apenas atividades que ainda vão acontecer (não conta canceladas/finalizadas).
+// Recorrentes contam enquanto a recorrência não tiver terminado, mesmo com data-âncora no passado.
+function aindaVaiAcontecer(a){
+  if (a.status_atividade !== 1) return false;
+  const agora = new Date();
+  if (a.recorrente) return !a.fim_recorrencia || new Date(a.fim_recorrencia + 'T23:59:59') >= agora;
+  return !!a.data_atividade && new Date(a.data_atividade) >= agora;
+}
+
+function carregarTimes(){
+  Promise.all([
+    authFetch(API_TIMES).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_USUARIOS).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_ATIVIDADES).then(r=>r.json()).catch(()=>[]),
+  ]).then(([times, usuarios, atividades]) => {
+    dados = times;
+    todosUsuarios = usuarios;
+    todasAtividades = atividades;
+    renderizarTimes();
+    atualizarVisaoGeral();
+  });
+}
+
+function renderizarTimes(){
+  const busca  = document.getElementById('busca').value.toLowerCase();
+  const status = document.getElementById('filtroStatus').value;
+  const lista  = dados.filter(t=>{
+    const mb = !busca || t.nome_time?.toLowerCase().includes(busca) || t.modalidade_time?.toLowerCase().includes(busca) || t.categoria_time?.toLowerCase().includes(busca);
+    const ms = !status || String(t.ativo_time) === status;
+    return mb && ms;
+  });
+  renderGridTimes(lista);
+}
+
+function renderGridTimes(lista){
+  const g = document.getElementById('timesGrid');
+  if(!lista.length){
+    g.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>Nenhum time encontrado</p></div>';
+    return;
+  }
+  g.innerHTML = lista.map(t => {
+    const cor     = t.cor_time || '#00C97A';
+    const membros = todosUsuarios.filter(u=>u.time&&(u.time.id_time===t.id_time||u.time===t.id_time));
+    const atletas = membros.filter(u=>u.tipo_usuario===3).length;
+    const ativs   = todasAtividades.filter(a=>a.time&&(a.time.id_time===t.id_time||a.time===t.id_time)).filter(aindaVaiAcontecer);
+    const treinos = ativs.filter(a=>a.tipo_atividade===1).length;
+    const jogos   = ativs.filter(a=>a.tipo_atividade===2).length;
+    const logoHTML = t.logo_time
+      ? '<img src="'+esc(t.logo_time)+'" alt="">'
+      : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+esc(ini(t.nome_time))+'</span>';
+    const logoEncoded = t.logo_time ? encodeURIComponent(t.logo_time) : '';
+    const ativo = t.ativo_time===1||t.ativo_time==='1';
+    const treinNome = esc(t.treinador?.nome_usuario || '—');
+    const btnAdmin = '<a href="editar-time.html?id='+t.id_time+'" class="btn-acao-sm btn-edit" onclick="event.stopPropagation()" style="text-decoration:none">Editar</a>'
+        +'<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDelTime('+t.id_time+',\''+esc(t.nome_time)+'\')">Excluir</button>';
+    return '<div class="time-card" title="Clique para entrar no time" onclick="entrarNoTime('+t.id_time+',\''+esc(t.nome_time)+'\',\''+esc(cor)+'\',decodeURIComponent(\''+logoEncoded+'\'))">'
+      +'<div class="time-card-banner" style="background:'+cor+'"></div>'
+      +'<div class="time-card-body">'
+        +'<div class="time-card-top">'
+          +'<div class="time-logo" style="background:'+cor+'22;border:2px solid '+cor+'44">'+logoHTML+'</div>'
+          +'<div style="flex:1;min-width:0">'
+            +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+              +'<div class="time-nome">'+esc(t.nome_time)+'</div>'
+              +(ativo?'<span class="badge-ativo">Ativo</span>':'<span class="badge-inativo">Inativo</span>')
+            +'</div>'
+            +'<div class="time-modalidade">'+esc(t.modalidade_time||'—')+' &bull; '+esc(t.categoria_time||'—')+'</div>'
+          +'</div>'
+        +'</div>'
+        +'<div class="time-stats">'
+          +'<div class="ts-box"><div class="ts-num" style="color:'+cor+'">'+atletas+'</div><div class="ts-label">Atletas</div></div>'
+          +'<div class="ts-box"><div class="ts-num" style="color:#4EC9FF">'+treinos+'</div><div class="ts-label">Treinos</div></div>'
+          +'<div class="ts-box"><div class="ts-num" style="color:#FFB020">'+jogos+'</div><div class="ts-label">Jogos</div></div>'
+        +'</div>'
+        +'<div class="time-treinador"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 14 0v2"/></svg> Treinador: <strong>'+treinNome+'</strong></div>'
+        +'<div class="time-footer">'
+          +'<button class="btn-acao-sm btn-ver" onclick="event.stopPropagation();verTime('+t.id_time+')">Gerenciar</button>'
+          +btnAdmin
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+}
+
+// Clique no card do time — entra direto no dashboard daquele time,
+// igual à tela de selecionar-time.html.
+function entrarNoTime(timeId, timeNome, timeCor, timeLogo) {
+  localStorage.setItem('timeSelecionado', JSON.stringify({
+    id: timeId, nome: timeNome, cor: timeCor || '#00C97A', logo: timeLogo || null
+  }));
+  window.location.href = 'dashboard.html';
+}
+
+// "Gerenciar" — abre o modal de administração do time (membros, stats),
+// sem entrar no dashboard dele.
+function verTime(id){
+  const t = dados.find(x=>x.id_time===id);
+  if(!t) return;
+  idParaEditarModal = id;
+  timeAtualModal = t;
+  const cor = t.cor_time || '#00C97A';
+
+  const logo = document.getElementById('modalTimeLogo');
+  logo.style.background = cor+'22';
+  logo.style.border = '2px solid '+cor+'44';
+  logo.innerHTML = t.logo_time
+    ? '<img src="'+esc(t.logo_time)+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px">'
+    : '<span style="color:#fff;font-family:\'Bebas Neue\',cursive;font-size:18px">'+esc(ini(t.nome_time))+'</span>';
+
+  document.getElementById('modalTimeNome').textContent = t.nome_time;
+  document.getElementById('modalTimeSub').textContent  = (t.modalidade_time||'—')+' · '+(t.categoria_time||'—')+' · '+(t.treinador?.nome_usuario||'—');
+
+  const membros   = todosUsuarios.filter(u=>u.time&&(u.time.id_time===id||u.time===id));
+  const ativs     = todasAtividades.filter(a=>a.time&&(a.time.id_time===id||a.time===id)).filter(aindaVaiAcontecer);
+  document.getElementById('mTotalAtletas').textContent = membros.filter(u=>u.tipo_usuario===3).length;
+  document.getElementById('mTotalTreinos').textContent = ativs.filter(a=>a.tipo_atividade===1).length;
+  document.getElementById('mTotalJogos').textContent   = ativs.filter(a=>a.tipo_atividade===2).length;
+
+  const ml = document.getElementById('membrosList');
+  if(!membros.length){
+    ml.innerHTML='<div style="text-align:center;padding:20px;color:var(--cinza);font-size:13px">Nenhum membro neste time</div>';
+  } else {
+    ml.innerHTML = membros.map(u => {
+      const avBg = {1:'rgba(0,201,122,0.2)',2:'rgba(78,201,255,0.2)',3:'rgba(255,176,32,0.2)'}[u.tipo_usuario]||'rgba(136,136,136,0.2)';
+      const avCor= {1:'#00C97A',2:'#4EC9FF',3:'#FFB020'}[u.tipo_usuario]||'#888';
+      const avHTML = u.foto_usuario
+        ? '<img src="'+esc(u.foto_usuario)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+        : esc(ini(u.nome_usuario));
+      const rmBtn = '<button class="membro-remove" onclick="removerMembro('+id+','+u.id_usuario+')">Remover</button>';
+      return '<div class="membro-row">'
+        +'<div class="membro-av" style="background:'+avBg+';color:'+avCor+'">'+avHTML+'</div>'
+        +'<div style="flex:1;min-width:0"><div class="membro-nome">'+esc(u.nome_usuario)+'</div>'
+        +'<div class="membro-tipo">'+({1:'Administrador',2:'Treinador',3:'Atleta'}[u.tipo_usuario]||'—')+'</div></div>'
+        +rmBtn
+      +'</div>';
+    }).join('');
+  }
+
+  renderAtletasDisp(id);
+  document.getElementById('colAddAtletas').style.display = '';
+  document.getElementById('modalFooterBtns').style.display = '';
+
+  new bootstrap.Modal(document.getElementById('modalTime')).show();
+}
+
+function renderAtletasDisp(timeId){
+  const busca = (document.getElementById('buscaAtleta')?.value||'').toLowerCase();
+  const semTime = todosUsuarios.filter(u=>
+    u.tipo_usuario===3 &&
+    (!u.time || u.time===null) &&
+    (!busca || u.nome_usuario?.toLowerCase().includes(busca))
+  );
+  const ad = document.getElementById('atletasDisp');
+  if(!semTime.length){
+    ad.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--cinza);font-size:12px">Todos os atletas já estão em um time</div>';
+    return;
+  }
+  ad.innerHTML = semTime.map(u =>
+    '<div class="atleta-add-row">'
+    +'<div class="membro-av" style="background:rgba(255,176,32,0.2);color:#FFB020">'
+    +(u.foto_usuario?'<img src="'+esc(u.foto_usuario)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">':esc(ini(u.nome_usuario)))
+    +'</div>'
+    +'<div style="min-width:0;flex:1"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.nome_usuario)+'</div></div>'
+    +'<button class="add-btn" onclick="adicionarMembro('+timeId+','+u.id_usuario+')">+ Add</button>'
+    +'</div>'
+  ).join('');
+}
+
+function filtrarAtletasDisp(){
+  if(timeAtualModal) renderAtletasDisp(timeAtualModal.id_time);
+}
+
+function adicionarMembro(idTime, idUsuario){
+  authFetch(API_TIMES+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'})
+    .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
+    .then(()=>{ toast('Atleta adicionado ao time!'); carregarTimes(); setTimeout(()=>verTime(idTime),600); })
+    .catch(()=>toast('Erro ao adicionar.',false));
+}
+
+function removerMembro(idTime, idUsuario){
+  authFetch(API_TIMES+'/'+idTime+'/membros/'+idUsuario, {method:'DELETE'})
+    .then(r=>{ if(!r.ok) throw new Error(); toast('Membro removido do time!'); carregarTimes(); setTimeout(()=>verTime(idTime),600); })
+    .catch(()=>toast('Erro ao remover.',false));
+}
+
+function editarDoModal(){
+  bootstrap.Modal.getInstance(document.getElementById('modalTime'))?.hide();
+  setTimeout(()=>{ window.location.href='editar-time.html?id='+idParaEditarModal; },300);
+}
+
+function confirmarDelTime(id, nome){
+  idParaDel = id;
+  document.getElementById('nomeDel').textContent = 'Excluir "'+nome+'"? Os membros não serão excluídos.';
+  new bootstrap.Modal(document.getElementById('modalDel')).show();
+}
+document.getElementById('btnConfDel').addEventListener('click',()=>{
+  if(!idParaDel) return;
+  authFetch(API_TIMES+'/'+idParaDel,{method:'DELETE'})
+    .then(()=>{ toast('Time excluído!'); bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide(); carregarTimes(); })
+    .catch(()=>toast('Erro ao excluir.',false));
+});
+
+/* ════════════════════════════════════════════════════════════
+   VISÃO GERAL
+   ════════════════════════════════════════════════════════════ */
+function atualizarVisaoGeral(){
+  document.getElementById('vg-times').textContent = dados.length;
+  document.getElementById('vg-admins').textContent = todosUsuarios.filter(u=>u.tipo_usuario===1).length;
+  document.getElementById('vg-treinadores').textContent = todosUsuarios.filter(u=>u.tipo_usuario===2).length;
+  document.getElementById('vg-atletas').textContent = todosUsuarios.filter(u=>u.tipo_usuario===3).length;
+}
+
+/* ════════════════════════════════════════════════════════════
+   TREINADORES — portado de cadastrar-treinador.html
+   ════════════════════════════════════════════════════════════ */
+let todosTimesTreinador = [];
+let treinadorEditandoId = null;
+let timeNoModalId = null;
+let fotoBase64 = null;
+
+async function carregarTreinadores() {
+  const [usuarios, times] = await Promise.all([
+    authFetch(API_USUARIOS).then(r=>r.json()).catch(()=>[]),
+    authFetch(API_TIMES).then(r=>r.json()).catch(()=>[]),
+  ]);
+  todosTimesTreinador = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
+  renderTimeSelectorGrid('timeSelectorGrid', null);
+  renderTreinadores(usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2));
+}
+
+function renderTimeSelectorGrid(containerId, selectedId) {
+  const g = document.getElementById(containerId);
+  if(!todosTimesTreinador.length){
+    g.innerHTML='<div style="padding:14px;color:var(--cinza);font-size:13px;grid-column:1/-1">Nenhum time ativo cadastrado.</div>';
+    return;
+  }
+  g.innerHTML = todosTimesTreinador.map(t=>{
+    const cor = t.cor_time||'#00C97A';
+    const sel = selectedId && (t.id_time==selectedId) ? ' selected' : '';
+    return '<div class="ts-option'+sel+'" data-tid="'+t.id_time+'" data-tname="'+esc(t.nome_time)+'" data-tcor="'+cor+'" tabindex="0" role="button" onclick="selecionarTimeTreinador(this,\''+containerId+'\')">'
+      +'<div class="ts-dot" style="background:'+cor+'"></div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div class="ts-nome">'+esc(t.nome_time)+'</div>'
+        +'<div class="ts-cat">'+esc(t.categoria_time||'—')+'</div>'
+      +'</div>'
+      +'<div class="ts-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+    +'</div>';
+  }).join('');
+}
+
+function selecionarTimeTreinador(el, containerId) {
+  const grid = document.getElementById(containerId);
+  grid.querySelectorAll('.ts-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  if(containerId === 'timeSelectorGrid') {
+    document.getElementById('inp-time-id').value = el.dataset.tid;
+    const h=document.getElementById('hint-time');
+    h.textContent='Time selecionado ✓'; h.className='field-hint show ok';
+  } else {
+    timeNoModalId = parseInt(el.dataset.tid);
+  }
+}
+
+function renderTreinadores(lista) {
+  const el = document.getElementById('treinadoresList');
+  if(!lista.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--cinza);font-size:13px">Nenhum treinador cadastrado ainda.</div>';
+    return;
+  }
+  el.innerHTML = lista.map(u=>{
+    const avHTML = u.foto_usuario
+      ? '<img src="'+esc(u.foto_usuario)+'" alt="">'
+      : esc(ini(u.nome_usuario));
+    const time = u.time;
+    const timeHTML = time
+      ? '<div class="trein-time"><div class="trein-time-dot" style="background:'+(time.cor_time||'#00C97A')+'"></div><span style="color:var(--branco);font-weight:600">'+esc(time.nome_time)+'</span></div>'
+      : '<div class="trein-sem-time">Sem time atribuído</div>';
+    const label = u.tipo_usuario===1 ? '👑 Admin' : '🏋️ Treinador';
+    return '<div class="trein-row">'
+      +'<div class="trein-av">'+avHTML+'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div class="trein-nome">'+esc(u.nome_usuario)+'</div>'
+        +'<div style="font-size:11px;color:var(--cinza);margin-bottom:3px">'+label+'</div>'
+        +timeHTML
+      +'</div>'
+      +'<button class="btn-trocar-time" onclick="abrirModalTrocarTime('+u.id_usuario+',\''+esc(u.nome_usuario)+'\','+(time?time.id_time:'null')+')">Atribuir Time</button>'
+    +'</div>';
+  }).join('');
+}
+
+function abrirModalTrocarTime(idUsuario, nome, idTimeAtual) {
+  treinadorEditandoId = idUsuario;
+  timeNoModalId = idTimeAtual;
+  document.getElementById('modalTreinNome').textContent = nome;
+  renderTimeSelectorGrid('modalTimeSel', idTimeAtual);
+  new bootstrap.Modal(document.getElementById('modalTrocarTime')).show();
+}
+
+async function confirmarTrocarTime() {
+  if(!timeNoModalId){ toast('Selecione um time.',false); return; }
+  await salvarTimeDoTreinador(treinadorEditandoId, timeNoModalId);
+  bootstrap.Modal.getInstance(document.getElementById('modalTrocarTime'))?.hide();
+}
+
+async function removerDoTime() {
+  if(!treinadorEditandoId) return;
+  try {
+    await authFetch(API_TIMES+'/0/membros/'+treinadorEditandoId, {method:'DELETE'});
+  } catch(_){}
+  await authFetch(API_USUARIOS+'/'+treinadorEditandoId, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({time: null})
+  }).catch(()=>{});
+  bootstrap.Modal.getInstance(document.getElementById('modalTrocarTime'))?.hide();
+  toast('Treinador removido do time.');
+  carregarTreinadores();
+}
+
+async function salvarTimeDoTreinador(idUsuario, idTime) {
+  try {
+    const r = await authFetch(API_TIMES+'/'+idTime+'/membros/'+idUsuario, {method:'PUT'});
+    if(!r.ok) throw new Error();
+    toast('Time atribuído com sucesso!');
+    carregarTreinadores();
+  } catch(e) {
+    toast('Erro ao atribuir time.',false);
+  }
+}
+
+function carregarFoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2*1024*1024){ toast('Foto muito grande. Máximo 2MB.',false); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    fotoBase64 = e.target.result;
+    document.getElementById('inp-foto').value = fotoBase64;
+    const img = document.getElementById('fotoPreviewImg');
+    img.src = fotoBase64; img.style.display='block';
+    document.getElementById('fotoCircle').querySelector('svg').style.display='none';
+    document.getElementById('btnRmFoto').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function removerFoto() {
+  fotoBase64=null;
+  document.getElementById('inp-foto').value='';
+  document.getElementById('fotoPreviewImg').style.display='none';
+  document.getElementById('fotoCircle').querySelector('svg').style.display='';
+  document.getElementById('btnRmFoto').classList.remove('show');
+}
+
+function validarNome(el) {
+  const h=document.getElementById('hint-nome');
+  if(el.value.trim().length<3){el.classList.add('is-invalid');h.textContent='Mínimo 3 caracteres';h.className='field-hint show err';return false;}
+  el.classList.remove('is-invalid');h.className='field-hint';return true;
+}
+function validarEmail(el) {
+  const h=document.getElementById('hint-email');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value)){el.classList.add('is-invalid');h.textContent='Email inválido';h.className='field-hint show err';return false;}
+  el.classList.remove('is-invalid');h.className='field-hint';return true;
+}
+function mascaraTelefone(el) {
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length<=10) v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else             v=v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3');
+  el.value=v.replace(/-$/,'');
+  if(v.replace(/\D/g,'').length>=10) validarCel(el);
+}
+function validarCel(el) {
+  const h=document.getElementById('hint-cel');
+  const v = el.value.replace(/\D/g,'');
+  if(v.length<10){el.classList.add('is-invalid');h.textContent='Telefone inválido (mínimo 10 dígitos)';h.className='field-hint show err';return false;}
+  el.classList.remove('is-invalid');h.className='field-hint';return true;
+}
+function validarCPF(el) {
+  const h=document.getElementById('hint-cpf');
+  const v = el.value.replace(/\D/g,'');
+  const invalido = v.length!==11 || /^(\d)\1{10}$/.test(v);
+  if(!invalido){
+    let s=0; for(let i=0;i<9;i++)s+=parseInt(v[i])*(10-i);
+    let r=11-(s%11); const d1=r>=10?0:r;
+    s=0; for(let i=0;i<10;i++)s+=parseInt(v[i])*(11-i);
+    r=11-(s%11); const d2=r>=10?0:r;
+    if(parseInt(v[9])===d1 && parseInt(v[10])===d2){
+      el.classList.remove('is-invalid');h.className='field-hint';return true;
+    }
+  }
+  el.classList.add('is-invalid');h.textContent='CPF inválido';h.className='field-hint show err';return false;
+}
+function mascaraCPF(el){
+  let v=el.value.replace(/\D/g,'');
+  if(v.length>11)v=v.slice(0,11);
+  v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  el.value=v;
+  if(v.replace(/\D/g,'').length===11) validarCPF(el);
+}
+function mascaraCEP(el){
+  let v=el.value.replace(/\D/g,'');
+  if(v.length>8)v=v.slice(0,8);
+  if(v.length>5)v=v.slice(0,5)+'-'+v.slice(5);
+  el.value=v;
+}
+function buscarCEP(el){
+  const cep=el.value.replace(/\D/g,'');
+  const h=document.getElementById('hint-cep');
+  const ld=document.getElementById('cepLoading');
+  if(cep.length!==8) return;
+  ld.classList.add('show');
+  el.classList.remove('is-invalid');
+  fetch('https://viacep.com.br/ws/'+cep+'/json/')
+    .then(r=>r.json())
+    .then(d=>{
+      ld.classList.remove('show');
+      if(d.erro){ el.classList.add('is-invalid'); h.textContent='CEP não encontrado'; h.className='field-hint show err'; return; }
+      document.getElementById('inp-end').value = d.logradouro||'';
+      document.getElementById('inp-bairro').value = d.bairro||'';
+      document.getElementById('inp-cidade').value = d.localidade||'';
+      document.getElementById('inp-estado').value = d.uf||'';
+      h.textContent='CEP encontrado ✓'; h.className='field-hint show ok';
+      toast('Endereço preenchido automaticamente!');
+    })
+    .catch(()=>{ ld.classList.remove('show'); h.textContent='Erro ao buscar CEP'; h.className='field-hint show err'; });
+}
+
+function campoTreinadorValido(campo) {
+  const validadores = { 'inp-nome': validarNome, 'inp-email': validarEmail, 'inp-cel': validarCel, 'inp-cpf': validarCPF };
+  const validar = validadores[campo.id];
+  return (!validar || validar(campo)) && campo.checkValidity();
+}
+
+document.getElementById('formTreinador').addEventListener('keydown', function(e) {
+  if(e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  const campoAtual = e.target;
+  if(!campoAtual.matches('input, select')) return;
+  const campos = Array.from(this.querySelectorAll('input, select'))
+    .filter(campo => campo.type !== 'hidden' && campo.type !== 'file' && !campo.disabled && campo.offsetParent !== null);
+  const indiceAtual = campos.indexOf(campoAtual);
+  if(indiceAtual === -1) return;
+  e.preventDefault();
+  if(!campoTreinadorValido(campoAtual)) return;
+  const proximoCampo = campos[indiceAtual + 1];
+  if(proximoCampo) {
+    proximoCampo.focus();
+  } else {
+    const primeiroTime = document.querySelector('#timeSelectorGrid .ts-option');
+    if(primeiroTime) primeiroTime.focus();
+  }
+});
+
+document.getElementById('timeSelectorGrid').addEventListener('keydown', function(e) {
+  if(e.key !== 'Enter' || e.shiftKey || e.isComposing || !e.target.matches('.ts-option')) return;
+  e.preventDefault();
+  const jaSelecionado = e.target.classList.contains('selected');
+  selecionarTimeTreinador(e.target, 'timeSelectorGrid');
+  if(jaSelecionado) document.getElementById('formTreinador').requestSubmit();
+});
+
+document.getElementById('formTreinador').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const okN = validarNome(document.getElementById('inp-nome'));
+  const okE = validarEmail(document.getElementById('inp-email'));
+  const okC = validarCel(document.getElementById('inp-cel'));
+  const okCpf = validarCPF(document.getElementById('inp-cpf'));
+  const timeId = document.getElementById('inp-time-id').value;
+  const hT=document.getElementById('hint-time');
+  if(!timeId){hT.textContent='Selecione um time responsável';hT.className='field-hint show err';}
+  if(!this.checkValidity()){ this.reportValidity(); return; }
+  if(!okN||!okE||!okC||!okCpf||!timeId) return;
+
+  const d = Object.fromEntries(new FormData(this).entries());
+  if (!d.senha_usuario || d.senha_usuario.length < 8) {
+    toast('Informe uma senha inicial com pelo menos 8 caracteres.', false);
+    return;
+  }
+  const payload = {
+    nome_usuario:       d.nome_usuario,
+    email_usuario:      d.email_usuario,
+    cel_usuario:        d.cel_usuario||'',
+    cpf_usuario:        d.cpf_usuario||'',
+    data_nasc_usuario:  d.data_nasc_usuario||null,
+    cep_usuario:        d.cep_usuario||'',
+    endereco_usuario:   d.endereco_usuario||'',
+    bairro_usuario:     d.bairro_usuario||'',
+    cidade_usuario:     d.cidade_usuario||'',
+    estado_usuario:     d.estado_usuario||'',
+    login_usuario:      d.login_usuario,
+    senha_usuario:      d.senha_usuario,
+    tipo_usuario:       2,
+    primeiro_login:     1,
+    foto_usuario:       fotoBase64||null,
+    time:               {id_time: parseInt(timeId)},
+  };
+
+  const btn=document.getElementById('btnSubmit');
+  btn.textContent='Salvando...'; btn.disabled=true;
+  try {
+    const r = await authFetch(API_USUARIOS,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok) {
+      const erro = await r.json().catch(()=>({}));
+      throw new Error(erro.erro || 'Erro ao cadastrar. Verifique o servidor.');
+    }
+    toast('Treinador cadastrado com sucesso!');
+    resetFormTreinador();
+    carregarTreinadores();
+    carregarTimes();
+  } catch(err){
+    toast(err.message || 'Erro ao cadastrar. Verifique o servidor.',false);
+  } finally {
+    btn.textContent='Cadastrar Treinador'; btn.disabled=false;
+  }
+});
+
+function resetFormTreinador() {
+  document.getElementById('formTreinador').reset();
+  removerFoto();
+  document.getElementById('inp-time-id').value='';
+  document.querySelectorAll('#timeSelectorGrid .ts-option').forEach(o=>o.classList.remove('selected'));
+  ['hint-nome','hint-email','hint-cel','hint-cpf','hint-cep','hint-time'].forEach(id=>{
+    const h=document.getElementById(id);if(h){h.className='field-hint';h.textContent='';}
+  });
+  ['inp-nome','inp-email','inp-cel','inp-cpf','inp-cep','inp-end','inp-bairro','inp-cidade','inp-estado'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.classList.remove('is-invalid');
+  });
+}
+
+// ── INICIALIZAÇÃO ──
+carregarTimes();
+carregarTreinadores();
+</script>
+</body>
+</html>

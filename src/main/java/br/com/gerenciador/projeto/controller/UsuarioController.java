@@ -2,13 +2,10 @@ package br.com.gerenciador.projeto.controller;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,41 +13,20 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import br.com.gerenciador.projeto.DAO.IUsuario;
-import br.com.gerenciador.projeto.DAO.TimeDAO;
 import br.com.gerenciador.projeto.model.Exame;
 import br.com.gerenciador.projeto.model.Usuario;
-import br.com.gerenciador.projeto.security.AuthUtil;
 import br.com.gerenciador.projeto.security.JwtFilter;
-import br.com.gerenciador.projeto.security.JwtUtil;
+import br.com.gerenciador.projeto.service.UsuarioService;
 
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
-    @Autowired private IUsuario  dao;
-    @Autowired private TimeDAO   timeDAO;
-    @Autowired private JwtUtil   jwtUtil;
+    @Autowired private UsuarioService usuarioService;
 
-    /** Gera hash BCrypt, evitando re-hashear algo que já é um hash BCrypt. */
-    private static String hashSenha(String senha) {
-        if (senha == null) return null;
-        if (senha.startsWith("$2a$") || senha.startsWith("$2b$") || senha.startsWith("$2y$"))
-            return senha; // já é hash BCrypt — não hashear de novo
-        return BCrypt.hashpw(senha, BCrypt.gensalt(12));
-    }
-
-    private static final String ERRO_SENHA_FRACA =
-        "A senha deve ter pelo menos 8 caracteres, incluindo letras e números.";
-
-    /** Política mínima: 8+ caracteres, com pelo menos uma letra e um número. */
-    private static boolean senhaFraca(String senha) {
-        if (senha == null || senha.length() < 8) return true;
-        boolean temLetra  = senha.chars().anyMatch(Character::isLetter);
-        boolean temDigito = senha.chars().anyMatch(Character::isDigit);
-        return !temLetra || !temDigito;
-    }
+    private static Integer authId(HttpServletRequest r)   { return (Integer) r.getAttribute(JwtFilter.ATTR_ID); }
+    private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     /** Grava o JWT como cookie HttpOnly — o JS do front nunca tem acesso a ele. */
     private void setCookieToken(HttpServletResponse response, String token) {
@@ -59,35 +35,9 @@ public class UsuarioController {
             .secure(true)
             .sameSite("Strict")
             .path("/")
-            .maxAge(jwtUtil.getExpirationSegundos())
+            .maxAge(usuarioService.getExpirationSegundos())
             .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-    }
-
-    /** Remove dados sensíveis (CPF, endereço, dados de responsáveis, etc.)
-     *  para quem não é Admin/Treinador nem o próprio usuário. */
-    private static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
-        boolean privilegiado = authTipo != null && authTipo <= 2;
-        boolean ehDono = authId != null && authId.equals(u.getId_usuario());
-        if (privilegiado || ehDono) return u;
-
-        u.setEmail_usuario(null);
-        u.setLogin_usuario(null);
-        u.setData_nasc_usuario(null);
-        u.setEndereco_usuario(null);
-        u.setBairro_usuario(null);
-        u.setCep_usuario(null);
-        u.setCidade_usuario(null);
-        u.setEstado_usuario(null);
-        u.setCel_usuario(null);
-        u.setCpf_usuario(null);
-        u.setRg_responsavel_1(null);
-        u.setRg_responsavel_2(null);
-        u.setCpf_responsavel_1(null);
-        u.setCpf_responsavel_2(null);
-        u.setCel_responsavel_1(null);
-        u.setCel_responsavel_2(null);
-        return u;
     }
 
     // ── GET /usuarios ────────────────────────────────────────────────────
@@ -95,79 +45,32 @@ public class UsuarioController {
     public List<Usuario> listarTodos(
             @RequestParam(required = false) Integer idTime,
             HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-        List<Usuario> lista = idTime != null ? dao.buscarPorTime(idTime) : dao.findAll();
-        lista.forEach(u -> sanitizarParaListagem(u, authId, authTipo));
-        return lista;
+        return usuarioService.listarTodos(idTime, authId(request), authTipo(request));
     }
 
     // ── GET /usuarios/{id} ───────────────────────────────────────────────
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-        return dao.findById(id)
-            .map(u -> sanitizarParaListagem(u, authId, authTipo))
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+    public Usuario buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        return usuarioService.buscarPorId(id, authId(request), authTipo(request));
     }
 
     // ── GET /usuarios/{id}/exames ────────────────────────────────────────
     @GetMapping("/{id}/exames")
-    public ResponseEntity<List<Exame>> listarExames(@PathVariable Integer id, HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-
-        return dao.findById(id).map(u -> {
-            boolean ehDono = authId != null && authId.equals(id);
-            Integer idTimeAlvo = u.getTime() != null ? u.getTime().getId_time() : null;
-            boolean autorizado = ehDono || AuthUtil.ehAdmin(authTipo)
-                || AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
-            if (!autorizado)
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).<List<Exame>>build();
-            return ResponseEntity.ok(u.getExames());
-        }).orElse(ResponseEntity.notFound().build());
+    public List<Exame> listarExames(@PathVariable Integer id, HttpServletRequest request) {
+        return usuarioService.listarExames(id, authId(request), authTipo(request));
     }
 
     // ── GET /usuarios/treinadores ─────────────────────────────────────────
     @GetMapping("/treinadores")
     public List<Usuario> listarTreinadores() {
-        return dao.findAll().stream()
-            .filter(u -> u.getTipo_usuario() != null && u.getTipo_usuario() <= 2)
-            .collect(Collectors.toList());
+        return usuarioService.listarTreinadores();
     }
 
     // ── POST /usuarios ────────────────────────────────────────────────────
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody Usuario usuario, HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-
-        // Somente Admin ou Treinador podem cadastrar novos usuarios.
-        if (!AuthUtil.ehAdmin(authTipo) && !AuthUtil.ehTreinador(authTipo))
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Somente Admin ou Treinador podem cadastrar usuarios."));
-
-        if (senhaFraca(usuario.getSenha_usuario()))
-            return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
-
-        // Somente Admin pode definir o perfil (tipo_usuario) do novo cadastro —
-        // Treinador sempre cadastra Atleta, evitando autopromoção/promoção indevida.
-        if (!AuthUtil.ehAdmin(authTipo) || usuario.getTipo_usuario() == null)
-            usuario.setTipo_usuario(3);
-
-        if (AuthUtil.ehTreinador(authTipo)) {
-            // Treinador só pode vincular o novo cadastro ao próprio time.
-            Integer meuTime = AuthUtil.timeDoUsuario(authId, dao);
-            usuario.setTime(meuTime != null ? timeDAO.findById(meuTime).orElse(null) : null);
-        } else if (usuario.getTime() != null && usuario.getTime().getId_time() != null) {
-            timeDAO.findById(usuario.getTime().getId_time()).ifPresent(usuario::setTime);
-        }
-
-        usuario.setSenha_usuario(hashSenha(usuario.getSenha_usuario()));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(dao.save(usuario));
+    public ResponseEntity<Usuario> criar(@RequestBody Usuario usuario, HttpServletRequest request) {
+        Usuario salvo = usuarioService.criar(usuario, authId(request), authTipo(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
     }
 
     // ── POST /usuarios/login ──────────────────────────────────────────────
@@ -175,55 +78,10 @@ public class UsuarioController {
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody Map<String, String> body,
             HttpServletResponse response) {
-        String login   = body.get("login_usuario");
-        String senha   = body.get("senha_usuario");
-        String tipoStr = body.get("tipo_usuario");
-
-        if (login == null || senha == null || tipoStr == null)
-            return ResponseEntity.badRequest()
-                .body(Map.of("erro", "Campos obrigatorios ausentes."));
-
-        Integer tipo;
-        try { tipo = Integer.parseInt(tipoStr); }
-        catch (NumberFormatException e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("erro", "tipo_usuario invalido."));
-        }
-
-        Optional<Usuario> opt = dao.buscarPorLoginTipo(login, tipo);
-        if (opt.isEmpty())
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("erro", "Usuario nao encontrado ou perfil incorreto."));
-
-        Usuario u = opt.get();
-        String hash = u.getSenha_usuario();
-
-        // Suporta BCrypt (novo) e texto plano (legado).
-        // Se a senha legada bater, o hash é migrado para BCrypt na hora.
-        boolean senhaOk;
-        boolean legado = false;
-        if (hash != null && (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$"))) {
-            senhaOk = BCrypt.checkpw(senha, hash);
-        } else {
-            senhaOk = senha.equals(hash);
-            legado  = senhaOk;
-        }
-
-        if (!senhaOk)
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("erro", "Senha incorreta."));
-
-        // Migração automática: substitui a senha em texto plano por BCrypt
-        if (legado) {
-            u.setSenha_usuario(BCrypt.hashpw(senha, BCrypt.gensalt(12)));
-            dao.save(u);
-        }
-
-        String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario());
-        u.setSenha_usuario(null);
-        setCookieToken(response, token);
-
-        return ResponseEntity.ok(Map.<String, Object>of("usuario", u));
+        UsuarioService.LoginResultado resultado = usuarioService.login(
+            body.get("login_usuario"), body.get("senha_usuario"), body.get("tipo_usuario"));
+        setCookieToken(response, resultado.token);
+        return ResponseEntity.ok(Map.<String, Object>of("usuario", resultado.usuario));
     }
 
     // ── POST /usuarios/logout ─────────────────────────────────────────────
@@ -242,66 +100,11 @@ public class UsuarioController {
 
     // ── PUT /usuarios/{id} ────────────────────────────────────────────────
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizar(
+    public Usuario atualizar(
             @PathVariable Integer id,
             @RequestBody Usuario dados,
             HttpServletRequest request) {
-
-        // Identidade injetada pelo JwtFilter após validar o token
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-
-        Usuario alvo = dao.findById(id).orElse(null);
-        if (alvo == null) return ResponseEntity.notFound().build();
-
-        boolean ehDono  = authId != null && authId.equals(id);
-        boolean ehAdmin = AuthUtil.ehAdmin(authTipo);
-        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
-        // Treinador só pode editar cadastros do próprio time — nunca de outro time ou sem time.
-        boolean ehTreinadorDoTime = AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
-
-        // Só o próprio usuário, um Admin ou o Treinador do time deste usuário podem editar este cadastro
-        if (!ehDono && !ehAdmin && !ehTreinadorDoTime)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Sem permissao para editar este usuario."));
-
-        boolean trocandoSenha = dados.getSenha_usuario() != null && !dados.getSenha_usuario().isBlank();
-        if (trocandoSenha && senhaFraca(dados.getSenha_usuario()))
-            return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
-        // Só o próprio dono ou um Admin podem trocar a senha por aqui —
-        // um Treinador não pode sequestrar a conta de outro usuário via troca de senha.
-        if (trocandoSenha && !ehDono && !ehAdmin)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Sem permissao para alterar a senha deste usuario."));
-
-        Usuario u = alvo;
-        if (dados.getNome_usuario()      != null) u.setNome_usuario(dados.getNome_usuario());
-        if (dados.getEmail_usuario()     != null) u.setEmail_usuario(dados.getEmail_usuario());
-        if (dados.getLogin_usuario()     != null) u.setLogin_usuario(dados.getLogin_usuario());
-        // Somente Admin pode alterar o perfil (tipo_usuario) de um cadastro —
-        // evita que o próprio usuário ou um Treinador se autopromovam.
-        if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
-        if (dados.getCel_usuario()       != null) u.setCel_usuario(dados.getCel_usuario());
-        if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) u.setCpf_usuario(dados.getCpf_usuario());
-        if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
-        if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
-        if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
-        if (dados.getCidade_usuario()    != null) u.setCidade_usuario(dados.getCidade_usuario());
-        if (dados.getEstado_usuario()    != null) u.setEstado_usuario(dados.getEstado_usuario());
-        if (dados.getFoto_usuario()      != null) u.setFoto_usuario(dados.getFoto_usuario());
-        if (dados.getCpf_responsavel_1() != null) u.setCpf_responsavel_1(dados.getCpf_responsavel_1());
-        if (dados.getCpf_responsavel_2() != null) u.setCpf_responsavel_2(dados.getCpf_responsavel_2());
-        if (dados.getCel_responsavel_1() != null) u.setCel_responsavel_1(dados.getCel_responsavel_1());
-        if (dados.getCel_responsavel_2() != null) u.setCel_responsavel_2(dados.getCel_responsavel_2());
-        if (trocandoSenha) u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
-        // Admin move para qualquer time; Treinador só pode vincular ao próprio time.
-        if (dados.getTime() != null && dados.getTime().getId_time() != null) {
-            Integer novoTime = dados.getTime().getId_time();
-            boolean podeVincular = ehAdmin
-                || (ehTreinadorDoTime && novoTime.equals(AuthUtil.timeDoUsuario(authId, dao)));
-            if (podeVincular) timeDAO.findById(novoTime).ifPresent(u::setTime);
-        }
-        return ResponseEntity.ok(dao.save(u));
+        return usuarioService.atualizar(id, dados, authId(request), authTipo(request));
     }
 
     // ── PUT /usuarios/{id}/senha ──────────────────────────────────────────
@@ -311,53 +114,16 @@ public class UsuarioController {
             @RequestBody Map<String, String> body,
             HttpServletRequest request,
             HttpServletResponse response) {
-
-        // Identidade injetada pelo JwtFilter após validar o token
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-
-        // Só o próprio usuário do token (ou um Admin) pode trocar esta senha
-        boolean ehDono  = authId != null && authId.equals(id);
-        boolean ehAdmin = authTipo != null && authTipo == 1;
-        if (!ehDono && !ehAdmin)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Sem permissao para alterar a senha deste usuario."));
-
-        String nova = body.get("senha_usuario");
-        if (senhaFraca(nova))
-            return ResponseEntity.badRequest().body(Map.of("erro", ERRO_SENHA_FRACA));
-
-        return dao.findById(id).map(u -> {
-            u.setSenha_usuario(BCrypt.hashpw(nova, BCrypt.gensalt(12)));
-            u.setPrimeiro_login(0);
-            dao.save(u);
-            String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario());
-            u.setSenha_usuario(null);
-            setCookieToken(response, token);
-            return ResponseEntity.ok(Map.<String, Object>of("usuario", u));
-        }).orElse(ResponseEntity.notFound().build());
+        UsuarioService.LoginResultado resultado = usuarioService.trocarSenha(
+            id, body.get("senha_usuario"), authId(request), authTipo(request));
+        setCookieToken(response, resultado.token);
+        return ResponseEntity.ok(Map.<String, Object>of("usuario", resultado.usuario));
     }
 
     // ── DELETE /usuarios/{id} ─────────────────────────────────────────────
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> excluir(@PathVariable Integer id, HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-
-        Usuario alvo = dao.findById(id).orElse(null);
-        if (alvo == null) return ResponseEntity.notFound().build();
-
-        boolean ehAdmin = AuthUtil.ehAdmin(authTipo);
-        // Treinador só pode excluir Atleta/Treinador do próprio time — nunca um Admin.
-        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
-        boolean ehTreinadorDoTime = alvo.getTipo_usuario() != null && alvo.getTipo_usuario() != 1
-            && AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
-
-        if (!ehAdmin && !ehTreinadorDoTime)
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("erro", "Sem permissao para excluir este usuario."));
-
-        dao.deleteById(id);
+    public ResponseEntity<Void> excluir(@PathVariable Integer id, HttpServletRequest request) {
+        usuarioService.excluir(id, authId(request), authTipo(request));
         return ResponseEntity.noContent().build();
     }
 }

@@ -379,13 +379,6 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
   <button class="pill-sair" onclick="document.getElementById('logoutModal').classList.add('show')">Sair</button>
 </div>
 
-<!-- Botão cadastrar treinador — só admin -->
-<div id="btnCadTreinadorWrap" style="display:none;margin-bottom:28px;gap:10px;flex-wrap:wrap">
-  <button onclick="abrirPopupTreinador()" style="display:flex;align-items:center;gap:8px;background:rgba(0,201,122,0.08);border:1.5px solid rgba(0,201,122,0.3);border-radius:12px;color:var(--verde);font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;padding:10px 20px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(0,201,122,0.15)'" onmouseout="this.style.background='rgba(0,201,122,0.08)'">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
-    Cadastrar Treinador
-  </button>
-</div>
 
 <!-- TIMES GRID -->
 <div class="times-wrap">
@@ -614,12 +607,21 @@ function renderSemTime() {
     '</div>';
 }
 
+// Contadores mostram apenas atividades que ainda vão acontecer (não conta canceladas/finalizadas).
+// Recorrentes contam enquanto a recorrência não tiver terminado, mesmo com data-âncora no passado.
+function aindaVaiAcontecer(a) {
+  if (a.status_atividade !== 1) return false;
+  const agora = new Date();
+  if (a.recorrente) return !a.fim_recorrencia || new Date(a.fim_recorrencia + 'T23:59:59') >= agora;
+  return !!a.data_atividade && new Date(a.data_atividade) >= agora;
+}
+
 function renderGrid(times, usuarios, atividades) {
   const grid = times.map(t => {
     const cor = t.cor_time || '#00C97A';
     const membros  = usuarios.filter(u => u.time && (u.time.id_time === t.id_time || u.time === t.id_time));
     const atletas  = membros.filter(u => u.tipo_usuario === 3).length;
-    const atividTs = atividades.filter(a => a.time && (a.time.id_time === t.id_time || a.time === t.id_time));
+    const atividTs = atividades.filter(a => a.time && (a.time.id_time === t.id_time || a.time === t.id_time)).filter(aindaVaiAcontecer);
     const treinos  = atividTs.filter(a => a.tipo_atividade === 1).length;
     const jogos    = atividTs.filter(a => a.tipo_atividade === 2).length;
 

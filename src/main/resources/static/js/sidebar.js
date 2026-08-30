@@ -22,7 +22,7 @@
   };
 
   function svg(name) {
-    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>';
+    return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[name] + '</svg>';
   }
 
   // ---------- ESTRUTURA ÚNICA DO MENU (editar só aqui) ----------
@@ -32,9 +32,7 @@
     ]},
     { section: 'Gestão', items: [
       { href: 'usuarios.html', label: 'Usuários', icon: 'usuarios' },
-      { href: 'times.html', label: 'Times', icon: 'times' },
-      { href: 'escalacao.html', label: 'Escalação', icon: 'escalacao' },
-      { href: 'cadastrar-treinador.html', label: 'Treinadores', icon: 'treinadores' }
+      { href: 'escalacao.html', label: 'Escalação', icon: 'escalacao' }
     ]},
     { section: 'Atividades', items: [
       { href: 'exames.html', label: 'Exames', icon: 'exames' },
@@ -58,7 +56,9 @@
       navHtml +=
         '<a href="' + item.href + '" class="nav-item' + ativo + '">' +
         '<span class="nav-icon" style="display:inline-flex">' + svg(item.icon) + '</span>' +
-        '<span>' + item.label + '</span></a>';
+        '<span>' + item.label + '</span>' +
+        '<span class="nav-alert" title="Requer atenção">!</span>' +
+        '</a>';
     });
   });
 
@@ -74,17 +74,50 @@
         '</div>' +
       '</div>' +
     '</div>' +
+    '<div id="perfilModal">' +
+      '<div class="perfil-card">' +
+        '<button class="perfil-fechar" onclick="fecharPerfil()">×</button>' +
+        '<div class="perfil-avatar-wrap"><div class="perfil-avatar" id="perfilAvatar">A</div></div>' +
+        '<div class="perfil-nome" id="perfilNome">—</div>' +
+        '<div class="perfil-role" id="perfilRole">—</div>' +
+        '<div class="perfil-campos">' +
+          '<div class="perfil-campo"><span class="perfil-label">Login</span><span class="perfil-valor" id="perfilLogin">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Email</span><span class="perfil-valor" id="perfilEmail">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Celular</span><span class="perfil-valor" id="perfilCel">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">CPF</span><span class="perfil-valor" id="perfilCpf">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Nascimento</span><span class="perfil-valor" id="perfilNasc">—</span></div>' +
+          '<div class="perfil-campo" id="perfilTimeWrap" style="display:none"><span class="perfil-label">Time</span><span class="perfil-valor" id="perfilTime">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">CEP</span><span class="perfil-valor" id="perfilCep">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Endereço</span><span class="perfil-valor" id="perfilEndereco">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Bairro</span><span class="perfil-valor" id="perfilBairro">—</span></div>' +
+          '<div class="perfil-campo"><span class="perfil-label">Cidade/UF</span><span class="perfil-valor" id="perfilCidade">—</span></div>' +
+        '</div>' +
+        '<div class="perfil-graficos" id="perfilGraficos" style="display:none">' +
+          '<div class="perfil-stats-mini">' +
+            '<div class="pgm-stat"><div class="pgm-num" id="pgAtv">—</div><div class="pgm-label">Atividades</div></div>' +
+            '<div class="pgm-stat"><div class="pgm-num" id="pgExames">—</div><div class="pgm-label">Exames</div></div>' +
+            '<div class="pgm-stat"><div class="pgm-num" id="pgDesemp">—</div><div class="pgm-label">Desempenhos</div></div>' +
+          '</div>' +
+          '<div class="perfil-grafico-titulo">Pontuação nos Jogos</div>' +
+          '<div class="perfil-chart-wrap"><canvas id="perfilChartPontuacao"></canvas></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
     '<aside class="sidebar">' +
       '<div class="sidebar-logo" id="sidebarLogo">' +
         '<div class="logo-icon" id="sidebarLogoIcon">L</div>' +
         '<div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>' +
       '</div>' +
       '<nav>' + navHtml + '</nav>' +
+      '<a href="painel-admin.html" class="painel-admin-link" id="painelAdminLink">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>' +
+        '<span>Painel Admin</span>' +
+      '</a>' +
       '<a href="selecionar-time.html" class="time-indicator" id="timeSidebarIndicator" style="display:none">' +
         '<div class="ti-dot"></div><div class="ti-nome">—</div><div class="ti-trocar">Trocar</div>' +
       '</a>' +
       '<div class="sidebar-footer">' +
-        '<div class="user-info">' +
+        '<div class="user-info" onclick="abrirPerfil()" title="Ver perfil">' +
           '<div class="user-avatar" id="avatarLetra">A</div>' +
           '<div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>' +
         '</div>' +
@@ -108,8 +141,11 @@
     window.location.href = 'login.html';
     return;
   }
-  if (user.tipo_usuario !== 1) {
-    document.querySelectorAll('.nav-item[href="times.html"]').forEach(function (item) { item.remove(); });
+  // Painel Admin não é um item de menu dentro das telas de um time — é o hub
+  // que abre ANTES de entrar em um time. Este botão é o único caminho de volta.
+  if (user.tipo_usuario === 1 && paginaAtual !== 'painel-admin.html') {
+    const painelLink = document.getElementById('painelAdminLink');
+    if (painelLink) painelLink.style.display = 'flex';
   }
 
   // ---------- DADOS DO USUÁRIO ----------
@@ -131,12 +167,16 @@
   // ---------- TIME SELECIONADO ----------
   const ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
   const tiEl = document.getElementById('timeSidebarIndicator');
-  if (ts && tiEl) {
-    tiEl.style.display = 'flex';
-    const dot = tiEl.querySelector('.ti-dot');
-    const nome = tiEl.querySelector('.ti-nome');
-    if (dot) dot.style.background = ts.cor || '#00C97A';
-    if (nome) nome.textContent = ts.nome || 'Time';
+  if (ts) {
+    // Admin já tem o botão "Painel Admin" para navegar entre times — o pill
+    // de "Trocar" de time é redundante e some só para ele.
+    if (tiEl && user.tipo_usuario !== 1) {
+      tiEl.style.display = 'flex';
+      const dot = tiEl.querySelector('.ti-dot');
+      const nome = tiEl.querySelector('.ti-nome');
+      if (dot) dot.style.background = ts.cor || '#00C97A';
+      if (nome) nome.textContent = ts.nome || 'Time';
+    }
 
     const icon = document.getElementById('sidebarLogoIcon');
     const nomeTimeEl = document.getElementById('sidebarNomeTime');
@@ -171,5 +211,201 @@
     localStorage.clear();
     window.location.href = 'login.html';
   };
+
+  // ---------- PERFIL (clique na foto/nome no rodapé da sidebar) ----------
+  function escAttr(s) {
+    return String(s == null ? '' : s).replace(/"/g, '&quot;');
+  }
+  function formatarData(iso) {
+    if (!iso) return '—';
+    const partes = String(iso).split('-');
+    if (partes.length !== 3) return iso;
+    return partes[2] + '/' + partes[1] + '/' + partes[0];
+  }
+  // ---------- GRÁFICOS DO PERFIL (só para atleta — mesmos dados de perfil-atleta.html) ----------
+  var _chartJsLoading = null;
+  function garantirChartJs() {
+    if (window.Chart) return Promise.resolve();
+    if (_chartJsLoading) return _chartJsLoading;
+    _chartJsLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return _chartJsLoading;
+  }
+
+  var perfilChartRef = null;
+  function renderPerfilGrafico(desempenhos) {
+    var comPts = (desempenhos || [])
+      .filter(function (d) { return d.pontuacao != null && d.data_desempenho; })
+      .sort(function (a, b) { return new Date(a.data_desempenho) - new Date(b.data_desempenho); })
+      .slice(-12);
+    var wrap = document.querySelector('#perfilGraficos .perfil-chart-wrap');
+    if (!wrap) return;
+    if (perfilChartRef) { perfilChartRef.destroy(); perfilChartRef = null; }
+    if (!comPts.length) {
+      wrap.innerHTML = '<div class="perfil-chart-empty">Sem pontuações registradas</div>';
+      return;
+    }
+    wrap.innerHTML = '<canvas id="perfilChartPontuacao"></canvas>';
+    var ctx = document.getElementById('perfilChartPontuacao').getContext('2d');
+    perfilChartRef = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: comPts.map(function (d) { return formatarData(d.data_desempenho); }),
+        datasets: [{
+          label: 'Pontuação',
+          data: comPts.map(function (d) { return d.pontuacao; }),
+          borderColor: '#00C97A',
+          backgroundColor: 'rgba(0,201,122,0.12)',
+          pointBackgroundColor: '#00C97A',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          tension: 0.35,
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (c) { return ' ' + c.raw + ' pts'; } } }
+        },
+        scales: {
+          x: { ticks: { color: '#8899BB', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8899BB', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function carregarGraficosPerfil() {
+    var el = document.getElementById('perfilGraficos');
+    var card = document.querySelector('.perfil-card');
+    if (!el) return;
+    el.style.display = 'block';
+    if (card) card.classList.add('com-graficos');
+    Promise.all([
+      fetch('/atividades/usuario/' + user.id_usuario, { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
+      fetch('/exames/usuario/' + user.id_usuario, { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
+      fetch('/desempenhos/usuario/' + user.id_usuario, { credentials: 'include' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
+    ]).then(function (results) {
+      var atividades = results[0], exames = results[1], desempenhos = results[2];
+      var elAtv = document.getElementById('pgAtv'); if (elAtv) elAtv.textContent = atividades.length;
+      var elEx = document.getElementById('pgExames'); if (elEx) elEx.textContent = exames.length;
+      var elDe = document.getElementById('pgDesemp'); if (elDe) elDe.textContent = desempenhos.length;
+      garantirChartJs().then(function () { renderPerfilGrafico(desempenhos); }).catch(function () {});
+    });
+  }
+
+  window.abrirPerfil = function () {
+    const nomeEl     = document.getElementById('perfilNome');
+    const roleEl     = document.getElementById('perfilRole');
+    const loginEl    = document.getElementById('perfilLogin');
+    const emailEl    = document.getElementById('perfilEmail');
+    const celEl      = document.getElementById('perfilCel');
+    const cpfEl      = document.getElementById('perfilCpf');
+    const nascEl     = document.getElementById('perfilNasc');
+    const cepEl      = document.getElementById('perfilCep');
+    const enderecoEl = document.getElementById('perfilEndereco');
+    const bairroEl   = document.getElementById('perfilBairro');
+    const cidadeEl   = document.getElementById('perfilCidade');
+    const timeWrapEl = document.getElementById('perfilTimeWrap');
+    const timeEl     = document.getElementById('perfilTime');
+    const avEl       = document.getElementById('perfilAvatar');
+
+    if (nomeEl)     nomeEl.textContent     = user.nome_usuario || '—';
+    if (roleEl)     roleEl.textContent     = tipos[user.tipo_usuario] || '—';
+    if (loginEl)    loginEl.textContent    = user.login_usuario || '—';
+    if (emailEl)    emailEl.textContent    = user.email_usuario || '—';
+    if (celEl)      celEl.textContent      = user.cel_usuario || '—';
+    if (cpfEl)      cpfEl.textContent      = user.cpf_usuario || '—';
+    if (nascEl)     nascEl.textContent     = formatarData(user.data_nasc_usuario);
+    if (cepEl)      cepEl.textContent      = user.cep_usuario || '—';
+    if (enderecoEl) enderecoEl.textContent = user.endereco_usuario || '—';
+    if (bairroEl)   bairroEl.textContent   = user.bairro_usuario || '—';
+    if (cidadeEl)   cidadeEl.textContent   = (user.cidade_usuario || user.estado_usuario)
+      ? [user.cidade_usuario, user.estado_usuario].filter(Boolean).join('/')
+      : '—';
+    if (timeWrapEl && timeEl) {
+      if (user.time && user.time.nome_time) {
+        timeEl.textContent = user.time.nome_time;
+        timeWrapEl.style.display = 'flex';
+      } else {
+        timeWrapEl.style.display = 'none';
+      }
+    }
+    if (avEl) {
+      if (user.foto_usuario) {
+        avEl.innerHTML = '<img src="' + escAttr(user.foto_usuario) + '" alt="">';
+      } else {
+        avEl.textContent = (user.nome_usuario || 'U')[0].toUpperCase();
+      }
+    }
+
+    const graficosEl = document.getElementById('perfilGraficos');
+    const perfilCardEl = document.querySelector('.perfil-card');
+    if (user.tipo_usuario === 3) {
+      carregarGraficosPerfil();
+    } else {
+      if (graficosEl) graficosEl.style.display = 'none';
+      if (perfilCardEl) perfilCardEl.classList.remove('com-graficos');
+    }
+
+    const modal = document.getElementById('perfilModal');
+    if (modal) modal.classList.add('show');
+  };
+  window.fecharPerfil = function () {
+    const modal = document.getElementById('perfilModal');
+    if (modal) modal.classList.remove('show');
+  };
+
+  // ---------- AVISOS (exames expirando / atividade próxima) ----------
+  // Marca um "!" ao lado do item de menu correspondente. Falha silenciosa
+  // se o backend estiver fora do ar — não deve travar a sidebar.
+  function marcarAviso(href, mostrar) {
+    const el = document.querySelector('.nav-item[href="' + href + '"] .nav-alert');
+    if (el) el.style.display = mostrar ? 'flex' : 'none';
+  }
+
+  function verificarAvisos() {
+    const idTimeQS = ts ? ('?idTime=' + ts.id) : '';
+
+    // Exames com validade terminando nos próximos 7 dias (ou já vencida).
+    fetch('/exames' + idTimeQS, { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (lista) {
+        const limite = new Date();
+        limite.setHours(23, 59, 59, 999);
+        limite.setDate(limite.getDate() + 7);
+        const temAviso = (lista || []).some(function (e) {
+          if (!e.data_fim_exame) return false;
+          return new Date(e.data_fim_exame + 'T00:00:00') <= limite;
+        });
+        marcarAviso('exames.html', temAviso);
+      })
+      .catch(function () {});
+
+    // Atividades ativas acontecendo nas próximas 24h.
+    fetch('/atividades' + idTimeQS, { credentials: 'include' })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (lista) {
+        const agora = new Date();
+        const limite = new Date(agora.getTime() + 24 * 60 * 60 * 1000);
+        const temAviso = (lista || []).some(function (a) {
+          if (a.status_atividade !== 1 || !a.data_atividade) return false;
+          const dt = new Date(a.data_atividade);
+          return dt >= agora && dt <= limite;
+        });
+        marcarAviso('atividades.html', temAviso);
+      })
+      .catch(function () {});
+  }
+  verificarAvisos();
 
 })();

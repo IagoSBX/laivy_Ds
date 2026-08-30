@@ -1,59 +1,37 @@
 package br.com.gerenciador.projeto.controller;
 
-import br.com.gerenciador.projeto.DAO.*;
-import br.com.gerenciador.projeto.model.*;
-import br.com.gerenciador.projeto.security.AuthUtil;
-import br.com.gerenciador.projeto.security.JwtFilter;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
 
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import br.com.gerenciador.projeto.dto.JogadaDTOs.JogadaResponse;
+import br.com.gerenciador.projeto.exception.ForbiddenException;
+import br.com.gerenciador.projeto.model.json.JogadaConteudo;
+import br.com.gerenciador.projeto.security.JwtFilter;
+import br.com.gerenciador.projeto.service.AssistenteService;
+import br.com.gerenciador.projeto.service.JogadaService.JogadaInvalidaException;
+import jakarta.validation.Valid;
 
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/assistente")
 public class AssistenteController {
 
-    @Value("${assistente.n8n.webhook-url}")
-    private String webhookUrl;
+    @Autowired private AssistenteService assistenteService;
 
-    @Value("${assistente.n8n.token}")
-    private String token;
-
-    @Autowired private IUsuario usuarioDAO;
-    @Autowired private AtividadeDAO atividadeDAO;
-    @Autowired private DesempenhoDAO desempenhoDAO;
-    @Autowired private EscalacaoDAO escalacaoDAO;
-    @Autowired private TimeDAO timeDAO;
-
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    /** Admin acessa qualquer time; demais papéis, somente o próprio time. */
-    private boolean autorizadoParaTime(Integer idTimeAlvo, HttpServletRequest request) {
-        Integer authId   = (Integer) request.getAttribute(JwtFilter.ATTR_ID);
-        Integer authTipo = (Integer) request.getAttribute(JwtFilter.ATTR_TIPO);
-        if (AuthUtil.ehAdmin(authTipo)) return true;
-        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
-        return meuTime != null && idTimeAlvo != null && meuTime.equals(idTimeAlvo);
-    }
+    private static Integer authId(HttpServletRequest r)   { return (Integer) r.getAttribute(JwtFilter.ATTR_ID); }
+    private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     // ── POST /assistente/chat ─────────────────────────────────────
     @PostMapping("/chat")
     public ResponseEntity<Map> chat(@RequestBody Map<String, Object> body) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("X-Token", token);
-            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                webhookUrl, request, Map.class);
-            return ResponseEntity.ok(response.getBody());
+            return ResponseEntity.ok(assistenteService.chat(body));
         } catch (Exception e) {
             return ResponseEntity.status(503)
                 .body(Map.of("erro", "Assistente indisponível. Verifique se o n8n está rodando."));
@@ -64,20 +42,7 @@ public class AssistenteController {
     @GetMapping("/resumo-geral")
     public ResponseEntity<Map<String, Object>> resumoGeral() {
         try {
-            List<Usuario> todos = usuarioDAO.findAll();
-            long atletas    = todos.stream().filter(u -> u.getTipo_usuario() == 3).count();
-            long treinadores= todos.stream().filter(u -> u.getTipo_usuario() == 2).count();
-            long admins     = todos.stream().filter(u -> u.getTipo_usuario() == 1).count();
-
-            Map<String, Object> r = new HashMap<>();
-            r.put("total_usuarios",    todos.size());
-            r.put("total_atletas",     atletas);
-            r.put("total_treinadores", treinadores);
-            r.put("total_admins",      admins);
-            r.put("total_times",       timeDAO.count());
-            r.put("total_atividades",  atividadeDAO.count());
-            r.put("total_desempenhos", desempenhoDAO.count());
-            return ResponseEntity.ok(r);
+            return ResponseEntity.ok(assistenteService.resumoGeral());
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("erro", "Erro ao buscar resumo geral."));
@@ -87,24 +52,10 @@ public class AssistenteController {
     // ── GET /assistente/resumo-time?idTime=1 ─────────────────────
     @GetMapping("/resumo-time")
     public ResponseEntity<Map<String, Object>> resumoTime(@RequestParam Integer idTime, HttpServletRequest request) {
-        if (!autorizadoParaTime(idTime, request))
-            return ResponseEntity.status(403).body(Map.of("erro", "Sem permissao para ver este time."));
         try {
-            Map<String, Object> r = new HashMap<>();
-            timeDAO.findById(idTime).ifPresent(t -> {
-                r.put("time",       t.getNome_time());
-                r.put("modalidade", t.getModalidade_time());
-                r.put("categoria",  t.getCategoria_time());
-                r.put("cor",        t.getCor_time());
-                r.put("descricao",  t.getDescricao_time());
-                r.put("ativo",      t.getAtivo_time());
-                r.put("treinador",  t.getTreinador() != null
-                    ? t.getTreinador().getNome_usuario() : "Não definido");
-                r.put("total_membros", t.getMembros() != null
-                    ? t.getMembros().size() : 0);
-            });
-            if (r.isEmpty()) r.put("erro", "Time não encontrado.");
-            return ResponseEntity.ok(r);
+            return ResponseEntity.ok(assistenteService.resumoTime(idTime, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("erro", "Erro ao buscar resumo do time."));
@@ -115,35 +66,12 @@ public class AssistenteController {
     @GetMapping("/ranking-desempenho")
     public ResponseEntity<List<Map<String, Object>>> rankingDesempenho(
             @RequestParam Integer idTime, HttpServletRequest request) {
-        if (!autorizadoParaTime(idTime, request))
-            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver este time.")));
         try {
-            List<Desempenho> lista = desempenhoDAO.buscarPorTime(idTime);
-
-            Map<String, List<Desempenho>> porAtleta = lista.stream()
-                .collect(Collectors.groupingBy(
-                    d -> d.getUsuario().getNome_usuario()));
-
-            List<Map<String, Object>> ranking = porAtleta.entrySet().stream()
-                .map(e -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("atleta", e.getKey());
-                    double media = e.getValue().stream()
-                        .mapToInt(d -> d.getPontuacao() != null ? d.getPontuacao() : 0)
-                        .average().orElse(0);
-                    m.put("media_pontuacao", Math.round(media * 10.0) / 10.0);
-                    m.put("total_avaliacoes", e.getValue().size());
-                    return m;
-                })
-                .sorted((a, b) -> Double.compare(
-                    (Double) b.get("media_pontuacao"),
-                    (Double) a.get("media_pontuacao")))
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(ranking);
+            return ResponseEntity.ok(assistenteService.rankingDesempenho(idTime, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of(
-                Map.of("erro", "Erro ao buscar ranking de desempenho.")));
+            return ResponseEntity.ok(List.of(Map.of("erro", "Erro ao buscar ranking de desempenho.")));
         }
     }
 
@@ -151,30 +79,12 @@ public class AssistenteController {
     @GetMapping("/ranking-pontos")
     public ResponseEntity<List<Map<String, Object>>> rankingPontos(
             @RequestParam Integer idAtividade, HttpServletRequest request) {
-        Integer idTimeDaAtividade = atividadeDAO.findById(idAtividade)
-            .map(a -> a.getTime() != null ? a.getTime().getId_time() : null)
-            .orElse(null);
-        if (!autorizadoParaTime(idTimeDaAtividade, request))
-            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver esta atividade.")));
         try {
-            List<Map<String, Object>> ranking = escalacaoDAO
-                .buscarPorAtividade(idAtividade).stream()
-                .filter(e -> e.getPontos_jogo() != null)
-                .sorted((a, b) -> b.getPontos_jogo() - a.getPontos_jogo())
-                .map(e -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("atleta",  e.getUsuario().getNome_usuario());
-                    m.put("pontos",  e.getPontos_jogo());
-                    m.put("posicao", e.getPosicao() != null ? e.getPosicao() : "");
-                    m.put("titular", e.getTitular() == 1 ? "Titular" : "Reserva");
-                    return m;
-                })
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(ranking);
+            return ResponseEntity.ok(assistenteService.rankingPontos(idAtividade, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of(
-                Map.of("erro", "Erro ao buscar ranking de pontos.")));
+            return ResponseEntity.ok(List.of(Map.of("erro", "Erro ao buscar ranking de pontos.")));
         }
     }
 
@@ -182,114 +92,61 @@ public class AssistenteController {
     @GetMapping("/proximas-atividades")
     public ResponseEntity<List<Map<String, Object>>> proximasAtividades(
             @RequestParam Integer idTime, HttpServletRequest request) {
-        if (!autorizadoParaTime(idTime, request))
-            return ResponseEntity.status(403).body(List.of(Map.of("erro", "Sem permissao para ver este time.")));
         try {
-            LocalDateTime agora = LocalDateTime.now();
-            Map<Integer, String> tipos = Map.of(
-                1, "Treino", 2, "Jogo", 3, "Evento", 4, "Competição");
-
-            List<Map<String, Object>> atividades = atividadeDAO
-                .buscarPorTime(idTime).stream()
-                .filter(a -> a.getData_atividade() != null
-                    && a.getData_atividade().isAfter(agora)
-                    && a.getStatus_atividade() == 1)
-                .sorted(Comparator.comparing(Atividade::getData_atividade))
-                .limit(5)
-                .map(a -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("nome",  a.getNome_atividade());
-                    m.put("tipo",  tipos.getOrDefault(a.getTipo_atividade(), "Outro"));
-                    m.put("data",  a.getData_atividade().toString());
-                    m.put("local", a.getLugar_atividade() != null
-                        ? a.getLugar_atividade() : "Não definido");
-                    return m;
-                })
-                .collect(Collectors.toList());
-
-            return ResponseEntity.ok(atividades);
+            return ResponseEntity.ok(assistenteService.proximasAtividades(idTime, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
-            return ResponseEntity.ok(List.of(
-                Map.of("erro", "Erro ao buscar próximas atividades.")));
+            return ResponseEntity.ok(List.of(Map.of("erro", "Erro ao buscar próximas atividades.")));
         }
     }
- // ── GET /assistente/dados-time?idTime=1 ──────────────────────────
+
+    // ── GET /assistente/jogadas?idTime=1 ──────────────────────────
+    @GetMapping("/jogadas")
+    public ResponseEntity<List<Map<String, Object>>> jogadas(
+            @RequestParam Integer idTime, HttpServletRequest request) {
+        try {
+            return ResponseEntity.ok(assistenteService.jogadasTime(idTime, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of(Map.of("erro", "Erro ao buscar jogadas do time.")));
+        }
+    }
+
+    // ── POST /assistente/sugerir-jogada ───────────────────────────
+    // Body: { idTime, idUsuario, nome, conteudo }. idUsuario é quem pediu a
+    // sugestão no chat — a autorização de escrita é recalculada em cima
+    // dele (ver AssistenteService.sugerirJogada), não do X-Token de serviço.
+    public record SugerirJogadaRequest(Integer idTime, Integer idUsuario, String nome, @Valid JogadaConteudo conteudo) {}
+
+    @PostMapping("/sugerir-jogada")
+    public ResponseEntity<?> sugerirJogada(@RequestBody @Valid SugerirJogadaRequest req) {
+        try {
+            JogadaResponse criada = assistenteService.sugerirJogada(
+                req.idTime(), req.idUsuario(), req.nome(), req.conteudo());
+            return ResponseEntity.status(201).body(criada);
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (JogadaInvalidaException e) {
+            return ResponseEntity.unprocessableEntity()
+                .body(Map.of("erro", "Jogada inválida.", "detalhes", e.getErros()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro ao criar jogada sugerida."));
+        }
+    }
+
+    // ── GET /assistente/dados-time?idTime=1 ──────────────────────────
     @GetMapping("/dados-time")
     public ResponseEntity<Map<String, Object>> dadosTime(@RequestParam Integer idTime, HttpServletRequest request) {
-        if (!autorizadoParaTime(idTime, request))
-            return ResponseEntity.status(403).body(Map.of("erro", "Sem permissao para ver este time."));
         try {
-            LocalDateTime agora = LocalDateTime.now();
-            Map<Integer, String> tipos = Map.of(
-                1, "Treino", 2, "Jogo", 3, "Evento", 4, "Competição");
-
-            Map<String, Object> r = new HashMap<>();
-
-            // Dados do time
-            timeDAO.findById(idTime).ifPresent(t -> {
-                r.put("time",          t.getNome_time());
-                r.put("modalidade",    t.getModalidade_time());
-                r.put("categoria",     t.getCategoria_time());
-                r.put("treinador",     t.getTreinador() != null
-                    ? t.getTreinador().getNome_usuario() : "Não definido");
-                r.put("total_membros", t.getMembros() != null
-                    ? t.getMembros().size() : 0);
-            });
-
-            // Atletas do time
-            List<String> nomes = usuarioDAO.buscarPorTimeTipo(idTime, 3)
-                .stream()
-                .map(Usuario::getNome_usuario)
-                .collect(Collectors.toList());
-            r.put("atletas", nomes);
-            r.put("total_atletas", nomes.size());
-
-            // Ranking de desempenho
-            List<Map<String, Object>> ranking = desempenhoDAO.buscarPorTime(idTime)
-                .stream()
-                .collect(Collectors.groupingBy(d -> d.getUsuario().getNome_usuario()))
-                .entrySet().stream()
-                .map(e -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("atleta", e.getKey());
-                    double media = e.getValue().stream()
-                        .mapToInt(d -> d.getPontuacao() != null ? d.getPontuacao() : 0)
-                        .average().orElse(0);
-                    m.put("media_pontuacao", Math.round(media * 10.0) / 10.0);
-                    m.put("avaliacoes", e.getValue().size());
-                    return m;
-                })
-                .sorted((a, b) -> Double.compare(
-                    (Double) b.get("media_pontuacao"),
-                    (Double) a.get("media_pontuacao")))
-                .collect(Collectors.toList());
-            r.put("ranking_desempenho", ranking);
-
-            // Próximas atividades
-            List<Map<String, Object>> atividades = atividadeDAO.buscarPorTime(idTime)
-                .stream()
-                .filter(a -> a.getData_atividade() != null
-                    && a.getData_atividade().isAfter(agora)
-                    && a.getStatus_atividade() == 1)
-                .sorted(Comparator.comparing(Atividade::getData_atividade))
-                .limit(5)
-                .map(a -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("nome",  a.getNome_atividade());
-                    m.put("tipo",  tipos.getOrDefault(a.getTipo_atividade(), "Outro"));
-                    m.put("data",  a.getData_atividade().toString());
-                    m.put("local", a.getLugar_atividade() != null
-                        ? a.getLugar_atividade() : "Não definido");
-                    return m;
-                })
-                .collect(Collectors.toList());
-            r.put("proximas_atividades", atividades);
-
-            return ResponseEntity.ok(r);
+            return ResponseEntity.ok(assistenteService.dadosTime(idTime, authTipo(request), authId(request)));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("erro", "Erro ao buscar dados do time."));
         }
     }
-    
 }

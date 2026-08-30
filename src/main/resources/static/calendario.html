@@ -16,7 +16,7 @@
  --azul2: #112244;
  --branco: #F0F4FF;
  --cinza: #8899BB;
- --sidebar-w: 240px;
+ --sidebar-w: 268px;
  --treino: #00C97A;
  --jogo: #FFB020;
  --evento: #A78FFF;
@@ -65,11 +65,16 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
 .filter-btn.t1.on { background: var(--treino); color: var(--azul); }
 .filter-btn.t2 { border-color: var(--jogo); color: var(--jogo); background: transparent; }
 .filter-btn.t2.on { background: var(--jogo); color: var(--azul); }
-.filter-btn.t4 { border-color: var(--competicao); color: var(--competicao); background: transparent; }
-.filter-btn.t4.on { background: var(--competicao); color: var(--azul); }
+
+.btn-relatorio {
+ padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+ cursor: pointer; border: 1.5px solid var(--verde); background: transparent; color: var(--verde);
+ transition: all 0.2s; letter-spacing: 0.5px; font-family: 'Barlow', sans-serif;
+}
+.btn-relatorio:hover { background: rgba(0,201,122,0.15); }
 
 /* STATS */
-.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 22px; }
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 22px; }
 .stat-mini {
  background: linear-gradient(135deg,#0D1E3C,#112244);
  border: 1px solid rgba(255,255,255,0.06);
@@ -231,9 +236,39 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
 
 /* ── TIME INDICATOR SIDEBAR ── */
 
+/* ── RELATÓRIO ANUAL ── */
+.relatorio-controles { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.relatorio-titulo { font-family: 'Bebas Neue',cursive; font-size: 28px; letter-spacing: 2px; text-align: center; margin-bottom: 4px; }
+.relatorio-subtitulo { text-align: center; font-size: 13px; color: var(--cinza); margin-bottom: 24px; }
+.relatorio-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+.mes-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; page-break-inside: avoid; }
+.mes-titulo { font-family: 'Bebas Neue',cursive; font-size: 17px; letter-spacing: 1px; color: var(--verde); text-align: center; margin-bottom: 10px; }
+.mes-dias-header { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 4px; }
+.mes-dias-header span { text-align: center; font-size: 9px; color: var(--cinza); font-weight: 700; }
+.mes-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 12px; }
+.mes-dia { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; border-radius: 4px; color: var(--cinza); position: relative; }
+.mes-dia.vazio { visibility: hidden; }
+.mes-dia.marcado { color: var(--branco); font-weight: 700; }
+.mes-dia .marcador { position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%; }
+.mes-lista { display: flex; flex-direction: column; gap: 5px; font-size: 11px; }
+.mes-lista-item { display: flex; gap: 6px; align-items: flex-start; line-height: 1.4; }
+.mes-lista-dia { flex-shrink: 0; font-weight: 700; color: var(--verde); min-width: 22px; }
+.mes-vazio { font-size: 11px; color: var(--cinza); text-align: center; padding: 6px 0; }
 
-
-
+@media print {
+  body * { visibility: hidden; }
+  #modalRelatorio, #modalRelatorio * { visibility: visible; }
+  #modalRelatorio { position: absolute; top: 0; left: 0; width: 100%; }
+  #modalRelatorio .modal-dialog { max-width: 100%; margin: 0; }
+  #modalRelatorio .modal-content { background: #fff; color: #000; border: none; }
+  .no-print { display: none !important; }
+  .relatorio-grid { grid-template-columns: repeat(3,1fr); }
+  .mes-card { border-color: #ccc; }
+  .mes-titulo { color: #000; }
+  .relatorio-titulo, .relatorio-subtitulo { color: #000; }
+  .mes-dia { color: #333; }
+  .mes-lista-dia { color: #000; }
+}
 
 </style>
 </head>
@@ -260,7 +295,7 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
  <button class="filter-btn all on" onclick="filtrar(0,this)">Todos</button>
  <button class="filter-btn t1" onclick="filtrar(1,this)"> Treino</button>
  <button class="filter-btn t2" onclick="filtrar(2,this)"> Jogo</button>
- <button class="filter-btn t4" onclick="filtrar(4,this)"> Competição</button>
+ <button class="btn-relatorio" onclick="abrirRelatorio()"> Gerar Relatório Anual</button>
  </div>
  </div>
 
@@ -277,10 +312,6 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
  <div class="stat-mini">
  <div class="stat-dot" style="background:var(--jogo)"></div>
  <div><div class="stat-num" id="st-jogo" style="color:var(--jogo)">—</div><div class="stat-label">Jogos</div></div>
- </div>
- <div class="stat-mini">
- <div class="stat-dot" style="background:var(--competicao)"></div>
- <div><div class="stat-num" id="st-comp" style="color:var(--competicao)">—</div><div class="stat-label">Competições</div></div>
  </div>
  </div>
 
@@ -328,6 +359,27 @@ body { font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--
  <div class="modal-footer">
  <a href="atividades.html" class="btn-acao">Ver Atividades</a>
  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Fechar</button>
+ </div>
+ </div>
+ </div>
+</div>
+
+<!-- MODAL RELATÓRIO ANUAL -->
+<div class="modal fade" id="modalRelatorio" tabindex="-1">
+ <div class="modal-dialog modal-dialog-centered modal-xl">
+ <div class="modal-content">
+ <div class="modal-header no-print">
+ <h5 class="modal-title" style="font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;">Relatório Anual do Calendário</h5>
+ <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+ </div>
+ <div class="modal-body">
+ <div class="relatorio-controles no-print">
+ <label class="form-label" style="margin:0;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--cinza)">Ano</label>
+ <input type="number" id="relatorioAno" class="form-control" style="width:110px;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);color:var(--branco);border-radius:8px;">
+ <button class="btn-relatorio" onclick="gerarRelatorioAno()">Gerar</button>
+ <button class="btn-relatorio" onclick="window.print()"> Imprimir / Salvar PDF</button>
+ </div>
+ <div id="relatorioConteudo"></div>
  </div>
  </div>
  </div>
@@ -385,10 +437,8 @@ function urlTime(base) {
 
 // CONFIG
 const TIPO = {
-  1: { label:'Treino',     emoji:'🏋️', cor:'#00C97A', bg:'rgba(0,201,122,0.15)',   textCor:'#0A1628' },
-  2: { label:'Jogo',       emoji:'🏀', cor:'#FFB020', bg:'rgba(255,176,32,0.15)',   textCor:'#0A1628' },
-  3: { label:'Evento',     emoji:'🎉', cor:'#A78FFF', bg:'rgba(167,143,255,0.15)',  textCor:'#0A1628' },
-  4: { label:'Competição', emoji:'🏆', cor:'#4EC9FF', bg:'rgba(78,201,255,0.15)',   textCor:'#0A1628' },
+  1: { label:'Treino', emoji:'🏋️', cor:'#00C97A', bg:'rgba(0,201,122,0.15)', textCor:'#0A1628' },
+  2: { label:'Jogo',   emoji:'🏀', cor:'#FFB020', bg:'rgba(255,176,32,0.15)', textCor:'#0A1628' },
 };
 
 let todosEventos = [];
@@ -440,7 +490,6 @@ function atualizarStats(data) {
  document.getElementById('st-total').textContent = data.length;
  document.getElementById('st-treino').textContent = data.filter(a=>a.tipo_atividade===1).length;
  document.getElementById('st-jogo').textContent = data.filter(a=>a.tipo_atividade===2).length;
- document.getElementById('st-comp').textContent = data.filter(a=>a.tipo_atividade===4).length;
 }
 
 // SIDEBAR PRÓXIMOS (considera ocorrências futuras de atividades recorrentes)
@@ -564,6 +613,91 @@ function abrirModal(a) {
  new bootstrap.Modal(document.getElementById('modalInfo')).show();
 }
 
+// ── RELATÓRIO ANUAL ──
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS_SEMANA = ['D','S','T','Q','Q','S','S'];
+
+// Expande todas as ocorrências (incluindo recorrências semanais) de uma lista de atividades dentro de um ano.
+function ocorrenciasNoAno(atividades, ano) {
+ const ocorrencias = [];
+ atividades.forEach(a => {
+ if (!a.data_atividade) return;
+ if (a.recorrente) {
+ const d = new Date(ano, 0, 1);
+ const fim = new Date(ano, 11, 31);
+ for (; d <= fim; d.setDate(d.getDate() + 1)) {
+ const occ = ocorrenciaEm(a, d);
+ if (occ) ocorrencias.push({ a, occ: new Date(occ) });
+ }
+ } else {
+ const occ = new Date(a.data_atividade);
+ if (occ.getFullYear() === ano) ocorrencias.push({ a, occ });
+ }
+ });
+ return ocorrencias;
+}
+
+function abrirRelatorio() {
+ document.getElementById('relatorioAno').value = new Date().getFullYear();
+ new bootstrap.Modal(document.getElementById('modalRelatorio')).show();
+ gerarRelatorioAno();
+}
+
+function gerarRelatorioAno() {
+ const ano = parseInt(document.getElementById('relatorioAno').value) || new Date().getFullYear();
+ const ocorrencias = ocorrenciasNoAno(todosEventos, ano);
+ const porMes = Array.from({ length: 12 }, () => []);
+ ocorrencias.forEach(o => porMes[o.occ.getMonth()].push(o));
+ porMes.forEach(lista => lista.sort((x, y) => x.occ - y.occ));
+
+ const nomeTime = (_ts && _ts.nome) || 'Todos os Times';
+ let html = `<div class="relatorio-titulo">Calendário ${ano} — ${esc(nomeTime)}</div>
+ <div class="relatorio-subtitulo">Relatório gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+ <div class="relatorio-grid">`;
+
+ MESES.forEach((nomeMes, mesIdx) => {
+ const lista = porMes[mesIdx];
+ const diasComAtividade = new Map();
+ lista.forEach(o => {
+ const dia = o.occ.getDate();
+ const t = TIPO[o.a.tipo_atividade] || TIPO[1];
+ if (!diasComAtividade.has(dia)) diasComAtividade.set(dia, t.cor);
+ });
+
+ const primeiroDia = new Date(ano, mesIdx, 1);
+ const totalDias = new Date(ano, mesIdx + 1, 0).getDate();
+ const offset = primeiroDia.getDay();
+
+ let gridHtml = '';
+ for (let i = 0; i < offset; i++) gridHtml += '<div class="mes-dia vazio"></div>';
+ for (let dia = 1; dia <= totalDias; dia++) {
+ const cor = diasComAtividade.get(dia);
+ gridHtml += `<div class="mes-dia${cor ? ' marcado' : ''}">${dia}${cor ? `<span class="marcador" style="background:${cor}"></span>` : ''}</div>`;
+ }
+
+ let listaHtml;
+ if (!lista.length) {
+ listaHtml = '<div class="mes-vazio">Nenhuma atividade</div>';
+ } else {
+ listaHtml = lista.map(o => {
+ const t = TIPO[o.a.tipo_atividade] || TIPO[1];
+ const diaStr = String(o.occ.getDate()).padStart(2, '0');
+ return `<div class="mes-lista-item"><span class="mes-lista-dia">${diaStr}</span><span>${t.emoji} ${esc(o.a.nome_atividade)}${o.a.lugar_atividade ? ' · ' + esc(o.a.lugar_atividade) : ''}</span></div>`;
+ }).join('');
+ }
+
+ html += `<div class="mes-card">
+ <div class="mes-titulo">${nomeMes}</div>
+ <div class="mes-dias-header">${DIAS_SEMANA.map(d => `<span>${d}</span>`).join('')}</div>
+ <div class="mes-grid">${gridHtml}</div>
+ <div class="mes-lista">${listaHtml}</div>
+ </div>`;
+ });
+
+ html += '</div>';
+ document.getElementById('relatorioConteudo').innerHTML = html;
+}
+
 // CALENDÁRIO
 document.addEventListener('DOMContentLoaded', function () {
  calendarRef = new FullCalendar.Calendar(document.getElementById('calendar'), {
@@ -623,7 +757,6 @@ document.addEventListener('DOMContentLoaded', function () {
  document.getElementById('st-total').textContent = '0';
  document.getElementById('st-treino').textContent = '0';
  document.getElementById('st-jogo').textContent = '0';
- document.getElementById('st-comp').textContent = '0';
  document.getElementById('proximosEventos').innerHTML = '<div class="no-events">Backend offline</div>';
  ok([]);
  });

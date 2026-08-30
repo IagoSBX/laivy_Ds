@@ -728,7 +728,9 @@ function clearLoginError(){
 function mostrarLoginLoading(){
   const el = document.getElementById('loginLoading');
   el.style.display = 'flex';
-  setTimeout(()=>{ window.location.href='selecionar-time.html'; }, 1400);
+  const usuarioLogado = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const destino = usuarioLogado.tipo_usuario === 1 ? 'painel-admin.html' : 'selecionar-time.html';
+  setTimeout(()=>{ window.location.href = destino; }, 1400);
 }
 </script>
 

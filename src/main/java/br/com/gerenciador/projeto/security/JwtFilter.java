@@ -3,6 +3,7 @@ package br.com.gerenciador.projeto.security;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -33,6 +34,10 @@ public class JwtFilter implements Filter {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    /** Mesmo segredo que o AssistenteService manda no header X-Token ao chamar o n8n. */
+    @Value("${assistente.n8n.token}")
+    private String assistenteToken;
 
     private static final List<String> API_PREFIXOS = List.of(
         "/usuarios", "/times", "/atividades", "/calendarios",
@@ -83,6 +88,19 @@ public class JwtFilter implements Filter {
         if (ehPublica) {
             chain.doFilter(req, res);
             return;
+        }
+
+        // Chamada de serviço confiável (n8n) com o segredo compartilhado do assistente.
+        // Só vale para /assistente/*: é o que permite as tools do agente de IA (rodando
+        // no container do n8n, sem cookie de navegador) chamarem de volta os endpoints
+        // de leitura sem precisar de um jwtToken de usuário.
+        if (casaComPrefixo(path, "/assistente")) {
+            String xToken = req.getHeader("X-Token");
+            if (xToken != null && !xToken.isBlank() && xToken.equals(assistenteToken)) {
+                req.setAttribute(ATTR_TIPO, 1); // trata como Admin: leitura liberada para qualquer time
+                chain.doFilter(req, res);
+                return;
+            }
         }
 
         // É rota protegida → exige token válido no cookie HttpOnly
