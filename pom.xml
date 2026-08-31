@@ -25,6 +25,10 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jjwt.version>0.12.6</jjwt.version>
+        <batik.version>1.17</batik.version>
+        <fop.version>2.9</fop.version>
+        <!-- Mesma versão do fontbox que o fop-transcoder já traz transitivamente -->
+        <pdfbox.version>2.0.27</pdfbox.version>
     </properties>
 
     <dependencies>
@@ -51,6 +55,52 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Prancheta tática: migração de schema. Sem isto, ddl-auto=update
+             briga com as colunas GERADAS de `jogada` e o Hibernate tenta
+             recriá-las a cada boot. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!-- Rasterização SVG -> PNG -->
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-transcoder</artifactId>
+            <version>${batik.version}</version>
+        </dependency>
+        <!-- batik-codec é necessário em tempo de execução para escrever o PNG -->
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>batik-codec</artifactId>
+            <version>${batik.version}</version>
+        </dependency>
+
+        <!-- SVG -> PDF. fop-transcoder é o enxuto, não o fop completo. -->
+        <dependency>
+            <groupId>org.apache.xmlgraphics</groupId>
+            <artifactId>fop-transcoder</artifactId>
+            <version>${fop.version}</version>
+            <exclusions>
+                <!-- evita conflito de versão do Batik trazido transitivamente -->
+                <exclusion>
+                    <groupId>org.apache.xmlgraphics</groupId>
+                    <artifactId>batik-all</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Junta as folhas (uma por página) num PDF só da sequência da jogada -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <!-- BCrypt standalone — sem Spring Security -->

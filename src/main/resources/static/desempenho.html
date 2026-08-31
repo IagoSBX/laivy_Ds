@@ -294,6 +294,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/list-sort.js"></script>
 
 
 <!-- MAIN -->
@@ -337,6 +338,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <select class="select-filtro" id="filtroAtleta" onchange="renderizar()">
  <option value="">Todos os atletas</option>
  </select>
+ <div id="ordenacaoWrap"></div>
  <div class="view-toggle ml-auto">
  <button class="view-btn active" id="vCards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
  <button class="view-btn" id="vTabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
@@ -353,7 +355,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="table-wrapper" id="tabelaWrapper">
  <div class="table-responsive">
  <table class="table">
- <thead><tr><th>ID</th><th>Atleta</th><th>Data</th><th>Posição</th><th>Pontuação</th><th>Ações</th></tr></thead>
+ <thead><tr><th id="thId">ID</th><th id="thNome">Atleta</th><th id="thData">Data</th><th>Posição</th><th id="thPontos">Pontuação</th><th>Ações</th></tr></thead>
  <tbody id="tabelaDesemp"></tbody>
  </table>
  </div>
@@ -596,6 +598,30 @@ function carregar(){
 }
 
 // RENDERIZAR
+function desempenhoGetter(item,campo){ return campo==='nome_usuario' ? (item.usuario?.nome_usuario) : item[campo]; }
+const ORDENACAO_OPCOES_DESEMPENHO=[
+ {valor:'nome_asc', label:'Atleta (A-Z)', campo:'nome_usuario', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Atleta (Z-A)', campo:'nome_usuario', tipo:'texto', direcao:'desc'},
+ {valor:'data_asc', label:'Data (mais antiga)', campo:'data_desempenho', tipo:'data', direcao:'asc'},
+ {valor:'data_desc', label:'Data (mais recente)', campo:'data_desempenho', tipo:'data', direcao:'desc'},
+ {valor:'pontos_desc', label:'Pontuação (maior)', campo:'pontuacao', tipo:'numero', direcao:'desc'},
+ {valor:'pontos_asc', label:'Pontuação (menor)', campo:'pontuacao', tipo:'numero', direcao:'asc'},
+];
+let ordenacaoState={campo:'data_desempenho',tipo:'data',direcao:'desc'};
+
+function inicializarOrdenacao(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrap'), ORDENACAO_OPCOES_DESEMPENHO, (opcao)=>{
+   ordenacaoState={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
+   renderizar();
+ }, 'data_desc');
+ ListSort.habilitarCabecalho(document.getElementById('thId'),'id_desempenho','numero',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thNome'),'nome_usuario','texto',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thData'),'data_desempenho','data',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thPontos'),'pontuacao','numero',ordenacaoState,renderizar);
+ ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
+}
+
 function renderizar(){
  const busca = document.getElementById('busca').value.toLowerCase();
  const atleta = document.getElementById('filtroAtleta').value;
@@ -604,8 +630,9 @@ function renderizar(){
  const matchAtleta = !atleta || String(d.usuario?.id_usuario) === atleta;
  return matchBusca && matchAtleta;
  });
- renderCards(lista);
- renderTabela(lista);
+ const ordenado=ListSort.ordenar(lista,Object.assign({},ordenacaoState,{getter:desempenhoGetter}));
+ renderCards(ordenado);
+ renderTabela(ordenado);
 }
 
 // MEDIA POR ATLETA (inclui pontos de jogos)
@@ -882,6 +909,7 @@ document.getElementById('btnConfDel').addEventListener('click',()=>{
  .catch(()=>toast('Erro ao excluir.', false));
 });
 
+inicializarOrdenacao();
 carregar();
 if(new URLSearchParams(location.search).get('novo')==='1')mudarTab('form',document.querySelectorAll('.tab')[1]);
 

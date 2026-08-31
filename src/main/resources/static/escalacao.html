@@ -44,6 +44,10 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 .esc-stat{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center;}
 .esc-stat-num{font-family:'Bebas Neue',cursive;font-size:30px;line-height:1;}
 .esc-stat-label{font-size:10px;color:var(--cinza);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.btn-fechar-esc{width:100%;padding:12px;border-radius:10px;border:1.5px solid rgba(0,201,122,0.35);background:rgba(0,201,122,0.1);color:var(--verde);font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;cursor:pointer;transition:background .2s;}
+.btn-fechar-esc:hover:not(:disabled){background:rgba(0,201,122,0.22);}
+.btn-fechar-esc:disabled{opacity:.5;cursor:not-allowed;border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:var(--cinza);}
+.fechar-esc-aviso{font-size:11px;color:var(--cinza);text-align:center;margin:8px 0 20px;}
 
 .layout{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
 
@@ -207,6 +211,9 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
  <div class="esc-stat"><div class="esc-stat-num" id="stTit" style="color:#FFB020">0</div><div class="esc-stat-label">Titulares</div></div>
  <div class="esc-stat"><div class="esc-stat-num" id="stRes" style="color:#4EC9FF">0</div><div class="esc-stat-label">Reservas</div></div>
  </div>
+
+ <button id="btnFecharEsc" class="btn-fechar-esc" disabled onclick="fecharEscalacao()">Fechar Escalação</button>
+ <div id="fecharEscAviso" class="fechar-esc-aviso">Faltam titulares para fechar a escalação (mínimo 5)</div>
 
  <div class="layout">
  <!-- QUADRA -->
@@ -496,6 +503,12 @@ authFetch(urlTime(API_A)).then(r=>r.json()).then(data=>{
  o.textContent = ico+' '+a.nome_atividade;
  sel.appendChild(o);
  });
+ // Vindo do card "Montar Escalação" (atividades.html) com a atividade já escolhida.
+ const idAtivUrl = new URLSearchParams(location.search).get('atividade');
+ if(idAtivUrl && sel.querySelector('option[value="'+idAtivUrl+'"]')){
+ sel.value = idAtivUrl;
+ carregarEscalacao();
+ }
 }).catch(()=>{});
 
 // Carrega atletas
@@ -533,6 +546,16 @@ function renderTudo(){
  document.getElementById('stRes').textContent = res.length;
  document.getElementById('cntTit').textContent = tit.length+'/5';
  document.getElementById('cntRes').textContent = res.length;
+
+ // Fechar escalação exige pelo menos 5 titulares
+ const btnFechar = document.getElementById('btnFecharEsc');
+ const avisoFechar = document.getElementById('fecharEscAviso');
+ const pronta = tit.length >= 5;
+ btnFechar.disabled = !pronta;
+ avisoFechar.textContent = pronta
+ ? 'Escalação pronta pra fechar (' + tit.length + ' titulares).'
+ : 'Faltam titulares para fechar a escalação (' + tit.length + '/5)';
+ avisoFechar.style.color = pronta ? 'var(--verde)' : 'var(--cinza)';
 
  // listas
  const lt = document.getElementById('listaTit');
@@ -631,13 +654,27 @@ function confirmarAdicao(){ if(isAtleta){ toast('Acesso restrito.', false); retu
  const pos = document.getElementById('selPos').value;
  const num = parseInt(document.getElementById('selNum').value)||null;
  const tit = parseInt(document.getElementById('selTipo').value);
+
+ // Verificação: camisa não pode repetir dentro da mesma escalação
+ if(num!=null && escDados.some(e=>e.numero_camisa===num)){
+ toast('Já existe um atleta escalado com a camisa '+num+' nesta atividade.', false);
+ return;
+ }
+ // Aviso (não bloqueia): já tem titular nesta posição
+ if(tit===1 && pos && escDados.some(e=>(e.titular==1||e.titular==='1') && e.posicao===pos)){
+ toast('Atenção: já tem titular nesta posição ('+pos+').', false);
+ }
+
  const payload = {
  atividade:{ id_atividade: idAtiv },
  usuario: { id_usuario: atletaSel.id_usuario },
  posicao: pos||null, numero_camisa: num, titular: tit
  };
  authFetch(API_E,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
- .then(r=>{ if(!r.ok) throw new Error(); return r.json(); })
+ .then(r=>{
+ if(!r.ok) return r.json().catch(()=>({})).then(erro=>{ throw {tratado:true, msg: erro.erro||'Não foi possível escalar este atleta.'}; });
+ return r.json();
+ })
  .then(d=>{
  escDados.push(d);
  toast(atletaSel.nome_usuario+' adicionado!');
@@ -645,8 +682,9 @@ function confirmarAdicao(){ if(isAtleta){ toast('Acesso restrito.', false); retu
  atletaSel = null;
  renderTudo();
  })
- .catch(()=>{
- // modo offline
+ .catch(e=>{
+ if(e && e.tratado){ toast(e.msg, false); return; }
+ // modo offline (falha de rede de verdade, não erro de validação do servidor)
  escDados.push({id_escalacao:Date.now(),usuario:atletaSel,posicao:pos,numero_camisa:num,titular:tit});
  toast(atletaSel.nome_usuario+' adicionado! (offline)');
  bootstrap.Modal.getInstance(document.getElementById('modalAdd'))?.hide();
@@ -660,6 +698,16 @@ function remover(id){ if(isAtleta){ toast('Acesso restrito.', false); return; }
  escDados = escDados.filter(e=>e.id_escalacao!==id);
  toast('Jogador removido!');
  renderTudo();
+}
+
+function fecharEscalacao(){
+ if(isAtleta){ toast('Acesso restrito.', false); return; }
+ const tit = escDados.filter(e => e.titular==1 || e.titular==='1');
+ if(tit.length < 5){
+ toast('Para fechar a escalação são necessários pelo menos 5 titulares (tem '+tit.length+').', false);
+ return;
+ }
+ toast('Escalação fechada com '+tit.length+' titulares e '+(escDados.length-tit.length)+' reservas!');
 }
 
 // ── LOGOUT COM CONFIRMAÇÃO ──

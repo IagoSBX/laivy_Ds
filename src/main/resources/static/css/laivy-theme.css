@@ -345,6 +345,11 @@ nav { flex: 1; padding: 22px 0; overflow-y: auto; }
 .perfil-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cinza); flex-shrink: 0; }
 .perfil-valor { font-size: 13px; font-weight: 600; color: var(--branco); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px; }
 
+/* ============ ORDENACAO DE LISTAS (list-sort.js) ============ */
+.th-ordenavel { cursor: pointer; user-select: none; white-space: nowrap; }
+.th-ordenavel:hover { color: var(--verde); }
+.sort-arrow { font-size: 9px; margin-left: 4px; color: var(--verde); display: inline-block; }
+.sort-dropdown { min-width: 170px; }
 /* ---------- 5b. PERFIL — GRÁFICOS E HISTÓRICO (atleta) ---------- */
 .perfil-graficos { margin-top: 22px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
 .perfil-stats-mini { display: flex; justify-content: space-around; margin-bottom: 20px; }

@@ -47,5 +47,11 @@ public final class JogadaDTOs {
     /** O que o atleta vê em "Ver observações do treinador" no modo leitura. */
     public record VinculoResponse(Integer ordem, String observacoes) {}
 
+    /** Uma atividade à qual a jogada está vinculada — usado para mostrar na
+     *  prancheta e na biblioteca que a jogada já foi atribuída a algo. */
+    public record VinculoAtividadeResponse(
+            Integer idAtividade, String nomeAtividade, LocalDateTime dataAtividade
+    ) {}
+
     public record ErroValidacao(String mensagem, java.util.List<String> detalhes) {}
 }

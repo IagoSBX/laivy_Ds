@@ -89,11 +89,17 @@ public record JogadaConteudo(
             @DecimalMin("0.0") @DecimalMax("1.0") double y
     ) {}
 
-    /** Ancorado nos tokens: mover o boneco reposiciona o traço. */
+    /**
+     * Ancorado nos tokens: mover o boneco reposiciona o traço.
+     *
+     * "arremesso" é o único tipo que não termina em outro jogador: o destino
+     * é a cesta. destinoTokenId fica null nesse caso — o ValidadorJogadaService
+     * confere que o traço termina perto de UMA cesta (não no meio da quadra).
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Traco(
             @NotBlank String id,
-            @NotBlank @Pattern(regexp = "corte|passe|bloqueio|drible|livre") String tipo,
+            @NotBlank @Pattern(regexp = "corte|passe|bloqueio|drible|livre|arremesso") String tipo,
             @NotEmpty @Size(max = 200) @Valid List<Ponto> pontos,
             String origemTokenId,
             String destinoTokenId

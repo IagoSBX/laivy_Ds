@@ -297,6 +297,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/list-sort.js"></script>
 
 
 <!-- MAIN -->
@@ -348,6 +349,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <option value="1"> Apto</option>
  <option value="0"> Inapto</option>
  </select>
+ <div id="ordenacaoWrap"></div>
  <div class="view-toggle ml-auto">
  <button class="view-btn active" id="vCards" title="Cards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
  <button class="view-btn" id="vTabela" title="Tabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
@@ -364,7 +366,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="table-wrapper" id="tabelaWrapper">
  <div class="table-responsive">
  <table class="table">
- <thead><tr><th>ID</th><th>Atleta</th><th>Data Início</th><th>Peso</th><th>Altura</th><th>IMC</th><th>Gordura</th><th>Status</th><th>Ações</th></tr></thead>
+ <thead><tr><th id="thId">ID</th><th id="thNome">Atleta</th><th id="thData">Data Início</th><th>Peso</th><th>Altura</th><th>IMC</th><th>Gordura</th><th>Status</th><th>Ações</th></tr></thead>
  <tbody id="tabelaExames"></tbody>
  </table>
  </div>
@@ -667,8 +669,30 @@ function renderizar(){
  const matchStatus = status==='' || String(e.status_usuario) === status;
  return matchBusca && matchStatus;
  });
- renderCards(lista);
- renderTabela(lista);
+ const ordenado=ListSort.ordenar(lista,Object.assign({},ordenacaoState,{getter:exameGetter}));
+ renderCards(ordenado);
+ renderTabela(ordenado);
+}
+
+const ORDENACAO_OPCOES_EXAMES=[
+ {valor:'nome_asc', label:'Atleta (A-Z)', campo:'nome_usuario', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Atleta (Z-A)', campo:'nome_usuario', tipo:'texto', direcao:'desc'},
+ {valor:'data_asc', label:'Data (mais antiga)', campo:'data_inicio_exame', tipo:'data', direcao:'asc'},
+ {valor:'data_desc', label:'Data (mais recente)', campo:'data_inicio_exame', tipo:'data', direcao:'desc'},
+];
+let ordenacaoState={campo:'data_inicio_exame',tipo:'data',direcao:'desc'};
+function exameGetter(item,campo){ return campo==='nome_usuario' ? (item.usuario?.nome_usuario) : item[campo]; }
+
+function inicializarOrdenacao(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrap'), ORDENACAO_OPCOES_EXAMES, (opcao)=>{
+   ordenacaoState={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
+   renderizar();
+ }, 'data_desc');
+ ListSort.habilitarCabecalho(document.getElementById('thId'),'id_exame','numero',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thNome'),'nome_usuario','texto',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thData'),'data_inicio_exame','data',ordenacaoState,renderizar);
+ ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
 }
 
 // IMC helper
@@ -997,6 +1021,7 @@ document.getElementById('btnConfDel').addEventListener('click',()=>{
  .catch(()=>toast('Erro ao excluir.', false));
 });
 
+inicializarOrdenacao();
 carregar();
 if(new URLSearchParams(location.search).get('novo')==='1')mudarTab('form',document.querySelectorAll('.tab')[1]);
 

@@ -8,7 +8,16 @@ import br.com.gerenciador.projeto.model.Atividade;
 
 public interface AtividadeDAO extends JpaRepository<Atividade, Integer> {
 
-    @Query("SELECT a FROM Atividade a WHERE a.usuario.id_usuario = :id ORDER BY a.data_atividade DESC")
+    /**
+     * Atividades "do usuário": as que ele criou (treinador/admin) OU as que
+     * ele foi escalado (atleta). Um atleta nunca é o "criador" de uma
+     * Atividade — sem o OR pela Escalacao esta consulta sempre voltava
+     * vazia pra qualquer atleta (era o que o perfil dele e o widget de
+     * perfil da sidebar usavam pra montar "atividades recentes").
+     */
+    @Query("SELECT DISTINCT a FROM Atividade a WHERE a.usuario.id_usuario = :id " +
+           "OR a.id_atividade IN (SELECT e.atividade.id_atividade FROM Escalacao e WHERE e.usuario.id_usuario = :id) " +
+           "ORDER BY a.data_atividade DESC")
     List<Atividade> buscarPorUsuario(@Param("id") Integer id);
 
     @Query("SELECT a FROM Atividade a WHERE a.tipo_atividade = :tipo")

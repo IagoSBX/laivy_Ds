@@ -243,6 +243,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/list-sort.js"></script>
 
 
 <main class="main">
@@ -269,8 +270,9 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  </select>
  <select class="select-filtro" id="filtroStatus" onchange="renderizar()">
  <option value="">Qualquer status</option>
- <option value="1"> Ativo</option><option value="0"> Cancelado</option>
+ <option value="1"> Ativo</option><option value="0"> Cancelado</option><option value="2"> Finalizado</option>
  </select>
+ <div id="ordenacaoWrap"></div>
  <div class="view-toggle ml-auto">
  <button class="view-btn active" id="vCards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
  <button class="view-btn" id="vTabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
@@ -281,7 +283,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="table-wrapper" id="tabelaWrapper">
  <div class="table-responsive">
  <table class="table">
- <thead><tr><th>ID</th><th>Nome</th><th>Responsável</th><th>Local</th><th>Data</th><th>Tipo</th><th>Status</th><th>Ações</th></tr></thead>
+ <thead><tr><th id="thId">ID</th><th id="thNome">Nome</th><th>Responsável</th><th>Local</th><th id="thData">Data</th><th>Tipo</th><th>Status</th><th>Ações</th></tr></thead>
  <tbody id="tabelaAtiv"></tbody>
  </table>
  </div>
@@ -626,7 +628,28 @@ function renderizar(){
  const mb=!busca||a.nome_atividade.toLowerCase().includes(busca)||(a.lugar_atividade||'').toLowerCase().includes(busca)||(a.usuario?.nome_usuario||'').toLowerCase().includes(busca);
  return mb&&(!tipo||String(a.tipo_atividade)===tipo)&&(status===''||String(a.status_atividade)===status);
  });
- renderCards(f);renderTabela(f);
+ const ordenado=ListSort.ordenar(f,ordenacaoState);
+ renderCards(ordenado);renderTabela(ordenado);
+}
+
+const ORDENACAO_OPCOES_ATIVIDADES=[
+ {valor:'nome_asc', label:'Nome (A-Z)', campo:'nome_atividade', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Nome (Z-A)', campo:'nome_atividade', tipo:'texto', direcao:'desc'},
+ {valor:'data_asc', label:'Data (mais antiga)', campo:'data_atividade', tipo:'data', direcao:'asc'},
+ {valor:'data_desc', label:'Data (mais recente)', campo:'data_atividade', tipo:'data', direcao:'desc'},
+];
+let ordenacaoState={campo:'data_atividade',tipo:'data',direcao:'desc'};
+
+function inicializarOrdenacao(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrap'), ORDENACAO_OPCOES_ATIVIDADES, (opcao)=>{
+   ordenacaoState={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
+   renderizar();
+ }, 'data_desc');
+ ListSort.habilitarCabecalho(document.getElementById('thId'),'id_atividade','numero',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thNome'),'nome_atividade','texto',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thData'),'data_atividade','data',ordenacaoState,renderizar);
+ ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
 }
 
 function renderCards(lista){
@@ -648,7 +671,7 @@ function renderCards(lista){
  +'<button class="btn-acao-sm btn-ver" onclick="event.stopPropagation();verDetalhes('+a.id_atividade+')">Ver</button>'
  +(isAdmin?'<button class="btn-acao-sm btn-edit" onclick="event.stopPropagation();abrirEdicao('+a.id_atividade+')">Editar</button><button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel('+a.id_atividade+')">Excluir</button>':'')
  +'</div></div>'
- +'<button class="btn-esc-card" onclick="event.stopPropagation();abrirEscalacao('+a.id_atividade+',\''+nE+'\')"> Montar Escalação</button>'
+ +'<button class="btn-esc-card" onclick="event.stopPropagation();abrirEscalacao('+a.id_atividade+',\''+nE+'\')"> '+(isAtleta?'Ver Escalação':'Montar Escalação')+'</button>'
  +(isAdmin && a.tipo_atividade===2 && a.status_atividade!==2 ? '<button class="btn-esc-card" style="background:rgba(0,201,122,0.08);border-color:rgba(0,201,122,0.3);color:#00C97A;margin-top:6px" onclick="event.stopPropagation();abrirFinalizarJogo('+a.id_atividade+')"> Finalizar Jogo / Lançar Pontos</button>' : '')
  +(a.status_atividade===2 && a.tipo_atividade===2 ? '<div style="background:rgba(0,201,122,0.06);border:1px solid rgba(0,201,122,0.15);border-radius:8px;padding:8px 12px;margin-top:6px;font-size:12px;color:#00C97A;font-weight:700;text-align:center"> Finalizado'+(a.placar_pro!=null?' · '+a.placar_pro+'×'+(a.placar_contra||0):'')+(a.time_oponente?' vs '+esc(a.time_oponente):'')+'</div>' : '')
  +'</div>';
@@ -742,12 +765,16 @@ function confirmarDel(id){ if(isAtleta){ toast('Acesso restrito.', false); retur
 document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDel)return;authFetch(api+'/'+idParaDel,{method:'DELETE'}).then(()=>{toast('Excluída!');bootstrap.Modal.getInstance(document.getElementById('modalDel'))?.hide();carregar();}).catch(()=>toast('Erro.',false));});
 
 document.addEventListener('DOMContentLoaded',function(){
+ inicializarOrdenacao();
  carregar();
  if(new URLSearchParams(location.search).get('novo')==='1')mudarTab('form',document.querySelectorAll('.tab')[1]);
 });
 
 // ESCALAÇÃO BASQUETE 
 function abrirEscalacao(idAtiv,nomeAtiv){
+ // Treinador/Admin monta a escalação de verdade na tela dedicada; o popup
+ // aqui é só o "ver rápido" do atleta, que não pode editar mesmo.
+ if(isAdmin){ location.href='escalacao.html?atividade='+idAtiv; return; }
  escAtivId=idAtiv;
  document.getElementById('escAtivNome').textContent=nomeAtiv;
  authFetch(apiEsc+'/atividade/'+idAtiv).then(r=>r.json()).then(d=>{escDados=d;renderEsc();}).catch(()=>{escDados=[];renderEsc();});

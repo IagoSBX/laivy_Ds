@@ -31,6 +31,12 @@ public class EscalacaoService {
         return escalacaoDAO.buscarPorAtividade(id);
     }
 
+    /** Dois atletas escalados na mesma atividade não podem usar a mesma camisa. */
+    private boolean numeroJaUsado(Integer idAtividade, Integer numero, Integer ignorarIdEscalacao) {
+        return escalacaoDAO.buscarPorAtividade(idAtividade).stream()
+            .anyMatch(e -> numero.equals(e.getNumero_camisa()) && !e.getId_escalacao().equals(ignorarIdEscalacao));
+    }
+
     // Somente Admin/Treinador escalam jogadores; Treinador só para atividades do próprio time.
     public Escalacao cadastrar(Escalacao esc, Integer authTipo, Integer authId) {
         if (esc.getAtividade() == null || esc.getAtividade().getId_atividade() == null)
@@ -40,6 +46,10 @@ public class EscalacaoService {
         Integer idTimeAlvo = atividade.getTime() != null ? atividade.getTime().getId_time() : null;
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, usuarioDAO))
             throw new ForbiddenException("Sem permissao para escalar jogadores nesta atividade.");
+        if (esc.getNumero_camisa() != null
+                && numeroJaUsado(atividade.getId_atividade(), esc.getNumero_camisa(), null))
+            throw new BadRequestException(
+                "Já existe um atleta escalado com a camisa " + esc.getNumero_camisa() + " nesta atividade.");
         esc.setAtividade(atividade);
         if (esc.getUsuario() != null && esc.getUsuario().getId_usuario() != null)
             usuarioDAO.findById(esc.getUsuario().getId_usuario()).ifPresent(esc::setUsuario);
@@ -52,6 +62,11 @@ public class EscalacaoService {
             .orElseThrow(() -> new NotFoundException("Escalacao nao encontrada."));
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(e), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar esta escalacao.");
+
+        if (dados.getNumero_camisa() != null && !dados.getNumero_camisa().equals(e.getNumero_camisa())
+                && numeroJaUsado(e.getAtividade().getId_atividade(), dados.getNumero_camisa(), e.getId_escalacao()))
+            throw new BadRequestException(
+                "Já existe um atleta escalado com a camisa " + dados.getNumero_camisa() + " nesta atividade.");
 
         if (dados.getPontos_jogo()   != null) e.setPontos_jogo(dados.getPontos_jogo());
         if (dados.getPosicao()       != null) e.setPosicao(dados.getPosicao());

@@ -188,6 +188,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/list-sort.js"></script>
 
 <main class="main">
   <div class="page-header">
@@ -252,6 +253,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
           <option value="1">Ativos</option>
           <option value="0">Inativos</option>
         </select>
+        <div id="ordenacaoWrapTimes"></div>
         <a href="novo-time.html" class="btn-novo ml-auto">+ Novo Time</a>
       </div>
       <div class="times-grid" id="timesGrid"></div>
@@ -355,7 +357,10 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
       <div class="col-lg-6">
         <div class="card-dark">
-          <h4>Treinadores Cadastrados</h4>
+          <h4 style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <span>Treinadores Cadastrados</span>
+            <span id="ordenacaoWrapTreinadores"></span>
+          </h4>
           <div id="treinadoresList">
             <div style="text-align:center;padding:32px;color:var(--cinza)">
               <div style="width:28px;height:28px;border:3px solid rgba(0,201,122,0.2);border-top-color:var(--verde);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px"></div>
@@ -545,7 +550,23 @@ function renderizarTimes(){
     const ms = !status || String(t.ativo_time) === status;
     return mb && ms;
   });
-  renderGridTimes(lista);
+  const ordenado = ListSort.ordenar(lista, ordenacaoStateTimes);
+  renderGridTimes(ordenado);
+}
+
+const ORDENACAO_OPCOES_TIMES=[
+ {valor:'nome_asc', label:'Nome (A-Z)', campo:'nome_time', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Nome (Z-A)', campo:'nome_time', tipo:'texto', direcao:'desc'},
+ {valor:'criacao_asc', label:'Criação (mais antigo)', campo:'id_time', tipo:'numero', direcao:'asc'},
+ {valor:'criacao_desc', label:'Criação (mais recente)', campo:'id_time', tipo:'numero', direcao:'desc'},
+];
+let ordenacaoStateTimes={campo:'nome_time',tipo:'texto',direcao:'asc'};
+
+function inicializarOrdenacaoTimes(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrapTimes'), ORDENACAO_OPCOES_TIMES, (opcao)=>{
+   ordenacaoStateTimes={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   renderizarTimes();
+ }, 'nome_asc');
 }
 
 function renderGridTimes(lista){
@@ -732,6 +753,21 @@ let todosTimesTreinador = [];
 let treinadorEditandoId = null;
 let timeNoModalId = null;
 let fotoBase64 = null;
+let treinadoresDados = [];
+const ORDENACAO_OPCOES_TREINADORES=[
+ {valor:'nome_asc', label:'Nome (A-Z)', campo:'nome_usuario', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Nome (Z-A)', campo:'nome_usuario', tipo:'texto', direcao:'desc'},
+ {valor:'registro_asc', label:'Registro (mais antigo)', campo:'id_usuario', tipo:'numero', direcao:'asc'},
+ {valor:'registro_desc', label:'Registro (mais recente)', campo:'id_usuario', tipo:'numero', direcao:'desc'},
+];
+let ordenacaoStateTreinadores={campo:'nome_usuario',tipo:'texto',direcao:'asc'};
+
+function inicializarOrdenacaoTreinadores(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrapTreinadores'), ORDENACAO_OPCOES_TREINADORES, (opcao)=>{
+   ordenacaoStateTreinadores={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   renderTreinadores(treinadoresDados);
+ }, 'nome_asc');
+}
 
 async function carregarTreinadores() {
   const [usuarios, times] = await Promise.all([
@@ -740,7 +776,8 @@ async function carregarTreinadores() {
   ]);
   todosTimesTreinador = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
   renderTimeSelectorGrid('timeSelectorGrid', null);
-  renderTreinadores(usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2));
+  treinadoresDados = usuarios.filter(u=>u.tipo_usuario===1||u.tipo_usuario===2);
+  renderTreinadores(treinadoresDados);
 }
 
 function renderTimeSelectorGrid(containerId, selectedId) {
@@ -778,6 +815,7 @@ function selecionarTimeTreinador(el, containerId) {
 
 function renderTreinadores(lista) {
   const el = document.getElementById('treinadoresList');
+  lista = ListSort.ordenar(lista, ordenacaoStateTreinadores);
   if(!lista.length){
     el.innerHTML='<div style="text-align:center;padding:32px;color:var(--cinza);font-size:13px">Nenhum treinador cadastrado ainda.</div>';
     return;
@@ -1042,6 +1080,8 @@ function resetFormTreinador() {
 }
 
 // ── INICIALIZAÇÃO ──
+inicializarOrdenacaoTimes();
+inicializarOrdenacaoTreinadores();
 carregarTimes();
 carregarTreinadores();
 </script>

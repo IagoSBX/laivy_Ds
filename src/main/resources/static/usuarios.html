@@ -157,7 +157,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .table tbody tr{
   background:rgba(255,255,255,0.02)!important;
   transition:background 0.15s,transform 0.15s;
-  cursor:default;
+  cursor:pointer;
 }
 .table tbody tr:hover{
   background:rgba(0,201,122,0.05)!important;
@@ -323,6 +323,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/list-sort.js"></script>
 
 
 <main class="main">
@@ -361,6 +362,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <option value="2"> Treinador</option>
  <option value="3"> Atleta</option>
  </select>
+ <div id="ordenacaoWrap"></div>
  <div class="view-toggle ml-auto">
  <button class="view-btn active" id="vCards" onclick="mudarVisao('cards')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></button>
  <button class="view-btn" id="vTabela" onclick="mudarVisao('tabela')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
@@ -371,7 +373,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="table-wrapper" id="tabelaWrapper">
  <div class="table-responsive">
  <table class="table">
- <thead><tr><th>ID</th><th>Usuário</th><th>Email</th><th>Login</th><th>Perfil</th><th style="text-align:right">Ações</th></tr></thead>
+ <thead><tr><th id="thId">ID</th><th id="thNome">Usuário</th><th>Email</th><th>Login</th><th>Perfil</th><th style="text-align:right">Ações</th></tr></thead>
  <tbody id="tabelaUsuarios"></tbody>
  </table>
  </div>
@@ -711,15 +713,35 @@ function filtrarTipo(v){
  mudarTab('lista',document.querySelectorAll('.tab')[0]);
  renderizar();
 }
+const ORDENACAO_OPCOES_USUARIOS=[
+ {valor:'nome_asc', label:'Nome (A-Z)', campo:'nome_usuario', tipo:'texto', direcao:'asc'},
+ {valor:'nome_desc', label:'Nome (Z-A)', campo:'nome_usuario', tipo:'texto', direcao:'desc'},
+ {valor:'registro_asc', label:'Registro (mais antigo)', campo:'id_usuario', tipo:'numero', direcao:'asc'},
+ {valor:'registro_desc', label:'Registro (mais recente)', campo:'id_usuario', tipo:'numero', direcao:'desc'},
+];
+let ordenacaoState={campo:'nome_usuario',tipo:'texto',direcao:'asc'};
+
 function renderizar(){
  const busca=document.getElementById('busca').value.toLowerCase();
  const tipo =document.getElementById('filtroTipo').value;
- const lista=dados.filter(u=>{
+ let lista=dados.filter(u=>{
  const mb=!busca||u.nome_usuario?.toLowerCase().includes(busca)||u.email_usuario?.toLowerCase().includes(busca)||u.login_usuario?.toLowerCase().includes(busca);
  const mt=!tipo||String(u.tipo_usuario)===tipo;
  return mb&&mt;
  });
+ lista=ListSort.ordenar(lista,ordenacaoState);
  renderCards(lista); renderTabela(lista);
+}
+
+function inicializarOrdenacao(){
+ ListSort.criarDropdown(document.getElementById('ordenacaoWrap'), ORDENACAO_OPCOES_USUARIOS, (opcao)=>{
+   ordenacaoState={campo:opcao.campo,tipo:opcao.tipo,direcao:opcao.direcao};
+   ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
+   renderizar();
+ }, 'nome_asc');
+ ListSort.habilitarCabecalho(document.getElementById('thId'),'id_usuario','numero',ordenacaoState,renderizar);
+ ListSort.habilitarCabecalho(document.getElementById('thNome'),'nome_usuario','texto',ordenacaoState,renderizar);
+ ListSort.atualizarSetas(document.getElementById('thNome').parentElement, ordenacaoState);
 }
 
 function renderCards(lista){
@@ -760,16 +782,16 @@ function renderTabela(lista){
  tb.innerHTML=lista.map(u=>{
  const ini=esc(iniciais(u.nome_usuario)),cor=TIPO_COR[u.tipo_usuario]||'#888',bg=TIPO_BG[u.tipo_usuario]||'rgba(136,136,136,0.2)';
  const botoesAdmin=(isAdmin||isTreina)
-  ?'<button class="btn-acao-sm btn-edit" onclick="abrirEdicao('+u.id_usuario+')">Editar</button>'
-  +'<button class="btn-acao-sm btn-del" onclick="confirmarDel('+u.id_usuario+',\''+esc(u.nome_usuario)+'\')">Excluir</button>'
+  ?'<button class="btn-acao-sm btn-edit" onclick="event.stopPropagation();abrirEdicao('+u.id_usuario+')">Editar</button>'
+  +'<button class="btn-acao-sm btn-del" onclick="event.stopPropagation();confirmarDel('+u.id_usuario+',\''+esc(u.nome_usuario)+'\')">Excluir</button>'
   :'';
- return '<tr><td style="color:var(--cinza);font-size:12px">#'+u.id_usuario+'</td>'
- +'<td><div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+cor+'">'+ini+'</div><span style="font-weight:700">'+esc(u.nome_usuario)+'</span></div></td>'
+ return '<tr onclick="ver('+u.id_usuario+')"><td style="color:var(--cinza);font-size:12px">#'+u.id_usuario+'</td>'
+ +'<td><div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+cor+'">'+ini+'</div><span style="font-weight:700;color:var(--cinza)">'+esc(u.nome_usuario)+'</span></div></td>'
  +'<td style="color:var(--cinza);font-size:13px">'+esc(u.email_usuario)+'</td>'
  +'<td style="color:var(--cinza);font-size:13px">'+esc(u.login_usuario||'—')+'</td>'
  +'<td>'+badge(u.tipo_usuario)+'</td>'
  +'<td style="text-align:right">'
- +'<button class="btn-acao-sm btn-ver" onclick="ver('+u.id_usuario+')">Ver</button>'
+ +'<button class="btn-acao-sm btn-ver" onclick="event.stopPropagation();ver('+u.id_usuario+')">Ver</button>'
  +botoesAdmin+'</td></tr>';
  }).join('');
 }
@@ -1033,6 +1055,7 @@ document.getElementById('btnConfDel').addEventListener('click',()=>{
  .catch(()=>toast('Erro ao excluir.',false));
 });
 
+inicializarOrdenacao();
 carregar();
 configurarCampoPerfil(false);
 if(new URLSearchParams(location.search).get('novo')==='1'){abrirNovoUsuario();}

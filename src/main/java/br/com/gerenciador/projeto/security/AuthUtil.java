@@ -39,4 +39,16 @@ public class AuthUtil {
         Integer meuTime = timeDoUsuario(authId, usuarioDAO);
         return meuTime != null && meuTime.equals(idTimeAlvo);
     }
+
+    /**
+     * Leitura: Admin vê qualquer time; Treinador ou Atleta só o próprio time
+     * (diferente de {@link #podeGerenciarTime}, que nega Atleta mesmo no
+     * próprio time). idTimeAlvo == null é sempre negado.
+     */
+    public static boolean ehMembroDoTime(Integer authTipo, Integer authId, Integer idTimeAlvo, IUsuario usuarioDAO) {
+        if (ehAdmin(authTipo)) return true;
+        if (idTimeAlvo == null) return false;
+        Integer meuTime = timeDoUsuario(authId, usuarioDAO);
+        return meuTime != null && meuTime.equals(idTimeAlvo);
+    }
 }

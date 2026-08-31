@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Quadra FIBA oficial, desenhada em METROS. viewBox = 0 0 28 15.
+
+  FONTE ÚNICA DA VERDADE. Este mesmo arquivo é:
+    - injetado no editor pelo navegador (render/quadraSvg.js)
+    - lido do classpath pelo SvgJogadaService para a exportação Batik
+
+  Se a geometria estiver duplicada em Java e em JS, o PDF diverge da tela
+  na primeira alteração. Por isso ela mora aqui e em nenhum outro lugar.
+
+  Medidas (FIBA Official Basketball Rules — Basketball Equipment):
+    quadra 28 x 15 | garrafão 4,90 x 5,80 | lance livre 3,60 a 5,80 do fundo
+    círculo de lance livre r=1,80 | linha de três r=6,75 do centro do aro
+    trecho reto da linha de três a 0,90 da lateral (2,99 de comprimento)
+    centro do aro a 1,575 do fundo | aro r=0,225 | não-carga r=1,25
+    círculo central r=1,80 | tabela a 1,20 do fundo, 1,80 de largura
+
+  Todo estilo é ATRIBUTO DE APRESENTAÇÃO, nunca CSS externo nem variável
+  CSS: o Batik implementa SVG 1.1 e não executa CSS externo nem JavaScript.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 15" id="quadra-fiba">
+
+  <defs>
+    <!-- Convenção de traços da prancheta física. Marcadores compartilhados
+         entre editor e exportação. markerUnits default = strokeWidth, então
+         o tamanho acompanha a espessura da linha. -->
+
+    <marker id="ponta-seta" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#1F1B16"/>
+    </marker>
+
+    <marker id="ponta-seta-passe" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#2E6B5E"/>
+    </marker>
+
+    <!-- Bloqueio: barra perpendicular no fim do traço -->
+    <marker id="ponta-bloqueio" viewBox="0 0 10 10" refX="1" refY="5"
+            markerWidth="4" markerHeight="4" orient="auto">
+      <path d="M1,0 L1,10" stroke="#1F1B16" stroke-width="2.4" fill="none"/>
+    </marker>
+
+    <!-- Arremesso: bola na cesta no fim do traço, não uma seta pra outro jogador -->
+    <marker id="ponta-arremesso" viewBox="0 0 10 10" refX="5" refY="5"
+            markerWidth="5" markerHeight="5" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#F2A93B" stroke="#8A5A12" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <g id="quadra-geometria" fill="none" stroke="#C0B6A8" stroke-width="0.08"
+     stroke-linecap="square">
+
+    <!-- piso -->
+    <rect x="0" y="0" width="28" height="15" fill="#FDFAF5" stroke="none"/>
+
+    <!-- garrafões -->
+    <rect x="0"    y="5.05" width="5.8" height="4.9" fill="#F4EDE2" stroke="none"/>
+    <rect x="22.2" y="5.05" width="5.8" height="4.9" fill="#F4EDE2" stroke="none"/>
+
+    <!-- limites e meio de quadra -->
+    <rect x="0" y="0" width="28" height="15"/>
+    <line x1="14" y1="0" x2="14" y2="15"/>
+    <circle cx="14" cy="7.5" r="1.8"/>
+
+    <!-- ============ lado esquerdo ============ -->
+    <rect x="0" y="5.05" width="5.8" height="4.9"/>
+    <line x1="5.8" y1="5.7" x2="5.8" y2="9.3"/>
+    <circle cx="5.8" cy="7.5" r="1.8"/>
+    <path d="M0,0.9 L2.9901,0.9 A 6.75 6.75 0 0 1 2.9901,14.1 L0,14.1"/>
+    <path d="M1.575,6.25 A 1.25 1.25 0 0 1 1.575,8.75"/>
+    <line x1="1.2" y1="6.6" x2="1.2" y2="8.4" stroke="#8C8175" stroke-width="0.11"/>
+    <circle cx="1.575" cy="7.5" r="0.225" stroke="#D9662B" stroke-width="0.09"/>
+
+    <!-- ============ lado direito ============ -->
+    <rect x="22.2" y="5.05" width="5.8" height="4.9"/>
+    <line x1="22.2" y1="5.7" x2="22.2" y2="9.3"/>
+    <circle cx="22.2" cy="7.5" r="1.8"/>
+    <path d="M28,0.9 L25.0099,0.9 A 6.75 6.75 0 0 0 25.0099,14.1 L28,14.1"/>
+    <path d="M26.425,6.25 A 1.25 1.25 0 0 0 26.425,8.75"/>
+    <line x1="26.8" y1="6.6" x2="26.8" y2="8.4" stroke="#8C8175" stroke-width="0.11"/>
+    <circle cx="26.425" cy="7.5" r="0.225" stroke="#D9662B" stroke-width="0.09"/>
+  </g>
+</svg>

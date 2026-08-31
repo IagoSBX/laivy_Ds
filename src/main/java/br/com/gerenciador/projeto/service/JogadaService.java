@@ -117,6 +117,16 @@ public class JogadaService {
         return vinculos.findByAtividadeIdOrderByOrdemAsc(idAtividade);
     }
 
+    @Transactional(readOnly = true)
+    public List<VinculoAtividadeResponse> atividadesDaJogada(Integer idJogada) {
+        return vinculos.findByJogadaId(idJogada).stream()
+                .map(aj -> new VinculoAtividadeResponse(
+                        aj.getAtividade().getId_atividade(),
+                        aj.getAtividade().getNome_atividade(),
+                        aj.getAtividade().getData_atividade()))
+                .toList();
+    }
+
     // ---- confirmação de leitura do atleta -----------------------------
 
     @Transactional
