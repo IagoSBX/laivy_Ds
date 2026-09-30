@@ -25,23 +25,23 @@ public class CalendarioController {
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     @GetMapping
-    public List<Calendario> listarTodos() {
-        return calendarioService.listarTodos();
+    public List<Calendario> listarTodos(HttpServletRequest request) {
+        return calendarioService.listarTodos(authTipo(request), authId(request));
     }
 
     @GetMapping("/{id}")
-    public Calendario buscarPorId(@PathVariable Integer id) {
-        return calendarioService.buscarPorId(id);
+    public Calendario buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        return calendarioService.buscarPorId(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/usuario/{id}")
-    public List<Calendario> buscarPorUsuario(@PathVariable Integer id) {
-        return calendarioService.buscarPorUsuario(id);
+    public List<Calendario> buscarPorUsuario(@PathVariable Integer id, HttpServletRequest request) {
+        return calendarioService.buscarPorUsuario(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/atividade/{id}")
-    public List<Calendario> buscarPorAtividade(@PathVariable Integer id) {
-        return calendarioService.buscarPorAtividade(id);
+    public List<Calendario> buscarPorAtividade(@PathVariable Integer id, HttpServletRequest request) {
+        return calendarioService.buscarPorAtividade(id, authTipo(request), authId(request));
     }
 
     @PostMapping

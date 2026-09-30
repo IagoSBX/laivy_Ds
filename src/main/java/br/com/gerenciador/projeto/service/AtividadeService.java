@@ -26,25 +26,54 @@ public class AtividadeService {
         return a.getTime() != null ? a.getTime().getId_time() : null;
     }
 
-    public List<Atividade> listarTodas(Integer idTime) {
-        if (idTime != null) return atividadeDAO.buscarPorTime(idTime);
-        return atividadeDAO.findAll();
-    }
-
-    public Atividade buscarPorId(Integer id) {
+    private Atividade buscar(Integer id) {
         return atividadeDAO.findById(id)
             .orElseThrow(() -> new NotFoundException("Atividade nao encontrada."));
     }
 
-    public List<Atividade> buscarPorUsuario(Integer id) {
+    // Admin ve qualquer time; Treinador/Atleta somente o proprio.
+    public List<Atividade> listarTodas(Integer idTime, Integer authTipo, Integer authId) {
+        if (AuthUtil.ehAdmin(authTipo))
+            return idTime != null ? atividadeDAO.buscarPorTime(idTime) : atividadeDAO.findAll();
+
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        if (meuTime == null) return List.of();
+        if (idTime != null && !idTime.equals(meuTime))
+            throw new ForbiddenException("Sem permissao para ver atividades de outro time.");
+        return atividadeDAO.buscarPorTime(meuTime);
+    }
+
+    public Atividade buscarPorId(Integer id, Integer authTipo, Integer authId) {
+        Atividade a = buscar(id);
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTime(a), usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver esta atividade.");
+        return a;
+    }
+
+    public List<Atividade> buscarPorUsuario(Integer id, Integer authTipo, Integer authId) {
+        Usuario alvo = usuarioDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver atividades deste usuario.");
         return atividadeDAO.buscarPorUsuario(id);
     }
 
-    public List<Atividade> buscarPorTipo(Integer tipo) {
-        return atividadeDAO.buscarPorTipo(tipo);
+    // Sem filtro de time no DAO: restringe ao proprio time apos buscar, exceto para Admin.
+    public List<Atividade> buscarPorTipo(Integer tipo, Integer authTipo, Integer authId) {
+        List<Atividade> lista = atividadeDAO.buscarPorTipo(tipo);
+        if (AuthUtil.ehAdmin(authTipo)) return lista;
+
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        if (meuTime == null) return List.of();
+        return lista.stream()
+            .filter(a -> meuTime.equals(idTime(a)))
+            .collect(Collectors.toList());
     }
 
-    public List<Atividade> buscarPorTime(Integer idTime) {
+    public List<Atividade> buscarPorTime(Integer idTime, Integer authTipo, Integer authId) {
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTime, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver atividades de outro time.");
         return atividadeDAO.findAll().stream()
             .filter(a -> a.getTime() != null && a.getTime().getId_time().equals(idTime))
             .collect(Collectors.toList());
@@ -76,7 +105,7 @@ public class AtividadeService {
     }
 
     public Atividade atualizar(Integer id, Atividade dados, Integer authTipo, Integer authId) {
-        Atividade a = buscarPorId(id);
+        Atividade a = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(a), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar esta atividade.");
 
@@ -99,7 +128,7 @@ public class AtividadeService {
     }
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
-        Atividade a = buscarPorId(id);
+        Atividade a = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(a), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir esta atividade.");
         atividadeDAO.deleteById(id);

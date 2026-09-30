@@ -31,20 +31,45 @@ public class CalendarioService {
         return null;
     }
 
-    public List<Calendario> listarTodos() {
-        return calendarioDAO.findAll();
-    }
-
-    public Calendario buscarPorId(Integer id) {
+    private Calendario buscar(Integer id) {
         return calendarioDAO.findById(id)
             .orElseThrow(() -> new NotFoundException("Registro de calendario nao encontrado."));
     }
 
-    public List<Calendario> buscarPorUsuario(Integer id) {
+    // Admin ve qualquer time; Treinador/Atleta somente o proprio (sem filtro no DAO: restringe apos buscar).
+    public List<Calendario> listarTodos(Integer authTipo, Integer authId) {
+        List<Calendario> lista = calendarioDAO.findAll();
+        if (AuthUtil.ehAdmin(authTipo)) return lista;
+
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        if (meuTime == null) return List.of();
+        return lista.stream()
+            .filter(c -> meuTime.equals(idTime(c)))
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    public Calendario buscarPorId(Integer id, Integer authTipo, Integer authId) {
+        Calendario c = buscar(id);
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTime(c), usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver este registro de calendario.");
+        return c;
+    }
+
+    public List<Calendario> buscarPorUsuario(Integer id, Integer authTipo, Integer authId) {
+        Usuario alvo = usuarioDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver o calendario deste usuario.");
         return calendarioDAO.buscarPorUsuario(id);
     }
 
-    public List<Calendario> buscarPorAtividade(Integer id) {
+    public List<Calendario> buscarPorAtividade(Integer id, Integer authTipo, Integer authId) {
+        Atividade atividade = atividadeDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Atividade nao encontrada."));
+        Integer idTimeAlvo = atividade.getTime() != null ? atividade.getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver o calendario desta atividade.");
         return calendarioDAO.buscarPorAtividade(id);
     }
 
@@ -65,7 +90,7 @@ public class CalendarioService {
     }
 
     public Calendario atualizar(Integer id, Calendario dados, Integer authTipo, Integer authId) {
-        Calendario c = buscarPorId(id);
+        Calendario c = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(c), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar este registro de calendario.");
 
@@ -80,7 +105,7 @@ public class CalendarioService {
     }
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
-        Calendario c = buscarPorId(id);
+        Calendario c = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(c), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir este registro de calendario.");
         calendarioDAO.deleteById(id);

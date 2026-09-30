@@ -29,31 +29,37 @@ public class AssistenteController {
 
     // ── POST /assistente/chat ─────────────────────────────────────
     @PostMapping("/chat")
-    public ResponseEntity<Map> chat(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map> chat(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
-            return ResponseEntity.ok(assistenteService.chat(body));
+            return ResponseEntity.ok(assistenteService.chat(body, authTipo(request), authId(request)));
         } catch (Exception e) {
             return ResponseEntity.status(503)
                 .body(Map.of("erro", "Assistente indisponível. Verifique se o n8n está rodando."));
         }
     }
 
-    // ── GET /assistente/resumo-geral ──────────────────────────────
+    // ── GET /assistente/resumo-geral?idUsuario=1 ───────────────────
+    // idUsuario (não authTipo(request)) porque quem chama é sempre o n8n,
+    // autenticado só pelo X-Token — o JwtFilter injeta authTipo=Admin nesse
+    // caminho sem checar identidade nenhuma (ver JwtFilter e
+    // AssistenteService.autorizadoParaTime).
     @GetMapping("/resumo-geral")
-    public ResponseEntity<Map<String, Object>> resumoGeral() {
+    public ResponseEntity<Map<String, Object>> resumoGeral(@RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.resumoGeral());
+            return ResponseEntity.ok(assistenteService.resumoGeral(idUsuario));
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("erro", "Erro ao buscar resumo geral."));
         }
     }
 
-    // ── GET /assistente/resumo-time?idTime=1 ─────────────────────
+    // ── GET /assistente/resumo-time?idTime=1&idUsuario=1 ───────────
     @GetMapping("/resumo-time")
-    public ResponseEntity<Map<String, Object>> resumoTime(@RequestParam Integer idTime, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> resumoTime(@RequestParam Integer idTime, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.resumoTime(idTime, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.resumoTime(idTime, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
@@ -62,12 +68,12 @@ public class AssistenteController {
         }
     }
 
-    // ── GET /assistente/ranking-desempenho?idTime=1 ───────────────
+    // ── GET /assistente/ranking-desempenho?idTime=1&idUsuario=1 ────
     @GetMapping("/ranking-desempenho")
     public ResponseEntity<List<Map<String, Object>>> rankingDesempenho(
-            @RequestParam Integer idTime, HttpServletRequest request) {
+            @RequestParam Integer idTime, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.rankingDesempenho(idTime, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.rankingDesempenho(idTime, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
@@ -75,12 +81,12 @@ public class AssistenteController {
         }
     }
 
-    // ── GET /assistente/ranking-pontos?idAtividade=5 ──────────────
+    // ── GET /assistente/ranking-pontos?idAtividade=5&idUsuario=1 ───
     @GetMapping("/ranking-pontos")
     public ResponseEntity<List<Map<String, Object>>> rankingPontos(
-            @RequestParam Integer idAtividade, HttpServletRequest request) {
+            @RequestParam Integer idAtividade, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.rankingPontos(idAtividade, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.rankingPontos(idAtividade, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
@@ -88,12 +94,12 @@ public class AssistenteController {
         }
     }
 
-    // ── GET /assistente/proximas-atividades?idTime=1 ──────────────
+    // ── GET /assistente/proximas-atividades?idTime=1&idUsuario=1 ───
     @GetMapping("/proximas-atividades")
     public ResponseEntity<List<Map<String, Object>>> proximasAtividades(
-            @RequestParam Integer idTime, HttpServletRequest request) {
+            @RequestParam Integer idTime, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.proximasAtividades(idTime, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.proximasAtividades(idTime, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
@@ -101,12 +107,12 @@ public class AssistenteController {
         }
     }
 
-    // ── GET /assistente/jogadas?idTime=1 ──────────────────────────
+    // ── GET /assistente/jogadas?idTime=1&idUsuario=1 ────────────────
     @GetMapping("/jogadas")
     public ResponseEntity<List<Map<String, Object>>> jogadas(
-            @RequestParam Integer idTime, HttpServletRequest request) {
+            @RequestParam Integer idTime, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.jogadasTime(idTime, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.jogadasTime(idTime, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {
@@ -137,11 +143,11 @@ public class AssistenteController {
         }
     }
 
-    // ── GET /assistente/dados-time?idTime=1 ──────────────────────────
+    // ── GET /assistente/dados-time?idTime=1&idUsuario=1 ──────────────
     @GetMapping("/dados-time")
-    public ResponseEntity<Map<String, Object>> dadosTime(@RequestParam Integer idTime, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> dadosTime(@RequestParam Integer idTime, @RequestParam Integer idUsuario) {
         try {
-            return ResponseEntity.ok(assistenteService.dadosTime(idTime, authTipo(request), authId(request)));
+            return ResponseEntity.ok(assistenteService.dadosTime(idTime, idUsuario));
         } catch (ForbiddenException e) {
             throw e;
         } catch (Exception e) {

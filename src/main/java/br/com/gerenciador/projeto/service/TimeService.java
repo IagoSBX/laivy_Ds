@@ -32,8 +32,13 @@ public class TimeService {
             .orElseThrow(() -> new NotFoundException("Time nao encontrado."));
     }
 
-    public List<Usuario> listarMembros(Integer id) {
-        return buscarPorId(id).getMembros();
+    // Dados sensíveis (CPF, endereço, contatos de responsáveis) são removidos
+    // para quem não é Admin/Treinador nem o próprio membro — mesmo criterio
+    // usado em UsuarioService.listarTodos.
+    public List<Usuario> listarMembros(Integer id, Integer authTipo, Integer authId) {
+        List<Usuario> membros = buscarPorId(id).getMembros();
+        membros.forEach(u -> UsuarioService.sanitizarParaListagem(u, authId, authTipo));
+        return membros;
     }
 
     // Somente Admin cria/edita/exclui times (o cadastro de time é uma ação administrativa).

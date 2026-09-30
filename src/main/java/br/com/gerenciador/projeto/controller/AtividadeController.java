@@ -25,28 +25,28 @@ public class AtividadeController {
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     @GetMapping
-    public List<Atividade> listarTodas(@RequestParam(required = false) Integer idTime) {
-        return atividadeService.listarTodas(idTime);
+    public List<Atividade> listarTodas(@RequestParam(required = false) Integer idTime, HttpServletRequest request) {
+        return atividadeService.listarTodas(idTime, authTipo(request), authId(request));
     }
 
     @GetMapping("/{id}")
-    public Atividade buscarPorId(@PathVariable Integer id) {
-        return atividadeService.buscarPorId(id);
+    public Atividade buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        return atividadeService.buscarPorId(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/usuario/{id}")
-    public List<Atividade> buscarPorUsuario(@PathVariable Integer id) {
-        return atividadeService.buscarPorUsuario(id);
+    public List<Atividade> buscarPorUsuario(@PathVariable Integer id, HttpServletRequest request) {
+        return atividadeService.buscarPorUsuario(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/tipo/{tipo}")
-    public List<Atividade> buscarPorTipo(@PathVariable Integer tipo) {
-        return atividadeService.buscarPorTipo(tipo);
+    public List<Atividade> buscarPorTipo(@PathVariable Integer tipo, HttpServletRequest request) {
+        return atividadeService.buscarPorTipo(tipo, authTipo(request), authId(request));
     }
 
     @GetMapping("/time/{idTime}")
-    public List<Atividade> buscarPorTime(@PathVariable Integer idTime) {
-        return atividadeService.buscarPorTime(idTime);
+    public List<Atividade> buscarPorTime(@PathVariable Integer idTime, HttpServletRequest request) {
+        return atividadeService.buscarPorTime(idTime, authTipo(request), authId(request));
     }
 
     @PostMapping

@@ -28,9 +28,14 @@ class ValidadorJogadaServiceTest {
 
     @Test
     void jogadaValidaPassa() {
-        var t1 = token("tk1", "ataque", 0.30, 0.30);
-        var t2 = token("tk2", "defesa", 0.60, 0.60);
-        var f = frame("f1", new Bola("tk1", null, null), t1, t2);
+        // basquete é 5x5: precisa de exatamente 5 atacantes e 5 defensores
+        // por frame, cada um longe o bastante dos outros (>0.6m).
+        Token[] tokens = new Token[10];
+        for (int i = 0; i < 5; i++) {
+            tokens[i] = token("ataque" + i, "ataque", 0.10, 0.10 + i * 0.20);
+            tokens[5 + i] = token("defesa" + i, "defesa", 0.30, 0.10 + i * 0.20);
+        }
+        var f = frame("f1", new Bola("ataque0", null, null), tokens);
 
         var resultado = validador.validar(jogada(f));
 

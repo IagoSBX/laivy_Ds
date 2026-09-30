@@ -27,7 +27,12 @@ public class EscalacaoService {
             ? e.getAtividade().getTime().getId_time() : null;
     }
 
-    public List<Escalacao> buscarPorAtividade(Integer id) {
+    public List<Escalacao> buscarPorAtividade(Integer id, Integer authTipo, Integer authId) {
+        Atividade atividade = atividadeDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Atividade nao encontrada."));
+        Integer idTimeAlvo = atividade.getTime() != null ? atividade.getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver escalacoes desta atividade.");
         return escalacaoDAO.buscarPorAtividade(id);
     }
 

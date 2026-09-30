@@ -160,7 +160,7 @@
   if (avatarEl) {
     if (user.foto_usuario) {
       avatarEl.classList.add('has-foto');
-      avatarEl.innerHTML = '<img src="' + user.foto_usuario + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      avatarEl.innerHTML = '<img src="' + escAttr(user.foto_usuario) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
     } else {
       avatarEl.textContent = (user.nome_usuario || 'U')[0].toUpperCase();
     }
@@ -187,7 +187,7 @@
       if (ts.logo) {
         icon.style.background = 'none';
         icon.style.padding = '0';
-        icon.innerHTML = '<img src="' + ts.logo + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+        icon.innerHTML = '<img src="' + escAttr(ts.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
       } else {
         const ini = (ts.nome || 'L').split(' ').slice(0, 2).map(function (x) { return x[0]; }).join('').toUpperCase();
         icon.textContent = ini;

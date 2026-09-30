@@ -25,18 +25,18 @@ public class VisitanteController {
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     @GetMapping
-    public List<Visitante> listarTodos(@RequestParam(required = false) Integer idTime) {
-        return visitanteService.listarTodos(idTime);
+    public List<Visitante> listarTodos(@RequestParam(required = false) Integer idTime, HttpServletRequest request) {
+        return visitanteService.listarTodos(idTime, authTipo(request), authId(request));
     }
 
     @GetMapping("/{id}")
-    public Visitante buscarPorId(@PathVariable Integer id) {
-        return visitanteService.buscarPorId(id);
+    public Visitante buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        return visitanteService.buscarPorId(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/calendario/{id}")
-    public List<Visitante> buscarPorCalendario(@PathVariable Integer id) {
-        return visitanteService.buscarPorCalendario(id);
+    public List<Visitante> buscarPorCalendario(@PathVariable Integer id, HttpServletRequest request) {
+        return visitanteService.buscarPorCalendario(id, authTipo(request), authId(request));
     }
 
     @PostMapping

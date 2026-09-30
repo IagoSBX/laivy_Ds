@@ -47,7 +47,7 @@ public class UsuarioService {
 
     /** Remove dados sensíveis (CPF, endereço, dados de responsáveis, etc.)
      *  para quem não é Admin/Treinador nem o próprio usuário. */
-    private static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
+    public static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
         boolean privilegiado = authTipo != null && authTipo <= 2;
         boolean ehDono = authId != null && authId.equals(u.getId_usuario());
         if (privilegiado || ehDono) return u;

@@ -24,8 +24,8 @@ public class EscalacaoController {
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     @GetMapping("/atividade/{id}")
-    public List<Escalacao> buscarPorAtividade(@PathVariable Integer id) {
-        return escalacaoService.buscarPorAtividade(id);
+    public List<Escalacao> buscarPorAtividade(@PathVariable Integer id, HttpServletRequest request) {
+        return escalacaoService.buscarPorAtividade(id, authTipo(request), authId(request));
     }
 
     @PostMapping

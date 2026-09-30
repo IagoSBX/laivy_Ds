@@ -48,7 +48,7 @@ class SvgJogadaServiceTest {
     void svgDaFolhaTemAQuantidadeCertaDeTokensETemXmlBemFormado() {
         var jogada = jogadaDeDoisFrames();
 
-        String svg = svc.svgFolha("Jogada de teste", jogada);
+        String svg = svc.svgFolhas("Jogada de teste", jogada).get(0);
 
         // cada token é um <circle r="0.52" .../>; a bola usa r="0.23", não colide
         int tokensNoSvg = contarOcorrencias(svg, Pattern.quote("r=\"0.52\""));

@@ -1,0 +1,14 @@
+target/
+mobile/
+mobile_backup_temp/
+laivyIA/
+_prancheta_entrega/
+.git/
+.idea/
+.vscode/
+.settings/
+.classpath
+.project
+*.log
+.DS_Store
+.env

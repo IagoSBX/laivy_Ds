@@ -359,3 +359,30 @@ nav { flex: 1; padding: 22px 0; overflow-y: auto; }
 .perfil-grafico-titulo { font-family: 'Bebas Neue', cursive; font-size: 15px; letter-spacing: 1px; color: var(--verde); margin-bottom: 10px; }
 .perfil-chart-wrap { position: relative; height: 160px; margin-bottom: 4px; }
 .perfil-chart-empty { text-align: center; padding: 20px 0; color: var(--cinza); font-size: 12px; }
+
+/* ── Controles nativos no tema escuro ──
+   color-scheme deixa o calendário do <input type="date"> e o olho de senha do Edge claros sobre o fundo escuro.
+   Em senha, o Bootstrap (.is-valid/.is-invalid) reserva espaço à direita p/ o ícone de check e empurra o olho
+   p/ o meio do campo: tiramos o ícone e o espaço só nesse tipo de campo. */
+input { color-scheme: dark; }
+input::-webkit-calendar-picker-indicator { opacity: .85; cursor: pointer; }
+input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+input[type="password"]::-ms-reveal { filter: brightness(0) invert(.85); cursor: pointer; }
+.form-control[type="password"].is-valid,
+.form-control[type="password"].is-invalid { background-image: none; padding-right: .75rem; }
+
+/* ── Setinha dos dropdowns ──
+   As páginas estilizam os campos com `background: ... !important`, e esse atalho apaga o background-image
+   em que o Bootstrap desenha a seta do .form-select: o <select> virava uma caixa sem indicação de que abre.
+   Aqui a seta é redesenhada para todo <select> do sistema (Bootstrap ou não) com um só visual.
+   `:not(#_)` só aumenta a especificidade p/ vencer o `!important` das páginas, que carregam depois deste arquivo. */
+select:not([multiple]):not([size]):not(#_) {
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%238899BB' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M4 6l4 4 4-4'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px 14px !important;
+  padding-right: 38px !important;
+  cursor: pointer;
+}
+select:not([multiple]):not([size]):not(#_):disabled { cursor: not-allowed; opacity: .7; }

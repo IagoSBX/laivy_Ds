@@ -177,6 +177,16 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
   font-size: 18px; transition: all .2s;
 }
 .fp-close:hover { background: rgba(255,80,80,0.15); color: #FF6B6B; }
+/* grid do formulário (a página não carrega o Bootstrap; só as classes usadas aqui) */
+.fp-card .row { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.fp-card .col-12 { grid-column: span 12; }
+.fp-card .col-md-8 { grid-column: span 8; }
+.fp-card .col-md-4 { grid-column: span 4; }
+.fp-card .d-flex { display: flex; }
+.fp-card .gap-3 { gap: 12px; }
+.fp-card .mt-2 { margin-top: 8px; }
+.fp-card .form-control, .fp-card .form-select { width: 100%; }
+@media (max-width: 767px) { .fp-card .col-md-8, .fp-card .col-md-4 { grid-column: span 12; } }
 /* form controls inside panel */
 .fp-card .form-label {
   font-size: 10px; font-weight: 700; letter-spacing: 2px;

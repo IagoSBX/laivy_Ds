@@ -25,18 +25,18 @@ public class DesempenhoController {
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
 
     @GetMapping
-    public List<Desempenho> listarTodos(@RequestParam(required = false) Integer idTime) {
-        return desempenhoService.listarTodos(idTime);
+    public List<Desempenho> listarTodos(@RequestParam(required = false) Integer idTime, HttpServletRequest request) {
+        return desempenhoService.listarTodos(idTime, authTipo(request), authId(request));
     }
 
     @GetMapping("/{id}")
-    public Desempenho buscarPorId(@PathVariable Integer id) {
-        return desempenhoService.buscarPorId(id);
+    public Desempenho buscarPorId(@PathVariable Integer id, HttpServletRequest request) {
+        return desempenhoService.buscarPorId(id, authTipo(request), authId(request));
     }
 
     @GetMapping("/usuario/{id}")
-    public List<Desempenho> buscarPorUsuario(@PathVariable Integer id) {
-        return desempenhoService.buscarPorUsuario(id);
+    public List<Desempenho> buscarPorUsuario(@PathVariable Integer id, HttpServletRequest request) {
+        return desempenhoService.buscarPorUsuario(id, authTipo(request), authId(request));
     }
 
     @PostMapping

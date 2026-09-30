@@ -265,16 +265,6 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 
 
 
-/* ── TIME SELECTOR IN FORM ── */
-.ts-form-opt{
-  display:flex;align-items:center;gap:8px;padding:9px 12px;
-  background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);
-  border-radius:9px;cursor:pointer;transition:all .2s;
-}
-.ts-form-opt:hover{background:rgba(0,201,122,0.06);border-color:rgba(0,201,122,0.2);}
-.ts-form-sel{background:rgba(0,201,122,0.1)!important;border-color:rgba(0,201,122,0.4)!important;}
-.ts-chk-f{width:16px;height:16px;border-radius:50%;background:var(--verde);
-  align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ── CARD ACTION BUTTONS — consistent across all pages ── */
 .user-acoes, .exam-acoes, .desemp-acoes, .ativ-acoes, .bv-acoes,
@@ -454,6 +444,11 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="col-md-4">
  <label class="form-label">Data de Nascimento</label>
  <input type="date" class="form-control" id="inp-nasc" name="data_nasc_usuario" required>
+ </div>
+ <!-- Time -->
+ <div class="col-md-4">
+ <label class="form-label">Time</label>
+ <select class="form-select" id="inp-time-form"><option value="">Carregando...</option></select>
  </div>
  <!-- Separador -->
  <div class="col-12"><div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0;"></div></div>
@@ -894,6 +889,7 @@ function abrirEdicao(id){
  f.login_usuario.value=u.login_usuario||''; f.senha_usuario.value='';
  f.tipo_usuario.value=u.tipo_usuario||3; f.cel_usuario.value=u.cel_usuario||'';
  configurarCampoPerfil(true);
+ carregarTimesForm(u.time && u.time.id_time);
  f.cpf_usuario.value=u.cpf_usuario||''; f.data_nasc_usuario.value=u.data_nasc_usuario||'';
  f.endereco_usuario.value=u.endereco_usuario||''; f.bairro_usuario.value=u.bairro_usuario||'';
  f.cep_usuario.value=u.cep_usuario||''; f.cidade_usuario.value=u.cidade_usuario||'';
@@ -995,8 +991,7 @@ document.getElementById('formCadastro').addEventListener('submit',function(e){
    }
    // Admin precisa escolher um time — sem isso o usuário fica "órfão" e some das listas filtradas por time
    if(isAdmin){
-     const tId = document.getElementById('inp-time-form') ? document.getElementById('inp-time-form').value : '';
-     if(!tId){
+     if(!document.getElementById('inp-time-form').value){
        toast('Selecione um time para o novo usuário.', false);
        okObrigatorios = false;
      }
@@ -1009,15 +1004,9 @@ document.getElementById('formCadastro').addEventListener('submit',function(e){
  // Novo usuário sempre tem primeiro_login=1 (deve trocar a senha no primeiro acesso)
  if(!id) d.primeiro_login = 1;
 
- // ── VINCULAR TIME AUTOMATICAMENTE ──
- if(!id){
-   if(isTreina && user.time && user.time.id_time){
-     d.time = {id_time: user.time.id_time};
-   } else if(isAdmin){
-     const tId = document.getElementById('inp-time-form') ? document.getElementById('inp-time-form').value : '';
-     if(tId) d.time = {id_time: parseInt(tId)};
-   }
- }
+ // ── TIME ── (o backend só aceita times que o usuário logado pode gerenciar)
+ const tId = document.getElementById('inp-time-form').value;
+ if(tId) d.time = {id_time: parseInt(tId)};
 
  authFetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})
  .then(async res=>{
@@ -1127,71 +1116,28 @@ function removerFoto(){
   }
 })();
 
-// ── TIME SELECTOR NO FORM DE USUÁRIOS ──
-let todosTimes = [];
-
-function carregarTimesForm(){
-  authFetch('/times')
-    .then(r=>r.json())
-    .then(times=>{
-      todosTimes = times.filter(t=>t.ativo_time===1||t.ativo_time==='1');
-
-      // Admin vê todos os times
-      if(isAdmin){
-        document.getElementById('colTimeSelector').style.display='block';
-        renderTimeSelectorForm(null);
-      } else if(isTreina){
-        // Treinador: show info pill (handled below)
-      }
-      // Treinador NÃO vê seletor — time é herdado automaticamente
-      // (mas exibe info de qual time será atribuído)
-      if(isTreina && user.time){
-        const colTime = document.getElementById('colTimeSelector');
-        colTime.style.display = 'block';
-        colTime.innerHTML = '<div style="background:rgba(0,201,122,0.06);border:1px solid rgba(0,201,122,0.15);border-radius:10px;padding:10px 14px;font-size:13px">'
-          +'<span style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);display:block;margin-bottom:4px">Time do Atleta</span>'
-          +'<div style="display:flex;align-items:center;gap:8px">'
-          +'<div style="width:10px;height:10px;border-radius:50%;background:'+(user.time.cor_time||'#00C97A')+'"></div>'
-          +'<span style="font-weight:700;color:var(--branco)">'+esc(user.time.nome_time||'—')+'</span>'
-          +'<span style="color:var(--cinza);font-size:11px">· atribuído automaticamente</span>'
-          +'</div>'
-        +'</div>';
-      }
-    })
-    .catch(()=>{});
-}
-
-function renderTimeSelectorForm(selectedId){
-  const g = document.getElementById('timeSelectorForm');
-  if(!g) return;
-  if(!todosTimes.length){
-    g.innerHTML='<div style="color:var(--cinza);font-size:12px;padding:8px">Nenhum time ativo.</div>';
+// ── TIME NO FORM DE USUÁRIOS ──
+// Admin aloca em qualquer time ativo; Treinador só no próprio (campo travado).
+function carregarTimesForm(selecionado){
+  const sel = document.getElementById('inp-time-form');
+  const preencher = (times, placeholder) => {
+    sel.innerHTML = (placeholder ? '<option value="">'+placeholder+'</option>' : '')
+      + times.map(t => '<option value="'+t.id_time+'">'+esc(t.nome_time)+(t.categoria_time ? ' · '+esc(t.categoria_time) : '')+'</option>').join('');
+    if(selecionado) sel.value = selecionado;
+  };
+  if(isTreina){
+    sel.disabled = true;
+    preencher(user.time ? [user.time] : [], user.time ? '' : 'Você não tem time vinculado');
     return;
   }
-  g.innerHTML = todosTimes.map(t=>{
-    const cor = t.cor_time||'#00C97A';
-    const isSel = selectedId && t.id_time==selectedId;
-    return '<div class="ts-form-opt'+(isSel?' ts-form-sel':'')+'" data-tid="'+t.id_time+'" onclick="selecionarTimeForm(this)">'
-      +'<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+cor+'"></div>'
-      +'<div style="flex:1;min-width:0">'
-        +'<div style="font-size:12px;font-weight:700">'+esc(t.nome_time)+'</div>'
-        +'<div style="font-size:10px;color:var(--cinza)">'+esc(t.categoria_time||'—')+'</div>'
-      +'</div>'
-      +'<div class="ts-chk-f" style="'+(isSel?'display:flex':'display:none')+'"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
-    +'</div>';
-  }).join('');
-}
-
-function selecionarTimeForm(el){
-  document.querySelectorAll('#timeSelectorForm .ts-form-opt').forEach(o=>{
-    o.classList.remove('ts-form-sel');
-    const chk=o.querySelector('.ts-chk-f');if(chk)chk.style.display='none';
-  });
-  el.classList.add('ts-form-sel');
-  const chk2=el.querySelector('.ts-chk-f');if(chk2)chk2.style.display='flex';
-  document.getElementById('inp-time-form').value = el.dataset.tid;
-  const h=document.getElementById('hint-time-form');
-  if(h){h.textContent='Time selecionado ✓';h.className='field-hint show ok';}
+  sel.disabled = false;
+  authFetch('/times')
+    .then(r => r.json())
+    .then(times => {
+      const ativos = times.filter(t => t.ativo_time == 1);
+      preencher(ativos, ativos.length ? 'Selecione um time' : 'Nenhum time ativo');
+    })
+    .catch(() => { sel.innerHTML = '<option value="">Erro ao carregar times</option>'; });
 }
 
 // Carregar times quando abrir o form

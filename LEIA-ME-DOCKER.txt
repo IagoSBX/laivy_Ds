@@ -1,0 +1,37 @@
+LAIVY - Sistema Gerenciador Esportivo (TCC)
+Como rodar via Docker
+=============================================
+
+Pré-requisito: Docker Desktop instalado e aberto.
+(Guia completo de instalação do Docker: peça o link ao Iago.)
+
+Passos:
+
+1. Extraia esta pasta (laivy-tcc-docker) em qualquer lugar do computador.
+
+2. Abra o Terminal (Mac/Linux) ou PowerShell (Windows) dentro desta pasta.
+
+3. Rode:
+
+   docker compose up --build
+
+   (na primeira vez demora alguns minutos - ele baixa as imagens e
+   compila o projeto. Nas próximas vezes é bem mais rápido.)
+
+4. Quando aparecer no terminal algo como "Started ProjetoApplication",
+   abra no navegador:
+
+   http://localhost:8080/login.html
+
+5. Login de teste:
+
+   Perfil          Login       Senha
+   Administrador   admin       admin
+   Treinador       treinador   1234
+   Atleta          atleta      1234
+
+Para parar tudo: Ctrl+C no terminal, depois "docker compose down".
+Os dados ficam salvos (volumes do Docker) entre uma execução e outra.
+
+Já vem um arquivo .env preenchido com valores padrão - não precisa
+configurar nada, é só rodar o comando do passo 3.

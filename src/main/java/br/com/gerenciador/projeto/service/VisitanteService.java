@@ -28,17 +28,37 @@ public class VisitanteService {
             ? v.getCalendario().getAtividade().getTime().getId_time() : null;
     }
 
-    public List<Visitante> listarTodos(Integer idTime) {
-        if (idTime != null) return visitanteDAO.buscarPorTime(idTime);
-        return visitanteDAO.findAll();
-    }
-
-    public Visitante buscarPorId(Integer id) {
+    private Visitante buscar(Integer id) {
         return visitanteDAO.findById(id)
             .orElseThrow(() -> new NotFoundException("Visitante nao encontrado."));
     }
 
-    public List<Visitante> buscarPorCalendario(Integer id) {
+    // Admin ve qualquer time; Treinador/Atleta somente o proprio.
+    public List<Visitante> listarTodos(Integer idTime, Integer authTipo, Integer authId) {
+        if (AuthUtil.ehAdmin(authTipo))
+            return idTime != null ? visitanteDAO.buscarPorTime(idTime) : visitanteDAO.findAll();
+
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        if (meuTime == null) return List.of();
+        if (idTime != null && !idTime.equals(meuTime))
+            throw new ForbiddenException("Sem permissao para ver visitantes de outro time.");
+        return visitanteDAO.buscarPorTime(meuTime);
+    }
+
+    public Visitante buscarPorId(Integer id, Integer authTipo, Integer authId) {
+        Visitante v = buscar(id);
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTime(v), usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver este visitante.");
+        return v;
+    }
+
+    public List<Visitante> buscarPorCalendario(Integer id, Integer authTipo, Integer authId) {
+        Calendario c = calendarioDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Calendario nao encontrado."));
+        Integer idTimeAlvo = c.getAtividade() != null && c.getAtividade().getTime() != null
+            ? c.getAtividade().getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver visitantes deste calendario.");
         return visitanteDAO.buscarPorCalendario(id);
     }
 
@@ -54,7 +74,7 @@ public class VisitanteService {
     }
 
     public Visitante atualizar(Integer id, Visitante dados, Integer authTipo, Integer authId) {
-        Visitante v = buscarPorId(id);
+        Visitante v = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(v), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar este visitante.");
 
@@ -66,7 +86,7 @@ public class VisitanteService {
     }
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
-        Visitante v = buscarPorId(id);
+        Visitante v = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(v), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir este visitante.");
         visitanteDAO.deleteById(id);

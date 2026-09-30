@@ -25,17 +25,36 @@ public class DesempenhoService {
             ? d.getUsuario().getTime().getId_time() : null;
     }
 
-    public List<Desempenho> listarTodos(Integer idTime) {
-        if (idTime != null) return desempenhoDAO.buscarPorTime(idTime);
-        return desempenhoDAO.findAll();
+    // Admin ve qualquer time; Treinador/Atleta somente o proprio.
+    public List<Desempenho> listarTodos(Integer idTime, Integer authTipo, Integer authId) {
+        if (AuthUtil.ehAdmin(authTipo))
+            return idTime != null ? desempenhoDAO.buscarPorTime(idTime) : desempenhoDAO.findAll();
+
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        if (meuTime == null) return List.of();
+        if (idTime != null && !idTime.equals(meuTime))
+            throw new ForbiddenException("Sem permissao para ver desempenhos de outro time.");
+        return desempenhoDAO.buscarPorTime(meuTime);
     }
 
-    public Desempenho buscarPorId(Integer id) {
+    private Desempenho buscar(Integer id) {
         return desempenhoDAO.findById(id)
             .orElseThrow(() -> new NotFoundException("Desempenho nao encontrado."));
     }
 
-    public List<Desempenho> buscarPorUsuario(Integer id) {
+    public Desempenho buscarPorId(Integer id, Integer authTipo, Integer authId) {
+        Desempenho d = buscar(id);
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTime(d), usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver este desempenho.");
+        return d;
+    }
+
+    public List<Desempenho> buscarPorUsuario(Integer id, Integer authTipo, Integer authId) {
+        Usuario alvo = usuarioDAO.findById(id)
+            .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        if (!AuthUtil.ehMembroDoTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+            throw new ForbiddenException("Sem permissao para ver desempenhos deste usuario.");
         return desempenhoDAO.buscarPorUsuario(id);
     }
 
@@ -53,7 +72,7 @@ public class DesempenhoService {
     }
 
     public Desempenho atualizar(Integer id, Desempenho dados, Integer authTipo, Integer authId) {
-        Desempenho d = buscarPorId(id);
+        Desempenho d = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(d), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar este desempenho.");
 
@@ -68,7 +87,7 @@ public class DesempenhoService {
     }
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
-        Desempenho d = buscarPorId(id);
+        Desempenho d = buscar(id);
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(d), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir este desempenho.");
         desempenhoDAO.deleteById(id);

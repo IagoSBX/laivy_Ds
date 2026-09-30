@@ -42,28 +42,57 @@ public class AssistenteService {
     private static final Map<Integer, String> TIPOS_ATIVIDADE = Map.of(
         1, "Treino", 2, "Jogo", 3, "Evento", 4, "Competição");
 
-    /** Admin acessa qualquer time; demais papéis, somente o próprio time. */
-    private boolean autorizadoParaTime(Integer idTimeAlvo, Integer authTipo, Integer authId) {
-        if (AuthUtil.ehAdmin(authTipo)) return true;
-        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+    /**
+     * Reautoriza a partir do idUsuario real, buscado no banco — nunca do
+     * authTipo que o JwtFilter injeta nas chamadas do n8n, que é sempre
+     * "Admin" (bypass de serviço só pra autenticar o n8n, sem identidade de
+     * usuário nenhuma — ver JwtFilter). Se essas leituras confiassem nesse
+     * authTipo, um prompt injection no agente de IA (ou uma chamada forjada
+     * direto pro endpoint com o idTime de outro time) vazaria dados de
+     * qualquer time pra qualquer usuário. Admin real acessa qualquer time;
+     * demais papéis, somente o próprio — igual ao resto do sistema.
+     */
+    private boolean autorizadoParaTime(Integer idTimeAlvo, Integer idUsuario) {
+        Usuario u = idUsuario != null ? usuarioDAO.findById(idUsuario).orElse(null) : null;
+        if (u == null) return false;
+        if (AuthUtil.ehAdmin(u.getTipo_usuario())) return true;
+        Integer meuTime = u.getTime() != null ? u.getTime().getId_time() : null;
         return meuTime != null && idTimeAlvo != null && meuTime.equals(idTimeAlvo);
     }
 
-    private void exigirAutorizacaoParaTime(Integer idTime, Integer authTipo, Integer authId) {
-        if (!autorizadoParaTime(idTime, authTipo, authId))
+    private void exigirAutorizacaoParaTime(Integer idTime, Integer idUsuario) {
+        if (!autorizadoParaTime(idTime, idUsuario))
             throw new ForbiddenException("Sem permissao para ver este time.");
     }
 
-    public Map chat(Map<String, Object> body) {
+    /**
+     * idUsuario/tipo_usuario/idTime no corpo vêm do JS do navegador — nunca
+     * confiáveis, poderiam ser forjados numa chamada direta ao endpoint. A
+     * identidade real só existe no cookie JWT validado nesta própria
+     * requisição (authTipo/authId), então ela substitui o que o corpo alega
+     * antes de repassar pro n8n: é esse idUsuario que as tools de leitura do
+     * agente vão revalidar no banco (ver autorizadoParaTime), fechando a
+     * brecha de um prompt injection pedir dados de outro time.
+     */
+    public Map chat(Map<String, Object> body, Integer authTipo, Integer authId) {
+        Map<String, Object> payload = new HashMap<>(body);
+        payload.put("idUsuario", authId);
+        payload.put("tipo_usuario", authTipo);
+        if (!AuthUtil.ehAdmin(authTipo))
+            payload.put("idTime", AuthUtil.timeDoUsuario(authId, usuarioDAO));
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("X-Token", token);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
         ResponseEntity<Map> response = restTemplate.postForEntity(webhookUrl, request, Map.class);
         return response.getBody();
     }
 
-    public Map<String, Object> resumoGeral() {
+    public Map<String, Object> resumoGeral(Integer idUsuario) {
+        Usuario chamador = idUsuario != null ? usuarioDAO.findById(idUsuario).orElse(null) : null;
+        if (chamador == null || !AuthUtil.ehAdmin(chamador.getTipo_usuario()))
+            throw new ForbiddenException("Somente Admin pode ver o resumo geral.");
         List<Usuario> todos = usuarioDAO.findAll();
         long atletas     = todos.stream().filter(u -> u.getTipo_usuario() == 3).count();
         long treinadores = todos.stream().filter(u -> u.getTipo_usuario() == 2).count();
@@ -82,8 +111,8 @@ public class AssistenteService {
 
     /** @Transactional: t.getMembros() é @OneToMany LAZY e open-in-view está desligado. */
     @Transactional(readOnly = true)
-    public Map<String, Object> resumoTime(Integer idTime, Integer authTipo, Integer authId) {
-        exigirAutorizacaoParaTime(idTime, authTipo, authId);
+    public Map<String, Object> resumoTime(Integer idTime, Integer idUsuario) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
         Map<String, Object> r = new HashMap<>();
         timeDAO.findById(idTime).ifPresent(t -> {
             r.put("time",       t.getNome_time());
@@ -123,16 +152,16 @@ public class AssistenteService {
             .collect(Collectors.toList());
     }
 
-    public List<Map<String, Object>> rankingDesempenho(Integer idTime, Integer authTipo, Integer authId) {
-        exigirAutorizacaoParaTime(idTime, authTipo, authId);
+    public List<Map<String, Object>> rankingDesempenho(Integer idTime, Integer idUsuario) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
         return montarRankingDesempenho(idTime);
     }
 
-    public List<Map<String, Object>> rankingPontos(Integer idAtividade, Integer authTipo, Integer authId) {
+    public List<Map<String, Object>> rankingPontos(Integer idAtividade, Integer idUsuario) {
         Integer idTimeDaAtividade = atividadeDAO.findById(idAtividade)
             .map(a -> a.getTime() != null ? a.getTime().getId_time() : null)
             .orElse(null);
-        exigirAutorizacaoParaTime(idTimeDaAtividade, authTipo, authId);
+        exigirAutorizacaoParaTime(idTimeDaAtividade, idUsuario);
 
         return escalacaoDAO.buscarPorAtividade(idAtividade).stream()
             .filter(e -> e.getPontos_jogo() != null)
@@ -168,8 +197,8 @@ public class AssistenteService {
             .collect(Collectors.toList());
     }
 
-    public List<Map<String, Object>> proximasAtividades(Integer idTime, Integer authTipo, Integer authId) {
-        exigirAutorizacaoParaTime(idTime, authTipo, authId);
+    public List<Map<String, Object>> proximasAtividades(Integer idTime, Integer idUsuario) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
         return montarProximasAtividades(idTime);
     }
 
@@ -189,8 +218,8 @@ public class AssistenteService {
             .collect(Collectors.toList());
     }
 
-    public List<Map<String, Object>> jogadasTime(Integer idTime, Integer authTipo, Integer authId) {
-        exigirAutorizacaoParaTime(idTime, authTipo, authId);
+    public List<Map<String, Object>> jogadasTime(Integer idTime, Integer idUsuario) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
         return montarJogadas(idTime);
     }
 
@@ -225,8 +254,8 @@ public class AssistenteService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> dadosTime(Integer idTime, Integer authTipo, Integer authId) {
-        exigirAutorizacaoParaTime(idTime, authTipo, authId);
+    public Map<String, Object> dadosTime(Integer idTime, Integer idUsuario) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
 
         Map<String, Object> r = new HashMap<>();
 

@@ -39,8 +39,8 @@ public class TimeController {
     }
 
     @GetMapping("/{id}/membros")
-    public List<Usuario> listarMembros(@PathVariable Integer id) {
-        return timeService.listarMembros(id);
+    public List<Usuario> listarMembros(@PathVariable Integer id, HttpServletRequest request) {
+        return timeService.listarMembros(id, authTipo(request), authId(request));
     }
 
     @PostMapping
