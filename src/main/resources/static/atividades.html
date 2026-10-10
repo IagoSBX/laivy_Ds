@@ -269,7 +269,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <div class="search-wrap"><input class="search-bar" id="busca" placeholder="Buscar atividade..." oninput="renderizar()"></div>
  <select class="select-filtro" id="filtroTipo" onchange="renderizar()">
  <option value="">Todos os tipos</option>
- <option value="1"> Treino</option><option value="2"> Jogo</option>
+ <option value="1">Treino</option><option value="2">Jogo</option><option value="3">Evento</option><option value="4">Competição</option>
  </select>
  <select class="select-filtro" id="filtroStatus" onchange="renderizar()">
  <option value="">Qualquer status</option>
@@ -305,10 +305,10 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  <select class="form-select" id="selectResp" name="usuario_id" required><option value="">Selecionar...</option></select>
  </div>
  <div class="col-md-4"><label class="form-label">Local</label><input class="form-control" name="lugar_atividade" placeholder="Ginásio, Quadra..."></div>
- <div class="col-md-4"><label class="form-label">Data e Hora</label><input type="datetime-local" class="form-control" name="data_atividade"></div>
+ <div class="col-md-4"><label class="form-label">Data e Hora</label><input type="datetime-local" class="form-control" name="data_atividade" required></div>
  <div class="col-md-2"><label class="form-label">Tipo</label>
  <select class="form-select" name="tipo_atividade" id="tipoAtividade" onchange="toggleOponente(this.value)">
- <option value="1"> Treino</option><option value="2"> Jogo</option>
+ <option value="1">Treino</option><option value="2">Jogo</option><option value="3">Evento</option><option value="4">Competição</option>
  </select>
  </div>
  <div class="col-md-2"><label class="form-label">Status</label>
@@ -734,10 +734,14 @@ document.getElementById('formAtiv').addEventListener('submit',function(e){
  if(isAtleta){ toast('Acesso restrito.', false); return; }
  const d=Object.fromEntries(new FormData(this).entries());
  const recorrente=document.getElementById('chkRecorrente').checked;
+ if(recorrente && d.fim_recorrencia && d.fim_recorrencia < d.data_atividade.slice(0,10)){
+   toast('A data final da recorrência não pode ser anterior ao primeiro treino.', false); return;
+ }
  const payload={nome_atividade:d.nome_atividade,lugar_atividade:d.lugar_atividade,data_atividade:d.data_atividade,tipo_atividade:parseInt(d.tipo_atividade),status_atividade:parseInt(d.status_atividade),time_oponente:d.time_oponente||null,usuario:{id_usuario:parseInt(d.usuario_id)},recorrente:recorrente,fim_recorrencia:recorrente?(d.fim_recorrencia||null):null};
  const id=document.getElementById('editId').value;
  authFetch(id?api+'/'+id:api,{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
- .then(()=>{toast(id?'Atualizada!':'Cadastrada!');cancelarForm();carregar();}).catch(()=>toast('Erro.',false));
+ .then(async r=>{if(!r.ok){const erro=await r.json().catch(()=>({}));throw new Error(erro.erro||'Não foi possível salvar a atividade.');}toast(id?'Atualizada!':'Cadastrada!');cancelarForm();carregar();})
+ .catch(e=>toast(e.message||'Erro ao salvar atividade.',false));
 });
 
 function cancelarForm(){document.getElementById('formAtiv').reset();document.getElementById('editId').value='';document.getElementById('formTitulo').textContent=' Nova Atividade';document.getElementById('btnSubmit').textContent='Cadastrar Atividade';toggleRecorrencia(false);mudarTab('lista',document.querySelectorAll('.tab')[0]);}
@@ -769,6 +773,7 @@ document.getElementById('btnConfDel').addEventListener('click',()=>{if(!idParaDe
 
 document.addEventListener('DOMContentLoaded',function(){
  inicializarOrdenacao();
+ toggleOponente(document.getElementById('tipoAtividade').value);
  carregar();
  if(new URLSearchParams(location.search).get('novo')==='1')mudarTab('form',document.querySelectorAll('.tab')[1]);
 });
@@ -884,13 +889,18 @@ function confirmarLogout(){
 // ── TOGGLE OPONENTE ──
 function toggleOponente(tipo){
  const box = document.getElementById('campoOponente');
- if(box) box.style.display = (String(tipo)==='2') ? 'block' : 'none';
+ const jogo = String(tipo)==='2';
+ if(box) box.style.display = jogo ? 'block' : 'none';
+ const oponente = document.getElementById('inpOponente');
+ if(oponente) oponente.required = jogo;
 }
 
 // ── TOGGLE RECORRÊNCIA ──
 function toggleRecorrencia(ativo){
  const box = document.getElementById('campoFimRecorrencia');
  if(box) box.style.display = ativo ? 'block' : 'none';
+ const fim = document.querySelector('[name="fim_recorrencia"]');
+ if(fim) fim.min = (document.querySelector('[name="data_atividade"]').value || '').slice(0,10);
 }
 
 // ── FINALIZAR JOGO — modal de lançamento de pontos ──

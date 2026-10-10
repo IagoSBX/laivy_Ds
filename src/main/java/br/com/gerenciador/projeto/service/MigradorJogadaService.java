@@ -28,12 +28,4 @@ public class MigradorJogadaService {
         return atual;
     }
 
-    /* Modelo de como a migração da Fase 2 vai ficar:
-     *
-     * private JogadaConteudo v1paraV2(JogadaConteudo v1) {
-     *     // v1 tinha um frame só implícito; v2 formaliza frames[]
-     *     return new JogadaConteudo(2, v1.tipo(), v1.enquadramento(),
-     *                               v1.duracaoPadraoMs(), v1.frames());
-     * }
-     */
 }

@@ -155,4 +155,20 @@ public class AssistenteController {
                 .body(Map.of("erro", "Erro ao buscar dados do time."));
         }
     }
+
+    // Endpoint para a ferramenta de recomendaÃ§Ã£o individual configurada no n8n.
+    @GetMapping("/dados-atleta")
+    public ResponseEntity<Map<String, Object>> dadosAtleta(
+            @RequestParam Integer idAtleta, HttpServletRequest request) {
+        try {
+            Integer solicitante = authId(request);
+            if (solicitante == null)
+                throw new ForbiddenException("Sessão de usuário obrigatória para acessar dados de saúde.");
+            return ResponseEntity.ok(assistenteService.dadosAtleta(idAtleta, solicitante));
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("erro", "Erro ao buscar contexto do atleta."));
+        }
+    }
 }

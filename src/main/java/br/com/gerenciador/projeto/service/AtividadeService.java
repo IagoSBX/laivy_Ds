@@ -10,6 +10,7 @@ import br.com.gerenciador.projeto.DAO.AtividadeDAO;
 import br.com.gerenciador.projeto.DAO.IUsuario;
 import br.com.gerenciador.projeto.DAO.TimeDAO;
 import br.com.gerenciador.projeto.exception.ForbiddenException;
+import br.com.gerenciador.projeto.exception.BadRequestException;
 import br.com.gerenciador.projeto.exception.NotFoundException;
 import br.com.gerenciador.projeto.model.Atividade;
 import br.com.gerenciador.projeto.model.Usuario;
@@ -81,6 +82,7 @@ public class AtividadeService {
 
     // Somente Admin/Treinador cadastram atividades; Treinador só para o próprio time.
     public Atividade cadastrar(Atividade atividade, Integer authTipo, Integer authId) {
+        validarFormulario(atividade);
         Integer idTimeDesejado = idTime(atividade);
         if (AuthUtil.ehTreinador(authTipo)) {
             // Treinador só pode cadastrar atividade para o próprio time.
@@ -109,22 +111,55 @@ public class AtividadeService {
         if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(a), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar esta atividade.");
 
+        Atividade validacao = new Atividade();
+        validacao.setData_atividade(dados.getData_atividade() != null ? dados.getData_atividade() : a.getData_atividade());
+        validacao.setTipo_atividade(dados.getTipo_atividade() != null ? dados.getTipo_atividade() : a.getTipo_atividade());
+        validacao.setTime_oponente(dados.getTipo_atividade() != null
+            ? dados.getTime_oponente()
+            : dados.getTime_oponente() != null ? dados.getTime_oponente() : a.getTime_oponente());
+        validacao.setRecorrente(dados.getRecorrente() != null ? dados.getRecorrente() : a.getRecorrente());
+        validacao.setFim_recorrencia(dados.getRecorrente() != null
+            ? dados.getFim_recorrencia()
+            : dados.getFim_recorrencia() != null ? dados.getFim_recorrencia() : a.getFim_recorrencia());
+        validarFormulario(validacao);
+
         if (dados.getNome_atividade()   != null) a.setNome_atividade(dados.getNome_atividade());
         if (dados.getLugar_atividade()  != null) a.setLugar_atividade(dados.getLugar_atividade());
         if (dados.getData_atividade()   != null) a.setData_atividade(dados.getData_atividade());
         if (dados.getTipo_atividade()   != null) a.setTipo_atividade(dados.getTipo_atividade());
         if (dados.getStatus_atividade() != null) a.setStatus_atividade(dados.getStatus_atividade());
-        if (dados.getTime_oponente()    != null) a.setTime_oponente(dados.getTime_oponente());
+        if (Integer.valueOf(2).equals(validacao.getTipo_atividade())) {
+            if (dados.getTipo_atividade() != null || dados.getTime_oponente() != null)
+                a.setTime_oponente(dados.getTime_oponente());
+        } else {
+            a.setTime_oponente(null);
+        }
         if (dados.getPlacar_pro()       != null) a.setPlacar_pro(dados.getPlacar_pro());
         if (dados.getPlacar_contra()    != null) a.setPlacar_contra(dados.getPlacar_contra());
         if (dados.getRecorrente()       != null) a.setRecorrente(dados.getRecorrente());
-        if (dados.getFim_recorrencia()  != null) a.setFim_recorrencia(dados.getFim_recorrencia());
+        if (Boolean.TRUE.equals(validacao.getRecorrente())) {
+            if (dados.getRecorrente() != null) a.setFim_recorrencia(dados.getFim_recorrencia());
+            else if (dados.getFim_recorrencia() != null) a.setFim_recorrencia(dados.getFim_recorrencia());
+        } else {
+            a.setFim_recorrencia(null);
+        }
         if (dados.getUsuario() != null && dados.getUsuario().getId_usuario() != null)
             usuarioDAO.findById(dados.getUsuario().getId_usuario()).ifPresent(a::setUsuario);
         // Só Admin pode mover a atividade para outro time.
         if (dados.getTime() != null && dados.getTime().getId_time() != null && AuthUtil.ehAdmin(authTipo))
             timeDAO.findById(dados.getTime().getId_time()).ifPresent(a::setTime);
         return atividadeDAO.save(a);
+    }
+
+    private static void validarFormulario(Atividade atividade) {
+        if (atividade.getData_atividade() == null)
+            throw new BadRequestException("Data e hora da atividade são obrigatórias.");
+        if (Integer.valueOf(2).equals(atividade.getTipo_atividade())
+                && (atividade.getTime_oponente() == null || atividade.getTime_oponente().isBlank()))
+            throw new BadRequestException("Informe o adversário para atividades do tipo jogo.");
+        if (Boolean.TRUE.equals(atividade.getRecorrente()) && atividade.getFim_recorrencia() != null
+                && atividade.getFim_recorrencia().isBefore(atividade.getData_atividade().toLocalDate()))
+            throw new BadRequestException("A data final da recorrência não pode ser anterior à primeira atividade.");
     }
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {

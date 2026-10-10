@@ -393,3 +393,4 @@ select:not([multiple]):not([size]):not(#_) {
   cursor: pointer;
 }
 select:not([multiple]):not([size]):not(#_):disabled { cursor: not-allowed; opacity: .7; }
+select option { background-color: #0D1E3C; color: #F0F4FF; }

@@ -138,12 +138,16 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
         <h1>Assistente <span>IA</span></h1>
         <p>Pergunte sobre o sistema ou os dados do seu time</p>
       </div>
-      <div class="badge-ia">● IA Online</div>
+      <div class="badge-ia">IA Online</div>
     </div>
   </div>
 
   <div class="chips-wrap">
     <div class="chips-label">Perguntas rápidas</div>
+    <div id="recomendacaoAtleta" style="display:none;margin:0 0 10px;max-width:340px">
+      <label for="selectAtletaRecomendacao" class="chips-label">Atleta para recomendação individual</label>
+      <select id="selectAtletaRecomendacao" class="form-select"><option value="">Selecione um atleta</option></select>
+    </div>
     <div class="chips">
       <button class="chip" onclick="perguntaRapida('O que é o LAIVY?')">O que é o LAIVY?</button>
       <button class="chip" onclick="perguntaRapida('Quais tecnologias foram usadas no projeto?')">Tecnologias usadas</button>
@@ -152,6 +156,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
       <button class="chip" onclick="perguntaRapida('Como funciona o banco de dados do LAIVY?')">Banco de dados</button>
       <button class="chip" onclick="perguntaRapida('Quais são as próximas atividades do time?')">Próximas atividades</button>
       <button class="chip" onclick="perguntaRapida('Quem tem o melhor desempenho no time?')">Ranking desempenho</button>
+      <button id="chipRecomendacaoAtleta" class="chip" onclick="solicitarRecomendacaoAtleta()">Recomendação para atleta</button>
     </div>
   </div>
 
@@ -205,6 +210,7 @@ async function _logout() {
 
 const API = 'http://localhost:8080';
 let enviando = false;
+let atletaRecomendacaoPendente = null;
 
 const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
 const time    = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
@@ -222,6 +228,23 @@ if (time && time.id) {
   const el = document.getElementById('timeSidebarIndicator');
   el.style.display = 'flex';
   document.getElementById('timeNomeSidebar').textContent = time.nome || '—';
+}
+
+if (Number(usuario.tipo_usuario) <= 2) {
+  const grupo = document.getElementById('recomendacaoAtleta');
+  grupo.style.display = 'block';
+  const ehAdmin = Number(usuario.tipo_usuario) === 1;
+  const podeListar = ehAdmin || !!time?.id;
+  const filtroTime = ehAdmin ? '' : `?idTime=${encodeURIComponent(time.id)}`;
+  if (podeListar) authFetch(`${API}/usuarios${filtroTime}`).then(r => r.json()).then(lista => {
+    const seletor = document.getElementById('selectAtletaRecomendacao');
+    lista.filter(u => Number(u.tipo_usuario) === 3).forEach(u => {
+      const opcao = document.createElement('option'); opcao.value = u.id_usuario; opcao.textContent = u.nome_usuario;
+      seletor.appendChild(opcao);
+    });
+  }).catch(() => {});
+} else {
+  document.getElementById('chipRecomendacaoAtleta').style.display = 'none';
 }
 
 function agora() {
@@ -297,6 +320,8 @@ async function enviar() {
   addTyping();
 
   try {
+    const idAtleta = atletaRecomendacaoPendente;
+    atletaRecomendacaoPendente = null;
     const res = await authFetch(`${API}/assistente/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -304,6 +329,7 @@ async function enviar() {
         pergunta,
         idUsuario:    usuario.id_usuario,
         idTime:       time ? time.id : null,
+        idAtleta,
         tipo_usuario: usuario.tipo_usuario
       })
     });
@@ -328,6 +354,14 @@ async function enviar() {
 function perguntaRapida(texto) {
   document.getElementById('inputPergunta').value = texto;
   enviar();
+}
+
+function solicitarRecomendacaoAtleta() {
+  const seletor = document.getElementById('selectAtletaRecomendacao');
+  const nome = seletor?.selectedOptions[0]?.textContent;
+  if (!seletor?.value) { addMsg('Selecione um atleta antes de pedir a recomendação.', 'erro'); return; }
+  atletaRecomendacaoPendente = Number(seletor.value);
+  perguntaRapida(`Sou treinador. Recomende um plano de treino individual para ${nome}, considerando o contextoAtleta incluído nesta solicitação. Avalie os dados recentes e as observações de saúde, não invente lesões nem diagnósticos e sinalize quando for necessária avaliação profissional.`);
 }
 
 function handleKey(e) {

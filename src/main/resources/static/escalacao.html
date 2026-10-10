@@ -663,9 +663,10 @@ function confirmarAdicao(){ if(isAtleta){ toast('Acesso restrito.', false); retu
  toast('Já existe um atleta escalado com a camisa '+num+' nesta atividade.', false);
  return;
  }
- // Aviso (não bloqueia): já tem titular nesta posição
- if(tit===1 && pos && escDados.some(e=>(e.titular==1||e.titular==='1') && e.posicao===pos)){
- toast('Atenção: já tem titular nesta posição ('+pos+').', false);
+ // Uma posição e uma camisa só podem aparecer uma vez na escalação.
+ if(tit===1 && pos && escDados.some(e=>(e.titular==1||e.titular==='1') && (e.posicao||'').toLowerCase()===pos.toLowerCase())){
+ toast('Já existe um atleta escalado na posição '+pos+'.', false);
+ return;
  }
 
  const payload = {
@@ -685,15 +686,7 @@ function confirmarAdicao(){ if(isAtleta){ toast('Acesso restrito.', false); retu
  atletaSel = null;
  renderTudo();
  })
- .catch(e=>{
- if(e && e.tratado){ toast(e.msg, false); return; }
- // modo offline (falha de rede de verdade, não erro de validação do servidor)
- escDados.push({id_escalacao:Date.now(),usuario:atletaSel,posicao:pos,numero_camisa:num,titular:tit});
- toast(atletaSel.nome_usuario+' adicionado! (offline)');
- bootstrap.Modal.getInstance(document.getElementById('modalAdd'))?.hide();
- atletaSel = null;
- renderTudo();
- });
+ .catch(e=>toast(e && e.msg ? e.msg : 'Não foi possível salvar a escalação.', false));
 }
 
 function remover(id){ if(isAtleta){ toast('Acesso restrito.', false); return; }

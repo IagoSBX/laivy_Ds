@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import br.com.gerenciador.projeto.DAO.IUsuario;
 import br.com.gerenciador.projeto.DAO.TimeDAO;
@@ -25,6 +28,7 @@ public class UsuarioService {
     @Autowired private IUsuario  dao;
     @Autowired private TimeDAO   timeDAO;
     @Autowired private JwtUtil   jwtUtil;
+    @PersistenceContext private EntityManager entityManager;
 
     /** Gera hash BCrypt, evitando re-hashear algo que já é um hash BCrypt. */
     private static String hashSenha(String senha) {
@@ -102,6 +106,7 @@ public class UsuarioService {
     }
 
     // Somente Admin ou Treinador podem cadastrar novos usuarios.
+    @Transactional
     public Usuario criar(Usuario usuario, Integer authId, Integer authTipo) {
         if (!AuthUtil.ehAdmin(authTipo) && !AuthUtil.ehTreinador(authTipo))
             throw new ForbiddenException("Somente Admin ou Treinador podem cadastrar usuarios.");
@@ -122,6 +127,8 @@ public class UsuarioService {
             timeDAO.findById(usuario.getTime().getId_time()).ifPresent(usuario::setTime);
         }
 
+        usuario.setCpf_usuario(normalizarCpf(usuario.getCpf_usuario()));
+        substituirCpfAnterior(usuario.getCpf_usuario(), null);
         usuario.setSenha_usuario(hashSenha(usuario.getSenha_usuario()));
 
         return dao.save(usuario);
@@ -182,6 +189,7 @@ public class UsuarioService {
         return jwtUtil.getExpirationSegundos();
     }
 
+    @Transactional
     public Usuario atualizar(Integer id, Usuario dados, Integer authId, Integer authTipo) {
         Usuario alvo = dao.findById(id)
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
@@ -212,7 +220,11 @@ public class UsuarioService {
         // evita que o próprio usuário ou um Treinador se autopromovam.
         if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
         if (dados.getCel_usuario()       != null) u.setCel_usuario(dados.getCel_usuario());
-        if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) u.setCpf_usuario(dados.getCpf_usuario());
+        if (dados.getCpf_usuario()       != null && !dados.getCpf_usuario().isBlank()) {
+            String cpf = normalizarCpf(dados.getCpf_usuario());
+            substituirCpfAnterior(cpf, id);
+            u.setCpf_usuario(cpf);
+        }
         if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
         if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
         if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
@@ -232,6 +244,27 @@ public class UsuarioService {
             if (podeVincular) timeDAO.findById(novoTime).ifPresent(u::setTime);
         }
         return dao.save(u);
+    }
+
+    private static String normalizarCpf(String cpf) {
+        if (cpf == null || cpf.isBlank()) return null;
+        String digitos = cpf.replaceAll("\\D", "");
+        return digitos.isEmpty() ? null : digitos;
+    }
+
+    /** O cadastro mais novo mantém o CPF; o registro anterior fica sem CPF. */
+    private void substituirCpfAnterior(String cpf, Integer idAtual) {
+        if (cpf == null) return;
+        entityManager.createNativeQuery("INSERT IGNORE INTO tbl_cpf_lock (cpf) VALUES (?1)")
+            .setParameter(1, cpf).executeUpdate();
+        entityManager.createNativeQuery("SELECT cpf FROM tbl_cpf_lock WHERE cpf = ?1 FOR UPDATE")
+            .setParameter(1, cpf).getSingleResult();
+        for (Usuario anterior : dao.buscarPorCpf(cpf)) {
+            if (idAtual == null || !idAtual.equals(anterior.getId_usuario())) {
+                anterior.setCpf_usuario(null);
+                dao.save(anterior);
+            }
+        }
     }
 
     public LoginResultado trocarSenha(Integer id, String nova, Integer authId, Integer authTipo) {

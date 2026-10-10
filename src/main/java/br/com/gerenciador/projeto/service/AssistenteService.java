@@ -36,6 +36,7 @@ public class AssistenteService {
     @Autowired private TimeDAO timeDAO;
     @Autowired private JogadaDAO jogadaDAO;
     @Autowired private JogadaService jogadaService;
+    @Autowired private ExameDAO exameDAO;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -80,6 +81,20 @@ public class AssistenteService {
         payload.put("tipo_usuario", authTipo);
         if (!AuthUtil.ehAdmin(authTipo))
             payload.put("idTime", AuthUtil.timeDoUsuario(authId, usuarioDAO));
+        Object idAtleta = payload.get("idAtleta");
+        if (idAtleta != null) {
+            try {
+                payload.put("contextoAtleta", dadosAtleta(Integer.valueOf(idAtleta.toString()), authId));
+                String pergunta = Objects.toString(payload.get("pergunta"), "");
+                String contexto = new com.fasterxml.jackson.databind.ObjectMapper().findAndRegisterModules()
+                    .writeValueAsString(payload.get("contextoAtleta"));
+                payload.put("pergunta", pergunta + "\n\nContexto autorizado do atleta para esta recomendação (use os registros sem inferir diagnósticos). Se houver exame inapto, não prescreva exercícios até liberação profissional:\n" + contexto);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                throw new IllegalStateException("Não foi possível preparar o contexto do atleta.", e);
+            } catch (NumberFormatException e) {
+                throw new ForbiddenException("Atleta inválido para recomendação.");
+            }
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -283,5 +298,58 @@ public class AssistenteService {
         r.put("jogadas", montarJogadas(idTime));
 
         return r;
+    }
+
+    /** Contexto autorizado para recomendaÃ§Ãµes individuais feitas pelo treinador. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> dadosAtleta(Integer idAtleta, Integer idUsuarioSolicitante) {
+        Usuario atleta = usuarioDAO.findById(idAtleta)
+            .orElseThrow(() -> new ForbiddenException("Atleta nÃ£o encontrado."));
+        Integer timeId = atleta.getTime() != null ? atleta.getTime().getId_time() : null;
+        Usuario solicitante = usuarioDAO.findById(idUsuarioSolicitante)
+            .orElseThrow(() -> new ForbiddenException("UsuÃ¡rio solicitante nÃ£o encontrado."));
+        if (!AuthUtil.ehAdmin(solicitante.getTipo_usuario())
+                && (!AuthUtil.ehTreinador(solicitante.getTipo_usuario())
+                    || !AuthUtil.podeGerenciarTime(solicitante.getTipo_usuario(), idUsuarioSolicitante, timeId, usuarioDAO)))
+            throw new ForbiddenException("Somente o treinador do time pode solicitar recomendaÃ§Ãµes individuais.");
+        if (atleta.getTipo_usuario() == null || atleta.getTipo_usuario() != 3)
+            throw new ForbiddenException("O usuÃ¡rio informado nÃ£o Ã© atleta.");
+
+        Map<String, Object> resposta = new HashMap<>();
+        resposta.put("atleta", atleta.getNome_usuario());
+        resposta.put("data_nascimento", atleta.getData_nasc_usuario());
+        resposta.put("desempenhos", desempenhoDAO.buscarPorUsuario(idAtleta).stream().map(d -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("data", d.getData_desempenho()); item.put("posicao", d.getPosicao_usuario());
+            item.put("salto_horizontal", d.getSalto_horizontal()); item.put("salto_vertical", d.getSalto_vertical());
+            item.put("pontuacao", d.getPontuacao()); return item;
+        }).toList());
+        resposta.put("exames_e_observacoes_de_saude", exameDAO.buscarPorUsuario(idAtleta).stream().map(e -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("inicio", e.getData_inicio_exame()); item.put("fim", e.getData_fim_exame());
+            item.put("observacoes", e.getObservacoes_exame()); item.put("status_apto", e.getStatus_usuario());
+            return item;
+        }).toList());
+        resposta.put("atividades", atividadeDAO.buscarPorUsuario(idAtleta).stream().map(a -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("nome", a.getNome_atividade()); item.put("tipo", a.getTipo_atividade());
+            item.put("data", a.getData_atividade()); item.put("status", a.getStatus_atividade());
+            return item;
+        }).toList());
+        resposta.put("escalacoes_e_pontos", escalacaoDAO.buscarPorUsuario(idAtleta).stream()
+            .map(e -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("atividade", e.getAtividade() != null ? e.getAtividade().getNome_atividade() : null);
+                item.put("data", e.getAtividade() != null ? e.getAtividade().getData_atividade() : null);
+                item.put("adversario", e.getAtividade() != null ? e.getAtividade().getTime_oponente() : null);
+                item.put("placar_pro", e.getAtividade() != null ? e.getAtividade().getPlacar_pro() : null);
+                item.put("placar_contra", e.getAtividade() != null ? e.getAtividade().getPlacar_contra() : null);
+                item.put("posicao", e.getPosicao()); item.put("pontos", e.getPontos_jogo());
+                item.put("titular", e.getTitular() != null && e.getTitular() == 1);
+                return item;
+            })
+            .toList());
+        resposta.put("nota_historico_lesoes", "NÃ£o existe campo estruturado de lesÃµes; considere apenas observaÃ§Ãµes clÃ­nicas registradas nos exames e nÃ£o infira diagnÃ³sticos.");
+        return resposta;
     }
 }
