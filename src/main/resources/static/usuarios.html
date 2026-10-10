@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Usuários — Sistema Esportivo</title>
+<title>Usuários — LAIVY</title>
+<link rel="icon" type="image/svg+xml" href="img/logo/app/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="img/logo/app/favicon-32.png">
+<link rel="apple-touch-icon" href="img/logo/app/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/laivy-theme.css">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1144,25 +1147,5 @@ function carregarTimesForm(selecionado){
 const _origMudarTab = typeof mudarTab !== 'undefined' ? mudarTab : null;
 </script>
 
-<script>
-(function(){
-  var ts = JSON.parse(localStorage.getItem('timeSelecionado') || 'null');
-  if (!ts) return;
-  var icon = document.getElementById('sidebarLogoIcon');
-  var nome = document.getElementById('sidebarNomeTime');
-  if (nome) nome.textContent = ts.nome || 'LAIVY';
-  if (icon) {
-    if (ts.logo) {
-      icon.style.background = 'none';
-      icon.style.padding = '0';
-      icon.innerHTML = '<img src="' + esc(ts.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
-    } else {
-      var ini = (ts.nome || 'L').split(' ').slice(0,2).map(function(x){return x[0];}).join('').toUpperCase();
-      icon.textContent = ini;
-      if (ts.cor) icon.style.background = 'linear-gradient(135deg,' + ts.cor + ',' + ts.cor + 'AA)';
-    }
-  }
-})();
-</script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 # Sistema Gerenciador Esportivo
-### TCC — ETEC 02/2026
+### TCC — ETEC 2026
 **Grupo:** Iago Silva · Victor Hugo · Yago Ribeiro · Leonardo Assis · Joao Pedro
 
 ---

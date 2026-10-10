@@ -107,8 +107,8 @@
     '</div>' +
     '<aside class="sidebar">' +
       '<div class="sidebar-logo" id="sidebarLogo">' +
-        '<div class="logo-icon" id="sidebarLogoIcon">L</div>' +
-        '<div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">Sistema Esportivo</div></div>' +
+        '<div class="logo-icon" id="sidebarLogoIcon"><img class="laivy-marca" src="img/logo/icone/laivy-icone-claro.svg" alt="LAIVY" style="width:100%;height:100%"></div>' +
+        '<div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">For those who live the game</div></div>' +
       '</div>' +
       '<nav>' + navHtml + '</nav>' +
       '<a href="painel-admin.html" class="painel-admin-link" id="painelAdminLink">' +
@@ -123,7 +123,7 @@
           '<div class="user-avatar" id="avatarLetra">A</div>' +
           '<div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>' +
         '</div>' +
-        '<button class="btn-logout" onclick="logout()">Sair do Sistema</button>' +
+        '<button class="btn-logout" onclick="logout()">Sair</button>' +
       '</div>' +
     '</aside>';
 
@@ -188,10 +188,6 @@
         icon.style.background = 'none';
         icon.style.padding = '0';
         icon.innerHTML = '<img src="' + escAttr(ts.logo) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
-      } else {
-        const ini = (ts.nome || 'L').split(' ').slice(0, 2).map(function (x) { return x[0]; }).join('').toUpperCase();
-        icon.textContent = ini;
-        if (ts.cor) icon.style.background = 'linear-gradient(135deg,' + ts.cor + ',' + ts.cor + 'AA)';
       }
     }
   }

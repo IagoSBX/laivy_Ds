@@ -182,7 +182,7 @@ public class SvgJogadaService {
           .append(210 - margem).append("\" y2=\"290\" stroke=\"").append(LAIVY_LARANJA)
           .append("\" stroke-width=\"0.5\" stroke-opacity=\"0.5\"/>");
         sb.append(texto(105, 294.5, 2.8, "middle", LAIVY_CINZA_CLARO, "normal",
-                "LAIVY · Sistema de Gestão Esportiva"));
+                "LAIVY · For those who live the game"));
 
         sb.append("</svg>");
         return sb.toString();
