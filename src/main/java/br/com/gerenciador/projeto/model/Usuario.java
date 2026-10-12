@@ -37,6 +37,11 @@ public class Usuario {
     @Column(name = "primeiro_login")
     private Integer primeiro_login; // 1=deve trocar senha no primeiro login, 0=já redefiniu
 
+    // Incrementada no logout/troca de senha: invalida os JWTs emitidos antes. Nunca vai no JSON.
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "token_version", nullable = false)
+    private Integer token_version = 0;
+
     @Column(name = "tipo_usuario", nullable = false)
     private Integer tipo_usuario; // 1=Admin, 2=Treinador, 3=Atleta
 
@@ -139,6 +144,8 @@ public class Usuario {
     public void setSenha_usuario(String senha_usuario) { this.senha_usuario = senha_usuario; }
 
     public Integer getPrimeiro_login() { return primeiro_login; }
+    public Integer getToken_version() { return token_version != null ? token_version : 0; }
+    public void setToken_version(Integer token_version) { this.token_version = token_version; }
     public void setPrimeiro_login(Integer primeiro_login) { this.primeiro_login = primeiro_login; }
 
     public Integer getTipo_usuario() { return tipo_usuario; }

@@ -14,7 +14,6 @@ import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.service.AtividadeService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/atividades")
 public class AtividadeController {
 

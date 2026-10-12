@@ -1,5 +1,6 @@
 package br.com.gerenciador.projeto.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +37,15 @@ public class AssistenteService {
     @Autowired private TimeDAO timeDAO;
     @Autowired private JogadaDAO jogadaDAO;
     @Autowired private JogadaService jogadaService;
+    @Autowired private UsuarioService usuarioService;
     @Autowired private ExameDAO exameDAO;
+    @Autowired private org.springframework.mail.javamail.JavaMailSender mailSender;
+
+    @Value("${app.mail.from}")
+    private String mailFrom;
+
+    @Value("${app.url}")
+    private String appUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -67,6 +76,24 @@ public class AssistenteService {
     }
 
     /**
+     * Dados individuais (desempenho, pontos) pela IA: Admin e Treinador veem
+     * o time inteiro (retorna null); Atleta — ou qualquer outro papel — só os
+     * próprios (retorna o idUsuario dele, usado como filtro).
+     */
+    private Integer somenteDoUsuario(Integer idUsuario) {
+        Usuario u = idUsuario != null ? usuarioDAO.findById(idUsuario).orElse(null) : null;
+        boolean veTimeInteiro = u != null
+            && (AuthUtil.ehAdmin(u.getTipo_usuario()) || AuthUtil.ehTreinador(u.getTipo_usuario()));
+        return veTimeInteiro ? null : idUsuario;
+    }
+
+    private static String nomePerfil(Integer tipo) {
+        if (AuthUtil.ehAdmin(tipo)) return "Admin";
+        if (AuthUtil.ehTreinador(tipo)) return "Treinador";
+        return "Atleta";
+    }
+
+    /**
      * idUsuario/tipo_usuario/idTime no corpo vêm do JS do navegador — nunca
      * confiáveis, poderiam ser forjados numa chamada direta ao endpoint. A
      * identidade real só existe no cookie JWT validado nesta própria
@@ -77,6 +104,15 @@ public class AssistenteService {
      */
     public Map chat(Map<String, Object> body, Integer authTipo, Integer authId) {
         Map<String, Object> payload = new HashMap<>(body);
+        // Anexo vira texto aqui no backend e vai junto da pergunta: o n8n só
+        // recebe texto, e o arquivo bruto não sai do servidor.
+        Object anexo = payload.remove("anexoBase64");
+        Object anexoNome = payload.remove("anexoNome");
+        if (anexo instanceof String b64 && !b64.isBlank()) {
+            String nome = anexoNome != null ? anexoNome.toString() : "arquivo";
+            payload.put("pergunta", String.valueOf(payload.getOrDefault("pergunta", ""))
+                + "\n\n[Arquivo anexado: " + nome + "]\n" + textoDoAnexo(nome, b64));
+        }
         payload.put("idUsuario", authId);
         payload.put("tipo_usuario", authTipo);
         if (!AuthUtil.ehAdmin(authTipo))
@@ -145,8 +181,11 @@ public class AssistenteService {
         return r;
     }
 
-    private List<Map<String, Object>> montarRankingDesempenho(Integer idTime) {
-        List<Desempenho> lista = desempenhoDAO.buscarPorTime(idTime);
+    /** somenteUsuario != null restringe aos desempenhos desse atleta. */
+    private List<Map<String, Object>> montarRankingDesempenho(Integer idTime, Integer somenteUsuario) {
+        List<Desempenho> lista = desempenhoDAO.buscarPorTime(idTime).stream()
+            .filter(d -> somenteUsuario == null || somenteUsuario.equals(d.getUsuario().getId_usuario()))
+            .collect(Collectors.toList());
         Map<String, List<Desempenho>> porAtleta = lista.stream()
             .collect(Collectors.groupingBy(d -> d.getUsuario().getNome_usuario()));
 
@@ -169,7 +208,7 @@ public class AssistenteService {
 
     public List<Map<String, Object>> rankingDesempenho(Integer idTime, Integer idUsuario) {
         exigirAutorizacaoParaTime(idTime, idUsuario);
-        return montarRankingDesempenho(idTime);
+        return montarRankingDesempenho(idTime, somenteDoUsuario(idUsuario));
     }
 
     public List<Map<String, Object>> rankingPontos(Integer idAtividade, Integer idUsuario) {
@@ -177,9 +216,11 @@ public class AssistenteService {
             .map(a -> a.getTime() != null ? a.getTime().getId_time() : null)
             .orElse(null);
         exigirAutorizacaoParaTime(idTimeDaAtividade, idUsuario);
+        Integer somente = somenteDoUsuario(idUsuario);
 
         return escalacaoDAO.buscarPorAtividade(idAtividade).stream()
             .filter(e -> e.getPontos_jogo() != null)
+            .filter(e -> somente == null || somente.equals(e.getUsuario().getId_usuario()))
             .sorted((a, b) -> b.getPontos_jogo() - a.getPontos_jogo())
             .map(e -> {
                 Map<String, Object> m = new HashMap<>();
@@ -251,21 +292,42 @@ public class AssistenteService {
      */
     @Transactional
     public JogadaResponse sugerirJogada(Integer idTime, Integer idUsuarioCriador, String nome, JogadaConteudo conteudo) {
-        Usuario criador = usuarioDAO.findById(idUsuarioCriador)
-            .orElseThrow(() -> new ForbiddenException("Usuário não encontrado."));
-
-        boolean autorizado = AuthUtil.ehAdmin(criador.getTipo_usuario())
-            || (AuthUtil.ehTreinador(criador.getTipo_usuario())
-                && criador.getTime() != null && idTime.equals(criador.getTime().getId_time()));
-        if (!autorizado) {
-            throw new ForbiddenException("Somente o treinador do time pode criar jogadas.");
-        }
+        Usuario criador = exigirEscritaNoTime(idTime, idUsuarioCriador);
 
         Time time = timeDAO.findById(idTime)
             .orElseThrow(() -> new ForbiddenException("Time não encontrado."));
 
         String nomeMarcado = "[Sugestão IA] " + nome;
         return jogadaService.criar(new SalvarJogadaRequest(nomeMarcado, conteudo), time, criador);
+    }
+
+    /** Só treinador do próprio time ou admin pode escrever jogadas (mesma regra de sugerirJogada). */
+    private Usuario exigirEscritaNoTime(Integer idTime, Integer idUsuario) {
+        // Admin não pertence a time: o time vem do que está selecionado na tela.
+        if (idTime == null)
+            throw new br.com.gerenciador.projeto.exception.BadRequestException(
+                "Nenhum time selecionado. Selecione um time no sistema antes de fazer essa alteração.");
+        Usuario u = idUsuario != null ? usuarioDAO.findById(idUsuario).orElse(null) : null;
+        boolean autorizado = u != null && (AuthUtil.ehAdmin(u.getTipo_usuario())
+            || (AuthUtil.ehTreinador(u.getTipo_usuario())
+                && u.getTime() != null && idTime.equals(u.getTime().getId_time())));
+        if (!autorizado) {
+            throw new ForbiddenException("Somente o treinador do time (ou um admin) pode fazer essa alteração.");
+        }
+        return u;
+    }
+
+    /** Conteúdo completo de uma jogada do time, pra IA ler antes de editar. */
+    public JogadaResponse verJogada(Integer idTime, Integer idUsuario, Integer idJogada) {
+        exigirAutorizacaoParaTime(idTime, idUsuario);
+        return jogadaService.buscar(idJogada, idTime);
+    }
+
+    /** Reescreve uma jogada existente. Autorização igual à de sugerirJogada. */
+    @Transactional
+    public JogadaResponse editarJogada(Integer idTime, Integer idUsuario, Integer idJogada, String nome, JogadaConteudo conteudo) {
+        exigirEscritaNoTime(idTime, idUsuario);
+        return jogadaService.atualizar(idJogada, idTime, new SalvarJogadaRequest(nome, conteudo), null);
     }
 
     @Transactional(readOnly = true)
@@ -293,11 +355,217 @@ public class AssistenteService {
         r.put("atletas", nomes);
         r.put("total_atletas", nomes.size());
 
-        r.put("ranking_desempenho", montarRankingDesempenho(idTime));
+        Integer somente = somenteDoUsuario(idUsuario);
+        Integer tipo = usuarioDAO.findById(idUsuario).map(Usuario::getTipo_usuario).orElse(null);
+        r.put("perfil_de_quem_pergunta", nomePerfil(tipo));
+        if (somente == null) {
+            r.put("ranking_desempenho", montarRankingDesempenho(idTime, null));
+        } else {
+            // Atleta não vê avaliação dos colegas — só a própria.
+            r.put("meu_desempenho", montarRankingDesempenho(idTime, somente));
+            r.put("observacao", "Quem pergunta é atleta: desempenho, ranking e avaliações dos "
+                + "outros atletas são restritos ao treinador. Não invente esses dados.");
+        }
         r.put("proximas_atividades", montarProximasAtividades(idTime));
         r.put("jogadas", montarJogadas(idTime));
 
         return r;
+    }
+
+    // ── Cadastro de atletas em lote (tool "Cadastrar Atletas" do n8n) ──────
+
+    private static final int MAX_ATLETAS_POR_LOTE = 50;
+    /** Teto diário de cadastros (= e-mails enviados) por treinador/admin: evita spam pelo Brevo. */
+    private static final int MAX_ATLETAS_POR_DIA = 100;
+    // ponytail: contador em memória (zera no restart); mover pro banco se precisar de auditoria.
+    private final java.util.concurrent.ConcurrentHashMap<String, Integer> cadastrosHoje = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    /** Um atleta extraído pela IA (de um PDF ou da mensagem do treinador). */
+    public record NovoAtleta(String nome, String email, String dataNascimento, String celular, String cpf) {}
+
+    /**
+     * Cadastra atletas no time a pedido da IA. A autorização é a mesma das
+     * jogadas: recalculada a partir do idUsuario real (treinador do próprio
+     * time ou admin). O cadastro em si passa pelo UsuarioService.criar, então
+     * valem as mesmas regras da tela: Treinador só cadastra Atleta, no próprio
+     * time, e a senha vai com BCrypt. Cada atleta recebe uma senha temporária
+     * e primeiro_login=1 (troca obrigatória no primeiro acesso), enviada por
+     * e-mail direto pro atleta — a senha não volta pra IA (nem pra OpenAI).
+     * Só se o e-mail falhar ela volta na resposta, pro treinador repassar.
+     *
+     * Cada linha é independente: um e-mail repetido não derruba o lote inteiro,
+     * só entra em "ignorados" com o motivo.
+     */
+    public Map<String, Object> cadastrarAtletas(Integer idTime, Integer idUsuario, List<NovoAtleta> atletas) {
+        Usuario chamador = exigirEscritaNoTime(idTime, idUsuario);
+        if (atletas == null || atletas.isEmpty())
+            throw new br.com.gerenciador.projeto.exception.BadRequestException("Nenhum atleta informado.");
+        if (atletas.size() > MAX_ATLETAS_POR_LOTE)
+            throw new br.com.gerenciador.projeto.exception.BadRequestException(
+                "Máximo de " + MAX_ATLETAS_POR_LOTE + " atletas por vez.");
+
+        String chaveDia = chamador.getId_usuario() + ":" + LocalDate.now();
+        int usadosHoje = cadastrosHoje.getOrDefault(chaveDia, 0);
+        if (usadosHoje + atletas.size() > MAX_ATLETAS_POR_DIA)
+            throw new br.com.gerenciador.projeto.exception.BadRequestException(
+                "Limite diário de " + MAX_ATLETAS_POR_DIA + " cadastros pela IA atingido ("
+                + usadosHoje + " hoje). Tente amanhã ou cadastre pela tela de usuários.");
+
+        Time time = timeDAO.findById(idTime)
+            .orElseThrow(() -> new ForbiddenException("Time não encontrado."));
+
+        List<Map<String, Object>> criados = new ArrayList<>();
+        List<Map<String, Object>> ignorados = new ArrayList<>();
+        Set<String> emailsDoLote = new HashSet<>();
+
+        for (NovoAtleta a : atletas) {
+            String nome  = a.nome()  != null ? a.nome().trim() : "";
+            String email = a.email() != null ? a.email().trim().toLowerCase() : "";
+            String motivo = null;
+            if (nome.isEmpty() || nome.length() > 100)               motivo = "Nome ausente ou muito longo.";
+            else if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") || email.length() > 100)
+                                                                      motivo = "E-mail ausente ou inválido.";
+            else if (!emailsDoLote.add(email))                        motivo = "E-mail repetido na lista.";
+            else if (usuarioDAO.existeEmail(email))                   motivo = "E-mail já cadastrado no sistema.";
+
+            LocalDate nascimento = null;
+            if (motivo == null && a.dataNascimento() != null && !a.dataNascimento().isBlank()) {
+                try { nascimento = LocalDate.parse(a.dataNascimento().trim()); }
+                catch (Exception e) { motivo = "Data de nascimento inválida (use AAAA-MM-DD)."; }
+            }
+
+            if (motivo != null) {
+                ignorados.add(Map.of("nome", nome, "email", email, "motivo", motivo));
+                continue;
+            }
+
+            String senhaTemporaria = gerarSenhaTemporaria();
+            Usuario u = new Usuario();
+            u.setNome_usuario(nome);
+            u.setEmail_usuario(email);
+            u.setLogin_usuario(gerarLogin(email));
+            u.setSenha_usuario(senhaTemporaria);
+            u.setTipo_usuario(3);
+            u.setPrimeiro_login(1);
+            u.setData_nasc_usuario(nascimento);
+            u.setCel_usuario(limitar(a.celular(), 20));
+            u.setCpf_usuario(limitar(a.cpf(), 20));
+            u.setTime(time);
+
+            try {
+                Usuario salvo = usuarioService.criar(u, chamador.getId_usuario(), chamador.getTipo_usuario());
+                Map<String, Object> m = new HashMap<>();
+                m.put("nome", salvo.getNome_usuario());
+                m.put("email", salvo.getEmail_usuario());
+                m.put("login", salvo.getLogin_usuario());
+                boolean enviado = enviarCredenciais(salvo, senhaTemporaria, time.getNome_time());
+                m.put("email_enviado", enviado);
+                if (!enviado) m.put("senha_temporaria", senhaTemporaria);
+                criados.add(m);
+            } catch (Exception e) {
+                ignorados.add(Map.of("nome", nome, "email", email, "motivo", "Erro ao salvar: " + e.getMessage()));
+            }
+        }
+
+        cadastrosHoje.merge(chaveDia, criados.size(), Integer::sum);
+
+        Map<String, Object> r = new HashMap<>();
+        r.put("time", time.getNome_time());
+        r.put("total_criados", criados.size());
+        r.put("criados", criados);
+        r.put("ignorados", ignorados);
+        return r;
+    }
+
+    /** Manda login + senha temporária pro e-mail do atleta. Falha não desfaz o cadastro. */
+    private boolean enviarCredenciais(Usuario u, String senha, String nomeTime) {
+        try {
+            var msg = new org.springframework.mail.SimpleMailMessage();
+            msg.setFrom(mailFrom);
+            msg.setTo(u.getEmail_usuario());
+            msg.setSubject("Seu acesso ao LAIVY - " + nomeTime);
+            msg.setText("Olá, " + u.getNome_usuario() + "!\n\n"
+                + "Você foi cadastrado(a) no time " + nomeTime + " no LAIVY.\n\n"
+                + "Acesse: " + appUrl + "/login.html\n"
+                + "Perfil: Atleta\n"
+                + "Login: " + u.getLogin_usuario() + "\n"
+                + "Senha temporária: " + senha + "\n\n"
+                + "No primeiro acesso você vai precisar criar uma nova senha.\n"
+                + "Se você não esperava este e-mail, pode ignorá-lo.");
+            mailSender.send(msg);
+            return true;
+        } catch (Exception e) {
+            System.err.println("[LAIVY] Falha ao enviar e-mail para " + u.getEmail_usuario() + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    /** Login = parte do e-mail antes do @, sem acentos/símbolos, com sufixo se já existir. */
+    private String gerarLogin(String email) {
+        String base = java.text.Normalizer.normalize(email.substring(0, email.indexOf('@')), java.text.Normalizer.Form.NFD)
+            .replaceAll("[^A-Za-z0-9._-]", "").toLowerCase();
+        if (base.isEmpty()) base = "atleta";
+        if (base.length() > 40) base = base.substring(0, 40);
+        String login = base;
+        for (int i = 2; usuarioDAO.existeLogin(login); i++) login = base + i;
+        return login;
+    }
+
+    /** 10 caracteres, sempre com letra e número (passa na senhaFraca do UsuarioService). */
+    private static String gerarSenhaTemporaria() {
+        final String letras = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+        final String numeros = "23456789";
+        final String todos = letras + numeros;
+        StringBuilder sb = new StringBuilder();
+        sb.append(letras.charAt(RANDOM.nextInt(letras.length())));
+        sb.append(numeros.charAt(RANDOM.nextInt(numeros.length())));
+        for (int i = 0; i < 8; i++) sb.append(todos.charAt(RANDOM.nextInt(todos.length())));
+        return sb.toString();
+    }
+
+    private static String limitar(String s, int max) {
+        if (s == null || s.isBlank()) return null;
+        s = s.trim();
+        return s.length() > max ? s.substring(0, max) : s;
+    }
+
+    // ── Anexo do chat (PDF/TXT/CSV) ─────────────────────────────────────
+
+    private static final int MAX_ANEXO_BYTES = 5 * 1024 * 1024;
+    private static final int MAX_ANEXO_CHARS = 20_000;
+
+    /** Extrai o texto do anexo em base64. PDF via PDFBox; .txt/.csv como UTF-8. */
+    private String textoDoAnexo(String nome, String base64) {
+        byte[] bytes;
+        try { bytes = Base64.getDecoder().decode(base64); }
+        catch (IllegalArgumentException e) {
+            throw new br.com.gerenciador.projeto.exception.BadRequestException("Anexo inválido.");
+        }
+        if (bytes.length > MAX_ANEXO_BYTES)
+            throw new br.com.gerenciador.projeto.exception.BadRequestException("Anexo maior que 5 MB.");
+
+        String n = nome != null ? nome.toLowerCase() : "";
+        String texto;
+        if (n.endsWith(".pdf")) {
+            try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.pdmodel.PDDocument.load(bytes)) {
+                var stripper = new org.apache.pdfbox.text.PDFTextStripper();
+                // Ordem visual (linha a linha): sem isso, tabelas saem com as colunas embaralhadas.
+                stripper.setSortByPosition(true);
+                texto = stripper.getText(doc);
+            } catch (java.io.IOException e) {
+                throw new br.com.gerenciador.projeto.exception.BadRequestException("Não consegui ler o PDF.");
+            }
+        } else if (n.endsWith(".txt") || n.endsWith(".csv")) {
+            texto = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        } else {
+            throw new br.com.gerenciador.projeto.exception.BadRequestException("Envie um arquivo PDF, TXT ou CSV.");
+        }
+        texto = texto.strip();
+        if (texto.isEmpty())
+            throw new br.com.gerenciador.projeto.exception.BadRequestException(
+                "O arquivo não tem texto legível (PDF escaneado como imagem não é suportado).");
+        return texto.length() > MAX_ANEXO_CHARS ? texto.substring(0, MAX_ANEXO_CHARS) + "\n[...texto cortado...]" : texto;
     }
 
     /** Contexto autorizado para recomendações individuais feitas pelo treinador. */

@@ -39,7 +39,6 @@ import java.util.List;
  * (AuthUtil.podeGerenciarTime) — Admin sempre passa, igual ao resto do sistema.
  */
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/times/{idTime}/jogadas")
 public class JogadaController {
 

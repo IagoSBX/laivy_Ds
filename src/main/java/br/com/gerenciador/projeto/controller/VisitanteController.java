@@ -14,7 +14,6 @@ import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.service.VisitanteService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/visitantes")
 public class VisitanteController {
 

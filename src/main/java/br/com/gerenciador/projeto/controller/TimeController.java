@@ -14,7 +14,6 @@ import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.service.TimeService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/times")
 public class TimeController {
 

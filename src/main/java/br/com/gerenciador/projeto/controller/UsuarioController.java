@@ -19,11 +19,11 @@ import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.service.UsuarioService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/usuarios")
 public class UsuarioController {
 
     @Autowired private UsuarioService usuarioService;
+    @Autowired private br.com.gerenciador.projeto.security.JwtUtil jwtUtil;
 
     private static Integer authId(HttpServletRequest r)   { return (Integer) r.getAttribute(JwtFilter.ATTR_ID); }
     private static Integer authTipo(HttpServletRequest r) { return (Integer) r.getAttribute(JwtFilter.ATTR_TIPO); }
@@ -62,8 +62,8 @@ public class UsuarioController {
 
     // ── GET /usuarios/treinadores ─────────────────────────────────────────
     @GetMapping("/treinadores")
-    public List<Usuario> listarTreinadores() {
-        return usuarioService.listarTreinadores();
+    public List<Usuario> listarTreinadores(HttpServletRequest request) {
+        return usuarioService.listarTreinadores(authId(request), authTipo(request));
     }
 
     // ── POST /usuarios ────────────────────────────────────────────────────
@@ -86,7 +86,15 @@ public class UsuarioController {
 
     // ── POST /usuarios/logout ─────────────────────────────────────────────
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Rota pública (o JwtFilter não exige token): se vier um token válido,
+        // invalida todas as sessões desse usuário — o JWT não vale mais nem copiado.
+        if (request.getCookies() != null) {
+            for (jakarta.servlet.http.Cookie c : request.getCookies()) {
+                if ("jwtToken".equals(c.getName()) && jwtUtil.validar(c.getValue()))
+                    usuarioService.encerrarSessoes(jwtUtil.getId(c.getValue()));
+            }
+        }
         ResponseCookie cookie = ResponseCookie.from("jwtToken", "")
             .httpOnly(true)
             .secure(true)

@@ -37,7 +37,8 @@ public class TimeService {
     // usado em UsuarioService.listarTodos.
     public List<Usuario> listarMembros(Integer id, Integer authTipo, Integer authId) {
         List<Usuario> membros = buscarPorId(id).getMembros();
-        membros.forEach(u -> UsuarioService.sanitizarParaListagem(u, authId, authTipo));
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+        membros.forEach(u -> UsuarioService.sanitizarParaListagem(u, authId, authTipo, meuTime));
         return membros;
     }
 

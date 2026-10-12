@@ -16,6 +16,7 @@ import java.util.Date;
  *   sub  → login_usuario
  *   id   → id_usuario
  *   tipo → tipo_usuario (1=Admin, 2=Treinador, 3=Atleta)
+ *   tv   → token_version do usuário (logout/troca de senha invalidam tokens antigos)
  */
 @Component
 public class JwtUtil {
@@ -36,11 +37,12 @@ public class JwtUtil {
     }
 
     // ── Geração ──────────────────────────────────────────────────
-    public String gerarToken(Integer id, String login, Integer tipo) {
+    public String gerarToken(Integer id, String login, Integer tipo, Integer tokenVersion) {
         return Jwts.builder()
                 .subject(login)
                 .claim("id",   id)
                 .claim("tipo", tipo)
+                .claim("tv",   tokenVersion)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getKey())
@@ -64,6 +66,12 @@ public class JwtUtil {
 
     public Integer getId(String token) {
         return parsear(token).getPayload().get("id", Integer.class);
+    }
+
+    /** Versão do token (ver Usuario.token_version); tokens antigos sem a claim valem como 0. */
+    public Integer getTokenVersion(String token) {
+        Integer tv = parsear(token).getPayload().get("tv", Integer.class);
+        return tv != null ? tv : 0;
     }
 
     public Integer getTipo(String token) {

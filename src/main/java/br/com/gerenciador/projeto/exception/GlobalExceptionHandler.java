@@ -33,6 +33,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(Map.of("erro", ex.getMessage()));
     }
 
+    @ExceptionHandler(br.com.gerenciador.projeto.service.UsuarioService.TooManyRequestsException.class)
+    public ResponseEntity<Map<String, Object>> tratarMuitasTentativas(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(Map.of("erro", ex.getMessage()));
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> tratarNaoAutorizado(UnauthorizedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("erro", ex.getMessage()));

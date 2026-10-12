@@ -9,3 +9,6 @@ target/
 *.log
 laivyIA
 src/main/resources/application.properties
+.env
+.env.bak
+CREDENCIAIS_LOCAIS.txt

@@ -27,6 +27,12 @@ public interface IUsuario extends JpaRepository<Usuario, Integer> {
     @Query("SELECT u FROM Usuario u WHERE u.time.id_time = :idTime AND u.tipo_usuario = :tipo")
     List<Usuario> buscarPorTimeTipo(@Param("idTime") Integer idTime, @Param("tipo") Integer tipo);
 
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE LOWER(u.email_usuario) = LOWER(:email)")
+    boolean existeEmail(@Param("email") String email);
+
+    @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE u.login_usuario = :login")
+    boolean existeLogin(@Param("login") String login);
+
     @Query("SELECT u FROM Usuario u WHERE u.cpf_usuario = :cpf")
     List<Usuario> buscarPorCpf(@Param("cpf") String cpf);
 }

@@ -108,6 +108,10 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 .btn-send{width:46px;height:46px;background:linear-gradient(135deg,var(--verde),#00A865);border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all 0.2s;flex-shrink:0;}
 .btn-send:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(0,201,122,0.4);}
 .btn-send:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-anexo{width:46px;height:46px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--branco);flex-shrink:0;transition:border 0.2s;}
+.btn-anexo:hover{border-color:rgba(0,201,122,0.4);}
+.anexo-chip{display:none;align-items:center;gap:8px;margin:0 20px 8px;padding:6px 12px;background:rgba(0,201,122,0.1);border:1px solid rgba(0,201,122,0.3);border-radius:10px;font-size:12px;color:var(--branco);width:fit-content;}
+.anexo-chip button{background:none;border:none;color:var(--cinza);cursor:pointer;font-size:14px;}
 .input-hint{font-size:11px;color:var(--cinza);margin-top:6px;text-align:center;opacity:0.6;}
 
 /* ── ERRO ── */
@@ -172,7 +176,13 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
       </div>
     </div>
 
+    <div class="anexo-chip" id="anexoChip">📎 <span id="anexoNome"></span>
+      <button type="button" onclick="removerAnexo()" aria-label="Remover anexo">✕</button>
+    </div>
     <div class="input-wrap">
+      <input type="file" id="inputAnexo" accept=".pdf,.txt,.csv" hidden onchange="selecionarAnexo(this)">
+      <button type="button" class="btn-anexo" onclick="document.getElementById('inputAnexo').click()"
+              title="Anexar PDF, TXT ou CSV (ex.: lista de atletas)" aria-label="Anexar arquivo">📎</button>
       <textarea
         id="inputPergunta"
         placeholder="Digite sua pergunta..."
@@ -182,7 +192,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
       ></textarea>
       <button class="btn-send" id="btnSend" onclick="enviar()">➤</button>
     </div>
-    <div class="input-hint">Enter para enviar · Shift+Enter para nova linha</div>
+    <div class="input-hint">Enter para enviar · Shift+Enter para nova linha · 📎 anexe um PDF com a lista de atletas para cadastrá-los</div>
   </div>
 
 </main>
@@ -213,6 +223,33 @@ async function _logout() {
 
 const API = 'http://localhost:8080';
 let enviando = false;
+let anexo = null; // File selecionado no 📎
+// Uma sessão por aba: é a chave da memória da conversa no n8n.
+const sessaoChat = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+
+function selecionarAnexo(input) {
+  const f = input.files[0];
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { alert('Arquivo maior que 5 MB.'); input.value = ''; return; }
+  anexo = f;
+  document.getElementById('anexoNome').textContent = f.name;
+  document.getElementById('anexoChip').style.display = 'flex';
+}
+
+function removerAnexo() {
+  anexo = null;
+  document.getElementById('inputAnexo').value = '';
+  document.getElementById('anexoChip').style.display = 'none';
+}
+
+function lerBase64(file) {
+  return new Promise((ok, erro) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(',')[1]);
+    r.onerror = erro;
+    r.readAsDataURL(file);
+  });
+}
 let atletaRecomendacaoPendente = null;
 
 const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
@@ -309,10 +346,12 @@ function removeTyping() {
 async function enviar() {
   if (enviando) return;
   const input = document.getElementById('inputPergunta');
-  const pergunta = input.value.trim();
+  const arquivo = anexo;
+  const pergunta = input.value.trim() || (arquivo ? 'Analise o arquivo anexado.' : '');
   if (!pergunta) return;
 
-  addMsg(pergunta, 'user');
+  addMsg(arquivo ? `📎 ${arquivo.name}\n${pergunta}` : pergunta, 'user');
+  removerAnexo();
   input.value = '';
   input.style.height = 'auto';
 
@@ -328,14 +367,22 @@ async function enviar() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pergunta,
+        sessaoChat,
         idUsuario:    usuario.id_usuario,
         idTime:       time ? time.id : null,
         idAtleta,
-        tipo_usuario: usuario.tipo_usuario
+        tipo_usuario: usuario.tipo_usuario,
+        anexoNome:    arquivo ? arquivo.name : undefined,
+        anexoBase64:  arquivo ? await lerBase64(arquivo) : undefined
       })
     });
 
     removeTyping();
+    if (res.status === 400) {
+      const e = await res.json().catch(() => ({}));
+      addMsg(e.erro || 'Não consegui processar o anexo.', 'erro');
+      return;
+    }
     if (!res.ok) throw new Error('Erro');
 
     const data = await res.json();
@@ -345,11 +392,11 @@ async function enviar() {
   } catch (err) {
     removeTyping();
     addMsg('Não consegui me conectar ao assistente. Verifique se o n8n está rodando em localhost:5678.', 'erro');
+  } finally {
+    enviando = false;
+    document.getElementById('btnSend').disabled = false;
+    input.focus();
   }
-
-  enviando = false;
-  document.getElementById('btnSend').disabled = false;
-  input.focus();
 }
 
 function perguntaRapida(texto) {

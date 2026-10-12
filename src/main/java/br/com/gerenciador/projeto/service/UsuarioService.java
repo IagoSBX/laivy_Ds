@@ -60,10 +60,18 @@ public class UsuarioService {
 
     /** Remove dados sensíveis (CPF, endereço, dados de responsáveis, etc.)
      *  para quem não é Admin/Treinador nem o próprio usuário. */
-    public static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
-        boolean privilegiado = authTipo != null && authTipo <= 2;
+    /**
+     * Dados pessoais (e-mail, login, CPF, endereço, responsáveis...) só para:
+     * Admin, o próprio usuário, ou o Treinador do MESMO time do usuário.
+     * meuTime = time de quem pede (AuthUtil.timeDoUsuario). Os demais veem só
+     * nome, perfil, time e foto — o que as telas de time precisam pra listar.
+     */
+    public static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo, Integer meuTime) {
         boolean ehDono = authId != null && authId.equals(u.getId_usuario());
-        if (privilegiado || ehDono) return u;
+        Integer timeDoAlvo = u.getTime() != null ? u.getTime().getId_time() : null;
+        boolean treinadorDoTime = AuthUtil.ehTreinador(authTipo)
+            && meuTime != null && meuTime.equals(timeDoAlvo);
+        if (AuthUtil.ehAdmin(authTipo) || ehDono || treinadorDoTime) return u;
 
         u.setEmail_usuario(null);
         u.setLogin_usuario(null);
@@ -88,14 +96,15 @@ public class UsuarioService {
 
     public List<Usuario> listarTodos(Integer idTime, Integer authId, Integer authTipo) {
         List<Usuario> lista = idTime != null ? dao.buscarPorTime(idTime) : dao.findAll();
-        lista.forEach(u -> sanitizarParaListagem(u, authId, authTipo));
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, dao);
+        lista.forEach(u -> sanitizarParaListagem(u, authId, authTipo, meuTime));
         return lista;
     }
 
     public Usuario buscarPorId(Integer id, Integer authId, Integer authTipo) {
         Usuario u = dao.findById(id)
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
-        return sanitizarParaListagem(u, authId, authTipo);
+        return sanitizarParaListagem(u, authId, authTipo, AuthUtil.timeDoUsuario(authId, dao));
     }
 
     public List<Exame> listarExames(Integer id, Integer authId, Integer authTipo) {
@@ -110,9 +119,11 @@ public class UsuarioService {
         return u.getExames();
     }
 
-    public List<Usuario> listarTreinadores() {
+    public List<Usuario> listarTreinadores(Integer authId, Integer authTipo) {
+        Integer meuTime = AuthUtil.timeDoUsuario(authId, dao);
         return dao.findAll().stream()
             .filter(u -> u.getTipo_usuario() != null && u.getTipo_usuario() <= 2)
+            .map(u -> sanitizarParaListagem(u, authId, authTipo, meuTime))
             .collect(Collectors.toList());
     }
 
@@ -165,9 +176,14 @@ public class UsuarioService {
             throw new BadRequestException("tipo_usuario invalido.");
         }
 
+        String chave = login.trim().toLowerCase();
+        exigirNaoBloqueado(chave);
+
         Optional<Usuario> opt = dao.buscarPorLoginTipo(login, tipo);
-        if (opt.isEmpty())
-            throw new UnauthorizedException("Usuario nao encontrado ou perfil incorreto.");
+        if (opt.isEmpty()) {
+            registrarFalha(chave);
+            throw new UnauthorizedException(ERRO_LOGIN);
+        }
 
         Usuario u = opt.get();
         String hash = u.getSenha_usuario();
@@ -183,8 +199,11 @@ public class UsuarioService {
             legado  = senhaOk;
         }
 
-        if (!senhaOk)
-            throw new UnauthorizedException("Senha incorreta.");
+        if (!senhaOk) {
+            registrarFalha(chave);
+            throw new UnauthorizedException(ERRO_LOGIN);
+        }
+        falhasLogin.remove(chave);
 
         // Migração automática: substitui a senha em texto plano por BCrypt
         if (legado) {
@@ -192,9 +211,46 @@ public class UsuarioService {
             dao.save(u);
         }
 
-        String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario());
+        String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
         return new LoginResultado(u, token);
+    }
+
+    /** Logout: invalida todos os tokens já emitidos para este usuário. */
+    public void encerrarSessoes(Integer idUsuario) {
+        if (idUsuario == null) return;
+        dao.findById(idUsuario).ifPresent(u -> {
+            u.setToken_version(u.getToken_version() + 1);
+            dao.save(u);
+        });
+    }
+
+    // ── Limite de tentativas de login ────────────────────────────────────
+    // Mesma mensagem para "usuário não existe" e "senha errada" (não revela
+    // quais logins existem). Após MAX_FALHAS erros seguidos, o login fica
+    // bloqueado por BLOQUEIO_MS.
+    // ponytail: em memória e por login — some no restart e não vale entre
+    // várias instâncias; mover pra banco/Redis se o sistema escalar.
+    private static final String ERRO_LOGIN = "Login, senha ou perfil incorretos.";
+    private static final int  MAX_FALHAS  = 5;
+    private static final long BLOQUEIO_MS = 15 * 60 * 1000L;
+    private final java.util.concurrent.ConcurrentHashMap<String, long[]> falhasLogin = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private void exigirNaoBloqueado(String chave) {
+        long[] f = falhasLogin.get(chave); // {quantidade, instante da última falha}
+        if (f == null) return;
+        if (System.currentTimeMillis() - f[1] > BLOQUEIO_MS) { falhasLogin.remove(chave); return; }
+        if (f[0] >= MAX_FALHAS)
+            throw new TooManyRequestsException("Muitas tentativas. Tente novamente em 15 minutos.");
+    }
+
+    private void registrarFalha(String chave) {
+        falhasLogin.merge(chave, new long[]{1, System.currentTimeMillis()},
+            (a, b) -> new long[]{a[0] + 1, b[1]});
+    }
+
+    public static class TooManyRequestsException extends RuntimeException {
+        public TooManyRequestsException(String m) { super(m); }
     }
 
     public long getExpirationSegundos() {
@@ -253,7 +309,10 @@ public class UsuarioService {
         if (dados.getCpf_responsavel_2() != null) u.setCpf_responsavel_2(dados.getCpf_responsavel_2());
         if (dados.getCel_responsavel_1() != null) u.setCel_responsavel_1(dados.getCel_responsavel_1());
         if (dados.getCel_responsavel_2() != null) u.setCel_responsavel_2(dados.getCel_responsavel_2());
-        if (trocandoSenha) u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
+        if (trocandoSenha) {
+            u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
+            u.setToken_version(u.getToken_version() + 1);
+        }
         // Admin move para qualquer time; Treinador só pode vincular ao próprio time.
         if (dados.getTime() != null && dados.getTime().getId_time() != null) {
             Integer novoTime = dados.getTime().getId_time();
@@ -299,8 +358,9 @@ public class UsuarioService {
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
         u.setSenha_usuario(BCrypt.hashpw(nova, BCrypt.gensalt(12)));
         u.setPrimeiro_login(0);
+        u.setToken_version(u.getToken_version() + 1); // derruba sessões abertas com a senha antiga
         dao.save(u);
-        String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario());
+        String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
         return new LoginResultado(u, token);
     }

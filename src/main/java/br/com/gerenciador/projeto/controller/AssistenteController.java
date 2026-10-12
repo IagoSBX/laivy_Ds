@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import br.com.gerenciador.projeto.dto.JogadaDTOs.JogadaResponse;
+import br.com.gerenciador.projeto.exception.BadRequestException;
 import br.com.gerenciador.projeto.exception.ForbiddenException;
 import br.com.gerenciador.projeto.model.json.JogadaConteudo;
 import br.com.gerenciador.projeto.security.JwtFilter;
@@ -18,7 +19,6 @@ import br.com.gerenciador.projeto.service.JogadaService.JogadaInvalidaException;
 import jakarta.validation.Valid;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/assistente")
 public class AssistenteController {
 
@@ -32,7 +32,10 @@ public class AssistenteController {
     public ResponseEntity<Map> chat(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
             return ResponseEntity.ok(assistenteService.chat(body, authTipo(request), authId(request)));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {
+            System.err.println("[LAIVY] Falha ao chamar o n8n: " + e.getMessage());
             return ResponseEntity.status(503)
                 .body(Map.of("erro", "Assistente indisponível. Verifique se o n8n está rodando."));
         }
@@ -137,9 +140,67 @@ public class AssistenteController {
         } catch (JogadaInvalidaException e) {
             return ResponseEntity.unprocessableEntity()
                 .body(Map.of("erro", "Jogada inválida.", "detalhes", e.getErros()));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Map.of("erro", "Erro ao criar jogada sugerida."));
+        }
+    }
+
+    // ── GET /assistente/jogada?idTime=1&idUsuario=1&id=5 ─────────────
+    @GetMapping("/jogada")
+    public ResponseEntity<?> verJogada(@RequestParam Integer idTime, @RequestParam Integer idUsuario,
+                                       @RequestParam Integer id) {
+        try {
+            return ResponseEntity.ok(assistenteService.verJogada(idTime, idUsuario, id));
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(Map.of("erro", "Jogada não encontrada neste time."));
+        }
+    }
+
+    // ── POST /assistente/editar-jogada ────────────────────────────
+    // Body: { idTime, idUsuario, idJogada, nome, conteudo }. Mesma regra de
+    // autorização do sugerir-jogada (recalculada a partir do idUsuario).
+    public record EditarJogadaRequest(Integer idTime, Integer idUsuario, Integer idJogada, String nome,
+                                      @Valid JogadaConteudo conteudo) {}
+
+    @PostMapping("/editar-jogada")
+    public ResponseEntity<?> editarJogada(@RequestBody @Valid EditarJogadaRequest req) {
+        try {
+            return ResponseEntity.ok(assistenteService.editarJogada(
+                req.idTime(), req.idUsuario(), req.idJogada(), req.nome(), req.conteudo()));
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (JogadaInvalidaException e) {
+            return ResponseEntity.unprocessableEntity()
+                .body(Map.of("erro", "Jogada inválida.", "detalhes", e.getErros()));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro ao editar jogada."));
+        }
+    }
+
+    // ── POST /assistente/cadastrar-atletas ────────────────────────
+    // Body: { idTime, idUsuario, atletas: [{ nome, email, dataNascimento?, celular?, cpf? }] }.
+    // Só treinador do time ou admin (recalculado a partir do idUsuario).
+    public record CadastrarAtletasRequest(Integer idTime, Integer idUsuario, List<AssistenteService.NovoAtleta> atletas) {}
+
+    @PostMapping("/cadastrar-atletas")
+    public ResponseEntity<?> cadastrarAtletas(@RequestBody CadastrarAtletasRequest req) {
+        try {
+            return ResponseEntity.status(201).body(
+                assistenteService.cadastrarAtletas(req.idTime(), req.idUsuario(), req.atletas()));
+        } catch (ForbiddenException e) {
+            throw e;
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("erro", "Erro ao cadastrar atletas."));
         }
     }
 

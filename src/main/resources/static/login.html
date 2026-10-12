@@ -548,7 +548,7 @@ async function fazerLogin(e) {
       body: JSON.stringify({ login_usuario: login, senha_usuario: senha, tipo_usuario: tipo })
     });
 
-    if (res.status === 401) {
+    if (res.status === 401 || res.status === 429) {
       const data = await res.json().catch(() => ({}));
       const msg = data.erro || 'Credenciais inválidas.';
       if (msg.includes('não encontrado') || msg.includes('perfil'))

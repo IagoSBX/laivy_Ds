@@ -14,7 +14,6 @@ import br.com.gerenciador.projeto.security.JwtFilter;
 import br.com.gerenciador.projeto.service.EscalacaoService;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/escalacoes")
 public class EscalacaoController {
 
