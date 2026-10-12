@@ -236,7 +236,7 @@ body { -webkit-text-size-adjust: 100%; }
   display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
 }
-.grade-biblioteca > .ajuda { grid-column: 1 / -1; }
+.grade-biblioteca > .ajuda { grid-column: 1 / -1; text-align: center; padding: 48px 0; margin: 0; font-size: 13px; color: var(--cinza); }
 
 .cartao-jogada {
   background: var(--superficie); border: 1px solid var(--linha); border-radius: 14px;

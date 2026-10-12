@@ -36,7 +36,7 @@ public class Exame {
     @Column(name = "status_usuario")
     private Integer status_usuario; // 0=Inapto, 1=Apto
 
-    @Column(name = "foto_exame", length = 255)
+    @Column(name = "foto_exame", columnDefinition = "MEDIUMTEXT")
     private String foto_exame;
 
     @ManyToOne(fetch = FetchType.EAGER)

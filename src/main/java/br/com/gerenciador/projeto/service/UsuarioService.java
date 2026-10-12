@@ -1,5 +1,6 @@
 package br.com.gerenciador.projeto.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,6 +50,14 @@ public class UsuarioService {
         return !temLetra || !temDigito;
     }
 
+    /** Nascimento aceito: não futuro e no máximo 100 anos atrás (a idade é calculada a partir dele). */
+    private static void validarNascimento(LocalDate nasc) {
+        if (nasc == null) return;
+        LocalDate hoje = LocalDate.now();
+        if (nasc.isAfter(hoje) || nasc.isBefore(hoje.minusYears(100)))
+            throw new BadRequestException("Data de nascimento invalida.");
+    }
+
     /** Remove dados sensíveis (CPF, endereço, dados de responsáveis, etc.)
      *  para quem não é Admin/Treinador nem o próprio usuário. */
     public static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo) {
@@ -60,6 +69,8 @@ public class UsuarioService {
         u.setLogin_usuario(null);
         u.setData_nasc_usuario(null);
         u.setEndereco_usuario(null);
+        u.setNumero_usuario(null);
+        u.setComplemento_usuario(null);
         u.setBairro_usuario(null);
         u.setCep_usuario(null);
         u.setCidade_usuario(null);
@@ -113,6 +124,7 @@ public class UsuarioService {
 
         if (senhaFraca(usuario.getSenha_usuario()))
             throw new BadRequestException(ERRO_SENHA_FRACA);
+        validarNascimento(usuario.getData_nasc_usuario());
 
         // Somente Admin pode definir o perfil (tipo_usuario) do novo cadastro —
         // Treinador sempre cadastra Atleta, evitando autopromoção/promoção indevida.
@@ -226,6 +238,12 @@ public class UsuarioService {
             u.setCpf_usuario(cpf);
         }
         if (dados.getEndereco_usuario()  != null) u.setEndereco_usuario(dados.getEndereco_usuario());
+        if (dados.getNumero_usuario()    != null) u.setNumero_usuario(dados.getNumero_usuario());
+        if (dados.getComplemento_usuario() != null) u.setComplemento_usuario(dados.getComplemento_usuario());
+        if (dados.getData_nasc_usuario() != null) {
+            validarNascimento(dados.getData_nasc_usuario());
+            u.setData_nasc_usuario(dados.getData_nasc_usuario());
+        }
         if (dados.getBairro_usuario()    != null) u.setBairro_usuario(dados.getBairro_usuario());
         if (dados.getCep_usuario()       != null && !dados.getCep_usuario().isBlank()) u.setCep_usuario(dados.getCep_usuario());
         if (dados.getCidade_usuario()    != null) u.setCidade_usuario(dados.getCidade_usuario());

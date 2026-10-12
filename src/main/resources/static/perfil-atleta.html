@@ -103,6 +103,11 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 
 /* EMPTY */
 .empty-state{text-align:center;padding:32px 0;color:var(--cinza);font-size:13px;}
+/* aviso de lista vazia no meio do card, mesmo quando o card estica ao lado do gráfico */
+.card-dark{display:flex;flex-direction:column;}
+.card-dark > [id^="lista"]{flex:1;display:flex;flex-direction:column;}
+.card-dark > [id^="lista"] > .empty-state{margin:auto;}
+.chart-wrap > .empty-state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0;}
 .empty-state .icon{font-size:28px;margin-bottom:8px;opacity:0.4;}
 
 
@@ -174,20 +179,20 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
     </div>
     <div class="card-dark">
       <div class="section-title">Exames Médicos</div>
-      <div id="listaExames"><div class="empty-state"><div class="icon">🩺</div>Nenhum exame registrado</div></div>
+      <div id="listaExames"><div class="empty-state">Nenhum exame registrado</div></div>
     </div>
   </div>
 
   <!-- ATIVIDADES -->
   <div class="card-dark" style="margin-bottom:24px">
     <div class="section-title">Atividades Participadas</div>
-    <div id="listaAtividades"><div class="empty-state"><div class="icon">📅</div>Nenhuma atividade registrada</div></div>
+    <div id="listaAtividades"><div class="empty-state">Nenhuma atividade registrada</div></div>
   </div>
 
   <!-- DESEMPENHOS -->
   <div class="card-dark" style="margin-bottom:24px">
     <div class="section-title">Histórico de Desempenho</div>
-    <div id="listaDesempenhos"><div class="empty-state"><div class="icon">📊</div>Nenhum desempenho registrado</div></div>
+    <div id="listaDesempenhos"><div class="empty-state">Nenhum desempenho registrado</div></div>
   </div>
 </main>
 
@@ -232,17 +237,7 @@ if (_session && _session.tipo_usuario === 3 && _session.id_usuario !== idAtleta)
 
 // Sidebar
 (function(){
-  if (_ts) {
-    document.getElementById('sidebarNomeTime').textContent = _ts.nome || 'LAIVY';
-    document.getElementById('sidebarTime').textContent = _ts.nome || '—';
-    const av = document.getElementById('sidebarAvatar');
-    if (_ts.logo) {
-      av.innerHTML = '<img src="'+esc(_ts.logo)+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">';
-    } else {
-      av.textContent = (_ts.nome||'L')[0].toUpperCase();
-    }
-    if (_ts.cor) av.style.background = _ts.cor + '33';
-  }
+  // nome/logo do time na sidebar: feito pelo js/sidebar.js
   // Ocultar gestão se for atleta
   if (_session && _session.tipo_usuario === 3) {
     document.querySelectorAll('.nav-item').forEach(n => {
@@ -276,7 +271,9 @@ function calcIdade(dataNasc) {
 
 function fmtData(d) {
   if (!d) return '—';
-  return new Date(d + ' ').toLocaleDateString('pt-BR');
+  // data pura (2026-10-05) vira meia-noite local; data com hora (atividades) já vem completa
+  const dt = new Date(String(d).length === 10 ? d + 'T00:00:00' : d);
+  return isNaN(dt) ? '—' : dt.toLocaleDateString('pt-BR');
 }
 
 const TIPO_ATV = {1:'Treino',2:'Jogo'};
@@ -409,7 +406,7 @@ function renderGrafico(list) {
   if (chartRef) chartRef.destroy();
 
   if (!comPts.length) {
-    ctx.canvas.parentElement.innerHTML = '<div class="empty-state"><div class="icon">📈</div>Sem pontuações registradas</div>';
+    ctx.canvas.parentElement.innerHTML = '<div class="empty-state">Sem pontuações registradas</div>';
     return;
   }
 

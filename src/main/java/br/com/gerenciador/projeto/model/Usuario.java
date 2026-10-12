@@ -50,6 +50,12 @@ public class Usuario {
     @Column(name = "endereco_usuario", length = 100)
     private String endereco_usuario;
 
+    @Column(name = "numero_usuario", length = 10)
+    private String numero_usuario;
+
+    @Column(name = "complemento_usuario", length = 60)
+    private String complemento_usuario;
+
     @Column(name = "bairro_usuario", length = 60)
     private String bairro_usuario;
 
@@ -146,6 +152,12 @@ public class Usuario {
 
     public String getEndereco_usuario() { return endereco_usuario; }
     public void setEndereco_usuario(String endereco_usuario) { this.endereco_usuario = endereco_usuario; }
+
+    public String getNumero_usuario() { return numero_usuario; }
+    public void setNumero_usuario(String numero_usuario) { this.numero_usuario = numero_usuario; }
+
+    public String getComplemento_usuario() { return complemento_usuario; }
+    public void setComplemento_usuario(String complemento_usuario) { this.complemento_usuario = complemento_usuario; }
 
     public String getBairro_usuario() { return bairro_usuario; }
     public void setBairro_usuario(String bairro_usuario) { this.bairro_usuario = bairro_usuario; }

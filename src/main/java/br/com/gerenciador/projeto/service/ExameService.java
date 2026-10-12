@@ -1,5 +1,6 @@
 package br.com.gerenciador.projeto.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +66,12 @@ public class ExameService {
         return exameDAO.buscarPorUsuario(id);
     }
 
+    /** A validade do exame não pode terminar antes de começar. */
+    private static void validarPeriodo(LocalDate inicio, LocalDate fim) {
+        if (inicio != null && fim != null && fim.isBefore(inicio))
+            throw new BadRequestException("A data de fim do exame nao pode ser anterior a data de inicio.");
+    }
+
     public Exame cadastrar(Exame exame, Integer authTipo, Integer authId) {
         if (exame.getUsuario() == null || exame.getUsuario().getId_usuario() == null)
             throw new BadRequestException("Usuario obrigatorio.");
@@ -72,6 +79,7 @@ public class ExameService {
             .orElseThrow(() -> new BadRequestException("Usuario nao encontrado."));
         if (!podeGerenciar(usuario, authTipo, authId))
             throw new ForbiddenException("Sem permissao para cadastrar exame para este usuario.");
+        validarPeriodo(exame.getData_inicio_exame(), exame.getData_fim_exame());
         exame.setUsuario(usuario);
         return exameDAO.save(exame);
     }
@@ -82,6 +90,8 @@ public class ExameService {
         if (!podeGerenciar(e.getUsuario(), authTipo, authId))
             throw new ForbiddenException("Sem permissao para editar este exame.");
 
+        validarPeriodo(dados.getData_inicio_exame() != null ? dados.getData_inicio_exame() : e.getData_inicio_exame(),
+                       dados.getData_fim_exame()    != null ? dados.getData_fim_exame()    : e.getData_fim_exame());
         if (dados.getData_inicio_exame()      != null) e.setData_inicio_exame(dados.getData_inicio_exame());
         if (dados.getData_fim_exame()         != null) e.setData_fim_exame(dados.getData_fim_exame());
         if (dados.getObservacoes_exame()      != null) e.setObservacoes_exame(dados.getObservacoes_exame());

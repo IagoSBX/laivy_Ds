@@ -156,7 +156,7 @@ public class AssistenteController {
         }
     }
 
-    // Endpoint para a ferramenta de recomendaÃ§Ã£o individual configurada no n8n.
+    // Endpoint para a ferramenta de recomendação individual configurada no n8n.
     @GetMapping("/dados-atleta")
     public ResponseEntity<Map<String, Object>> dadosAtleta(
             @RequestParam Integer idAtleta, HttpServletRequest request) {

@@ -665,7 +665,7 @@ function renderGrid(times, usuarios, atividades) {
           + '</strong>'
         + '</div>'
       + '</div>'
-      + '<div class="tc-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="' + cor + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>'
+      + '<div class="tc-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A1628" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></div>'
     + '</div>';
   }).join('');
 
@@ -825,7 +825,7 @@ function fecharPopupTreinador() {
 function ptRenderTimeGrid() {
   const g = document.getElementById('ptTimeGrid');
   if (!todosTimes || !todosTimes.length) {
-    g.innerHTML = '<div style="padding:12px;color:#8899BB;font-size:13px;grid-column:1/-1">Nenhum time ativo.</div>';
+    g.innerHTML = '<div style="padding:12px;text-align:center;color:#8899BB;font-size:13px;grid-column:1/-1">Nenhum time ativo.</div>';
     return;
   }
   g.innerHTML = todosTimes.map(t => {

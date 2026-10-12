@@ -50,6 +50,35 @@ body {
 }
 
 /* ---------- 3. SIDEBAR ---------- */
+/* Menu recolhido: a mesma variável define a largura do menu e a margem do conteúdo (.main) em todas as telas. */
+html.sb-recolhida { --sidebar-w: 76px; }
+.sidebar, .main { transition: width .2s, margin-left .2s; }
+.btn-recolher {
+  position: absolute; top: 40px; right: -13px; z-index: 101;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #0D1E3C; color: var(--cinza); cursor: pointer;
+  border: 1px solid rgba(0, 201, 122, 0.35);
+}
+.btn-recolher:hover, .btn-recolher:focus-visible { color: var(--verde); border-color: var(--verde); outline: none; }
+.btn-recolher svg { transition: transform .2s; }
+html.sb-recolhida .btn-recolher svg { transform: rotate(180deg); }
+html.sb-recolhida .logo-texts,
+html.sb-recolhida .nav-item > span:not(.nav-icon):not(.nav-alert),
+html.sb-recolhida .painel-admin-link span,
+html.sb-recolhida .time-indicator .ti-nome,
+html.sb-recolhida .time-indicator .ti-trocar,
+html.sb-recolhida .user-info > div:last-child,
+html.sb-recolhida .btn-logout span { display: none; }
+html.sb-recolhida .sidebar-logo { padding: 0 15px 28px; justify-content: center; }
+html.sb-recolhida .nav-section { font-size: 0; padding: 0; margin: 10px 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+html.sb-recolhida .nav-item { justify-content: center; padding: 13px 0; gap: 0; }
+html.sb-recolhida .nav-alert { position: absolute; margin: -18px 0 0 22px; }
+html.sb-recolhida .painel-admin-link,
+html.sb-recolhida .time-indicator { justify-content: center; padding-left: 0; padding-right: 0; }
+html.sb-recolhida .sidebar-footer { padding: 18px 12px; }
+html.sb-recolhida .user-info { justify-content: center; padding-left: 0; padding-right: 0; }
+.btn-logout { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .sidebar {
   width: var(--sidebar-w);
   background: linear-gradient(180deg, #0D1E3C, #091525);
@@ -376,7 +405,9 @@ input::-webkit-calendar-picker-indicator { opacity: .85; cursor: pointer; }
 input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 input[type="password"]::-ms-reveal { filter: brightness(0) invert(.85); cursor: pointer; }
 .form-control[type="password"].is-valid,
-.form-control[type="password"].is-invalid { background-image: none; padding-right: .75rem; }
+.form-control[type="password"].is-invalid,
+.form-control[type="date"].is-valid,
+.form-control[type="date"].is-invalid { background-image: none; padding-right: .75rem; }
 
 /* ── Setinha dos dropdowns ──
    As páginas estilizam os campos com `background: ... !important`, e esse atalho apaga o background-image
@@ -394,3 +425,18 @@ select:not([multiple]):not([size]):not(#_) {
 }
 select:not([multiple]):not([size]):not(#_):disabled { cursor: not-allowed; opacity: .7; }
 select option { background-color: #0D1E3C; color: #F0F4FF; }
+
+/* Tabelas (modo lista): o Bootstrap 5.3 pinta as células com --bs-table-color (escuro do tema claro).
+   :root aumenta a especificidade porque este arquivo carrega antes do bootstrap.min.css. */
+:root .table { --bs-table-color: var(--branco); --bs-table-bg: transparent; --bs-table-hover-color: var(--branco); }
+
+/* Campo de data com máscara (js/campo-data.js): texto dd/mm/aaaa + botão de calendário */
+.campo-data { position: relative; }
+.campo-data > .form-control { padding-right: 42px !important; }
+.campo-data-btn {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: none; border: 0; border-radius: 6px; padding: 6px; display: flex;
+  color: var(--cinza); cursor: pointer;
+}
+.campo-data-btn:hover, .campo-data-btn:focus-visible { color: var(--verde); background: rgba(0, 201, 122, 0.08); outline: none; }
+.campo-data-nativo { position: absolute !important; left: 0; bottom: 0; width: 1px !important; height: 1px !important; opacity: 0; pointer-events: none; padding: 0 !important; border: 0 !important; }

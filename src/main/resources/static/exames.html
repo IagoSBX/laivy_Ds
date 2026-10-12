@@ -300,6 +300,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/campo-data.js"></script>
 <script src="js/list-sort.js"></script>
 
 
@@ -413,8 +414,9 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  </div>
 
  <!-- DATAS -->
- <div class="col-md-6"><label class="form-label">Data Início</label><input type="date" class="form-control" name="data_inicio_exame" required></div>
- <div class="col-md-6"><label class="form-label">Data Fim</label><input type="date" class="form-control" name="data_fim_exame"></div>
+ <div class="col-md-6"><label class="form-label" for="inp-ex-inicio">Data Início</label><input type="date" class="form-control" id="inp-ex-inicio" name="data_inicio_exame" onchange="validarPeriodoExame()" required></div>
+ <div class="col-md-6"><label class="form-label" for="inp-ex-fim">Data Fim</label><input type="date" class="form-control" id="inp-ex-fim" name="data_fim_exame" onchange="validarPeriodoExame()">
+ <div id="hint-ex-fim" style="display:none;font-size:11px;margin-top:4px;color:#FF6B6B">A data de fim não pode ser anterior à data de início.</div></div>
 
  <div class="col-12"><div class="form-sep"></div></div>
 
@@ -894,6 +896,7 @@ document.getElementById('formExame').addEventListener('keydown', function(e){
 document.getElementById('formExame').addEventListener('submit', function(e){
  e.preventDefault();
  if(isAtleta){ toast('Acesso restrito.', false); return; }
+ if(!validarPeriodoExame()){ toast('A data de fim não pode ser anterior à data de início.', false); return; }
  const d = Object.fromEntries(new FormData(this).entries());
  const id = document.getElementById('editId').value;
  const payload = {
@@ -910,13 +913,27 @@ document.getElementById('formExame').addEventListener('submit', function(e){
  const url = id ? `${apiEx}/${id}` : apiEx;
  const metodo = id ? 'PUT' : 'POST';
  authFetch(url,{method:metodo,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
- .then(()=>{ toast(id?'Exame atualizado!':'Exame cadastrado!'); cancelarForm(); carregar(); })
- .catch(()=>toast('Erro ao salvar.', false));
+ .then(async r=>{
+   if(!r.ok){ const erro = await r.json().catch(()=>({})); throw new Error(erro.erro || 'Não foi possível salvar o exame.'); }
+   toast(id?'Exame atualizado!':'Exame cadastrado!'); cancelarForm(); carregar();
+ })
+ .catch(e=>toast(e.message || 'Erro ao salvar.', false));
 });
+
+// Fim da validade não pode ser antes do início (o backend confere a mesma regra).
+function validarPeriodoExame(){
+ const ini = document.getElementById('inp-ex-inicio'), fim = document.getElementById('inp-ex-fim');
+ fim.min = ini.value || '';
+ const ok = !ini.value || !fim.value || fim.value >= ini.value;
+ fim.classList.toggle('is-invalid', !ok);
+ document.getElementById('hint-ex-fim').style.display = ok ? 'none' : 'block';
+ return ok;
+}
 
 // CANCELAR FORM
 function cancelarForm(){
  document.getElementById('formExame').reset();
+ validarPeriodoExame();
  document.getElementById('editId').value = '';
  document.getElementById('formTitulo').textContent = ' Novo Exame';
  document.getElementById('btnSubmit').textContent = 'Cadastrar Exame';
@@ -988,6 +1005,7 @@ function abrirEdicao(id){
  f.usuario_id.value = e.usuario?.id_usuario || '';
  f.data_inicio_exame.value = e.data_inicio_exame || '';
  f.data_fim_exame.value = e.data_fim_exame || '';
+ validarPeriodoExame();
  f.peso_usuario.value = e.peso_usuario ?? '';
  f.altura_usuario.value = e.altura_usuario ?? '';
  f.taxa_gordura_usuario.value = e.taxa_gordura_usuario ?? '';

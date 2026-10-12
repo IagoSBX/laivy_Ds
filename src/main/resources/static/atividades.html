@@ -246,6 +246,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 <!-- MODAL LOGOUT -->
 <div id="sidebar-placeholder"></div>
 <script src="js/sidebar.js"></script>
+<script src="js/campo-data.js"></script>
 <script src="js/list-sort.js"></script>
 
 
@@ -316,13 +317,13 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
  </div>
  <!-- Campo time oponente - só aparece para jogos -->
  <div class="col-md-6" id="campoOponente" style="display:none">
- <label class="form-label">Time Oponente / Adversário</label>
+ <label class="form-label" for="inpOponente">Time Oponente / Adversário *</label>
  <input class="form-control" name="time_oponente" id="inpOponente" placeholder="Ex: Escola Municipal ABC, Time Estrela...">
  </div>
  <div class="col-12">
  <div class="form-check" style="display:flex;align-items:center;gap:8px;">
  <input type="checkbox" class="form-check-input" name="recorrente" id="chkRecorrente" style="margin:0;cursor:pointer;" onchange="toggleRecorrencia(this.checked)">
- <label class="form-check-label" for="chkRecorrente" style="cursor:pointer;font-size:13px;">🔁 Repetir toda semana no mesmo dia e horário</label>
+ <label class="form-label" for="chkRecorrente" style="cursor:pointer;display:inline;margin:0;">Repetir toda semana no mesmo dia e horário</label>
  </div>
  </div>
  <div class="col-md-4" id="campoFimRecorrencia" style="display:none">
@@ -621,7 +622,7 @@ authFetch(urlTime(apiU)).then(r=>r.json()).then(data=>{
 function aindaVaiAcontecer(a,agora){if(a.status_atividade!==1)return false;if(a.recorrente)return !a.fim_recorrencia||new Date(a.fim_recorrencia+'T23:59:59')>=agora;return !!a.data_atividade&&new Date(a.data_atividade)>=agora;}
 function atualizarStats(){const agora=new Date();const pendentes=dados.filter(a=>aindaVaiAcontecer(a,agora));document.getElementById('st-total').textContent=pendentes.length;document.getElementById('st-t1').textContent=pendentes.filter(a=>a.tipo_atividade===1).length;document.getElementById('st-t2').textContent=pendentes.filter(a=>a.tipo_atividade===2).length;}
 function filtrarTipo(v){document.getElementById('filtroTipo').value=v;mudarTab('lista',document.querySelectorAll('.tab')[0]);renderizar();}
-function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(localStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));authFetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();}).catch(()=>{dados=[];atualizarStats();renderizar();});}
+function carregar(){console.log('[ATIVIDADES] timeSelecionado:', JSON.parse(localStorage.getItem('timeSelecionado')||'null'));console.log('[ATIVIDADES] URL:', urlTime(api));authFetch(urlTime(api)).then(r=>r.json()).then(d=>{dados=d;atualizarStats();renderizar();const v=new URLSearchParams(location.search).get('ver');if(v)verDetalhes(Number(v));}).catch(()=>{dados=[];atualizarStats();renderizar();});}
 
 function renderizar(){
  const busca=document.getElementById('busca').value.toLowerCase();

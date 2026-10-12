@@ -62,7 +62,7 @@ public class EscalacaoService {
             throw new BadRequestException(
                 "Já existe um atleta escalado com a camisa " + esc.getNumero_camisa() + " nesta atividade.");
         if (Integer.valueOf(1).equals(esc.getTitular()) && posicaoJaUsada(atividade.getId_atividade(), esc.getPosicao(), null))
-            throw new BadRequestException("JÃ¡ existe um atleta escalado nesta posiÃ§Ã£o nesta atividade.");
+            throw new BadRequestException("Já existe um atleta escalado nesta posição nesta atividade.");
         esc.setAtividade(atividade);
         if (esc.getUsuario() != null && esc.getUsuario().getId_usuario() != null)
             usuarioDAO.findById(esc.getUsuario().getId_usuario()).ifPresent(esc::setUsuario);
@@ -87,7 +87,7 @@ public class EscalacaoService {
         String posicaoFinal = dados.getPosicao() != null ? dados.getPosicao() : e.getPosicao();
         if (Integer.valueOf(1).equals(titularFinal)
                 && posicaoJaUsada(e.getAtividade().getId_atividade(), posicaoFinal, e.getId_escalacao()))
-            throw new BadRequestException("JÃ¡ existe um atleta escalado nesta posiÃ§Ã£o nesta atividade.");
+            throw new BadRequestException("Já existe um atleta escalado nesta posição nesta atividade.");
         if (dados.getPontos_jogo()   != null) e.setPontos_jogo(dados.getPontos_jogo());
         if (dados.getPosicao()       != null) e.setPosicao(dados.getPosicao());
         if (dados.getNumero_camisa() != null) e.setNumero_camisa(dados.getNumero_camisa());

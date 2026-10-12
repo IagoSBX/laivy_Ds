@@ -300,20 +300,20 @@ public class AssistenteService {
         return r;
     }
 
-    /** Contexto autorizado para recomendaÃ§Ãµes individuais feitas pelo treinador. */
+    /** Contexto autorizado para recomendações individuais feitas pelo treinador. */
     @Transactional(readOnly = true)
     public Map<String, Object> dadosAtleta(Integer idAtleta, Integer idUsuarioSolicitante) {
         Usuario atleta = usuarioDAO.findById(idAtleta)
-            .orElseThrow(() -> new ForbiddenException("Atleta nÃ£o encontrado."));
+            .orElseThrow(() -> new ForbiddenException("Atleta não encontrado."));
         Integer timeId = atleta.getTime() != null ? atleta.getTime().getId_time() : null;
         Usuario solicitante = usuarioDAO.findById(idUsuarioSolicitante)
-            .orElseThrow(() -> new ForbiddenException("UsuÃ¡rio solicitante nÃ£o encontrado."));
+            .orElseThrow(() -> new ForbiddenException("Usuário solicitante não encontrado."));
         if (!AuthUtil.ehAdmin(solicitante.getTipo_usuario())
                 && (!AuthUtil.ehTreinador(solicitante.getTipo_usuario())
                     || !AuthUtil.podeGerenciarTime(solicitante.getTipo_usuario(), idUsuarioSolicitante, timeId, usuarioDAO)))
-            throw new ForbiddenException("Somente o treinador do time pode solicitar recomendaÃ§Ãµes individuais.");
+            throw new ForbiddenException("Somente o treinador do time pode solicitar recomendações individuais.");
         if (atleta.getTipo_usuario() == null || atleta.getTipo_usuario() != 3)
-            throw new ForbiddenException("O usuÃ¡rio informado nÃ£o Ã© atleta.");
+            throw new ForbiddenException("O usuário informado não é atleta.");
 
         Map<String, Object> resposta = new HashMap<>();
         resposta.put("atleta", atleta.getNome_usuario());
@@ -349,7 +349,7 @@ public class AssistenteService {
                 return item;
             })
             .toList());
-        resposta.put("nota_historico_lesoes", "NÃ£o existe campo estruturado de lesÃµes; considere apenas observaÃ§Ãµes clÃ­nicas registradas nos exames e nÃ£o infira diagnÃ³sticos.");
+        resposta.put("nota_historico_lesoes", "Não existe campo estruturado de lesões; considere apenas observações clínicas registradas nos exames e não infira diagnósticos.");
         return resposta;
     }
 }

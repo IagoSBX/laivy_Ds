@@ -1,4 +1,4 @@
-LAIVY - Sistema Gerenciador Esportivo (TCC)
+LAIVY (TCC)
 Como rodar via Docker
 =============================================
 

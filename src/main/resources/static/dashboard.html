@@ -103,6 +103,8 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 
 .ativ-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
 .ativ-item:last-child{border-bottom:none;padding-bottom:0;}
+.ativ-link{color:inherit;text-decoration:none;border-radius:10px;margin:0 -8px;padding-left:8px;padding-right:8px;transition:background .2s;}
+.ativ-link:hover,.ativ-link:focus-visible{background:rgba(0,201,122,0.06);color:inherit;outline:none;}
 .ativ-data-box{background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 10px;text-align:center;min-width:46px;flex-shrink:0;}
 .ativ-data-box .dia{font-family:'Bebas Neue',cursive;font-size:22px;line-height:1;color:var(--branco);}
 .ativ-data-box .mes{font-size:9px;color:var(--cinza);font-weight:700;letter-spacing:1px;text-transform:uppercase;}
@@ -111,6 +113,9 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 .ativ-sub{font-size:11px;color:var(--cinza);margin-top:3px;}
 .ativ-tipo{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:2px;}
 .empty-mini{text-align:center;padding:24px;color:var(--cinza);font-size:13px;}
+.card-dark:has(> #listaAtividades){display:flex;flex-direction:column;}
+#listaAtividades{flex:1;display:flex;flex-direction:column;}
+#listaAtividades > .empty-mini{margin:auto;}
 
 /* ── ACESSO RÁPIDO ── */
 .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
@@ -528,7 +533,7 @@ authFetch(urlTime(`${api}/atividades`))
  const hora = d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  const hoje = new Date().toDateString()===d.toDateString();
  return `
- <div class="ativ-item">
+ <a class="ativ-item ativ-link" href="atividades.html?ver=${a.id_atividade}" title="Ver detalhes da atividade">
  <div class="ativ-data-box" style="${hoje?'background:rgba(0,201,122,0.15);border:1px solid rgba(0,201,122,0.3)':''}">
  <div class="ativ-data-box .dia" style="font-family:'Bebas Neue',cursive;font-size:22px;line-height:1;color:${hoje?'var(--verde)':'var(--branco)'}">${dia}</div>
  <div style="font-size:9px;color:var(--cinza);font-weight:700;letter-spacing:1px;text-transform:uppercase">${mes}</div>
@@ -538,7 +543,7 @@ authFetch(urlTime(`${api}/atividades`))
  <div class="ativ-sub"> ${hora}${a.lugar_atividade?' '+esc(a.lugar_atividade):''}</div>
  </div>
  <span class="ativ-tipo" style="background:${t.bg};color:${t.cor}">${t.emoji} ${t.label}</span>
- </div>`;
+ </a>`;
  }).join('');
  })
  .catch(()=>{

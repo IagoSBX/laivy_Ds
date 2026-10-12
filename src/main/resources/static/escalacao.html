@@ -72,7 +72,7 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 .jog-info{flex:1;min-width:0;}
 .jog-nome{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .jog-pos{font-size:11px;color:var(--cinza);margin-top:1px;}
-.btn-rm{background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:7px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;transition:all 0.2s;}
+.btn-rm{background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:7px;padding:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;}
 .btn-rm:hover{background:rgba(255,80,80,0.25);}
 .btn-add{width:100%;padding:10px;border-radius:10px;font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;margin-top:6px;}
 .btn-add-tit{background:rgba(255,176,32,0.08);border:1.5px dashed rgba(255,176,32,0.35);color:#FFB020;}
@@ -583,9 +583,9 @@ function itemHTML(e){
  +'<div class="jog-av" style="background:'+c+'22;color:'+c+'">'+esc(ini(nome))+'</div>'
  +'<div class="jog-info">'
  +'<div class="jog-nome">'+esc(nome)+(num?' <span style="font-size:10px;background:rgba(255,255,255,0.08);padding:1px 6px;border-radius:5px">#'+num+'</span>':'')+'</div>'
- +'<div class="jog-pos">'+(e.posicao||'—')+'</div>'
+ +'<div class="jog-pos">'+esc(e.posicao||'—')+'</div>'
  +'</div>'
- +(isAdmin ? '<button class="btn-rm" onclick="remover('+e.id_escalacao+')"></button>' : '')
+ +(isAdmin ? '<button class="btn-rm" title="Retirar da escalação" aria-label="Retirar '+esc(nome)+' da escalação" onclick="remover('+e.id_escalacao+')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' : '')
  +'</div>';
 }
 

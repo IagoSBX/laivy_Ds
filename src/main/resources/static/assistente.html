@@ -60,6 +60,9 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 
 /* ── PERGUNTAS PRONTAS ── */
 .chips-wrap{padding:0 32px;margin-bottom:16px;flex-shrink:0;}
+.rec-atleta{margin-top:12px;max-width:340px;}
+.select-laivy{width:100%;background-color:rgba(255,255,255,0.04);border:1px solid rgba(0,201,122,0.35);border-radius:10px;padding:9px 14px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;outline:none;}
+.select-laivy:focus{border-color:var(--verde);box-shadow:0 0 0 3px rgba(0,201,122,0.15);}
 .chips-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:10px;opacity:0.7;}
 .chips{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:rgba(240,244,255,0.7);cursor:pointer;transition:all 0.2s;font-family:'Barlow',sans-serif;}
@@ -144,10 +147,6 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 
   <div class="chips-wrap">
     <div class="chips-label">Perguntas rápidas</div>
-    <div id="recomendacaoAtleta" style="display:none;margin:0 0 10px;max-width:340px">
-      <label for="selectAtletaRecomendacao" class="chips-label">Atleta para recomendação individual</label>
-      <select id="selectAtletaRecomendacao" class="form-select"><option value="">Selecione um atleta</option></select>
-    </div>
     <div class="chips">
       <button class="chip" onclick="perguntaRapida('O que é o LAIVY?')">O que é o LAIVY?</button>
       <button class="chip" onclick="perguntaRapida('Quais tecnologias foram usadas no projeto?')">Tecnologias usadas</button>
@@ -156,7 +155,11 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
       <button class="chip" onclick="perguntaRapida('Como funciona o banco de dados do LAIVY?')">Banco de dados</button>
       <button class="chip" onclick="perguntaRapida('Quais são as próximas atividades do time?')">Próximas atividades</button>
       <button class="chip" onclick="perguntaRapida('Quem tem o melhor desempenho no time?')">Ranking desempenho</button>
-      <button id="chipRecomendacaoAtleta" class="chip" onclick="solicitarRecomendacaoAtleta()">Recomendação para atleta</button>
+      <button id="chipRecomendacaoAtleta" class="chip" onclick="abrirSeletorAtleta()" aria-expanded="false" aria-controls="recomendacaoAtleta">Recomendação para atleta</button>
+    </div>
+    <div id="recomendacaoAtleta" class="rec-atleta" hidden>
+      <label for="selectAtletaRecomendacao" class="chips-label">Escolha o atleta</label>
+      <select id="selectAtletaRecomendacao" class="select-laivy" onchange="solicitarRecomendacaoAtleta()"><option value="">Selecione um atleta</option></select>
     </div>
   </div>
 
@@ -231,8 +234,6 @@ if (time && time.id) {
 }
 
 if (Number(usuario.tipo_usuario) <= 2) {
-  const grupo = document.getElementById('recomendacaoAtleta');
-  grupo.style.display = 'block';
   const ehAdmin = Number(usuario.tipo_usuario) === 1;
   const podeListar = ehAdmin || !!time?.id;
   const filtroTime = ehAdmin ? '' : `?idTime=${encodeURIComponent(time.id)}`;
@@ -356,11 +357,20 @@ function perguntaRapida(texto) {
   enviar();
 }
 
+function abrirSeletorAtleta() {
+  const grupo = document.getElementById('recomendacaoAtleta');
+  grupo.hidden = !grupo.hidden;
+  document.getElementById('chipRecomendacaoAtleta').setAttribute('aria-expanded', String(!grupo.hidden));
+  if (!grupo.hidden) document.getElementById('selectAtletaRecomendacao').focus();
+}
+
 function solicitarRecomendacaoAtleta() {
   const seletor = document.getElementById('selectAtletaRecomendacao');
   const nome = seletor?.selectedOptions[0]?.textContent;
-  if (!seletor?.value) { addMsg('Selecione um atleta antes de pedir a recomendação.', 'erro'); return; }
+  if (!seletor?.value) return;
   atletaRecomendacaoPendente = Number(seletor.value);
+  seletor.value = '';
+  abrirSeletorAtleta();
   perguntaRapida(`Sou treinador. Recomende um plano de treino individual para ${nome}, considerando o contextoAtleta incluído nesta solicitação. Avalie os dados recentes e as observações de saúde, não invente lesões nem diagnósticos e sinalize quando for necessária avaliação profissional.`);
 }
 

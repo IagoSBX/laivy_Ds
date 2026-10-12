@@ -56,7 +56,7 @@
     grupo.items.forEach(function (item) {
       const ativo = item.href === paginaAtual ? ' active' : '';
       navHtml +=
-        '<a href="' + item.href + '" class="nav-item' + ativo + '">' +
+        '<a href="' + item.href + '" class="nav-item' + ativo + '" title="' + item.label + '">' +
         '<span class="nav-icon" style="display:inline-flex">' + svg(item.icon) + '</span>' +
         '<span>' + item.label + '</span>' +
         '<span class="nav-alert" title="Requer atenção">!</span>' +
@@ -106,12 +106,13 @@
       '</div>' +
     '</div>' +
     '<aside class="sidebar">' +
+      '<button type="button" class="btn-recolher" id="btnRecolherMenu" onclick="alternarMenuLateral()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>' +
       '<div class="sidebar-logo" id="sidebarLogo">' +
         '<div class="logo-icon" id="sidebarLogoIcon"><img class="laivy-marca" src="img/logo/icone/laivy-icone-claro.svg" alt="LAIVY" style="width:100%;height:100%"></div>' +
         '<div class="logo-texts"><div class="t1" id="sidebarNomeTime">LAIVY</div><div class="t2">For those who live the game</div></div>' +
       '</div>' +
       '<nav>' + navHtml + '</nav>' +
-      '<a href="painel-admin.html" class="painel-admin-link" id="painelAdminLink">' +
+      '<a href="painel-admin.html" class="painel-admin-link" id="painelAdminLink" title="Painel Admin">' +
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></svg>' +
         '<span>Painel Admin</span>' +
       '</a>' +
@@ -123,13 +124,36 @@
           '<div class="user-avatar" id="avatarLetra">A</div>' +
           '<div><div class="user-name" id="nomeUsuario">—</div><div class="user-role" id="tipoUsuario">—</div></div>' +
         '</div>' +
-        '<button class="btn-logout" onclick="logout()">Sair</button>' +
+        '<button class="btn-logout" onclick="logout()" title="Sair"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Sair</span></button>' +
       '</div>' +
     '</aside>';
+
+  // ---------- RECOLHER / EXPANDIR ----------
+  // Sem escolha salva, recolhe sozinho em janelas estreitas (tela dividida).
+  const CHAVE_MENU = 'sidebarRecolhida';
+  function lerPreferencia() { try { return localStorage.getItem(CHAVE_MENU); } catch (e) { return null; } }
+  function aplicarMenu() {
+    const pref = lerPreferencia();
+    const recolhida = pref === null ? window.innerWidth < 1000 : pref === '1';
+    document.documentElement.classList.toggle('sb-recolhida', recolhida);
+    const btn = document.getElementById('btnRecolherMenu');
+    if (btn) {
+      btn.setAttribute('aria-expanded', String(!recolhida));
+      btn.setAttribute('aria-label', recolhida ? 'Expandir menu' : 'Recolher menu');
+      btn.title = recolhida ? 'Expandir menu' : 'Recolher menu';
+    }
+  }
+  window.alternarMenuLateral = function () {
+    const recolhida = document.documentElement.classList.contains('sb-recolhida');
+    try { localStorage.setItem(CHAVE_MENU, recolhida ? '0' : '1'); } catch (e) {}
+    aplicarMenu();
+  };
+  window.addEventListener('resize', aplicarMenu);
 
   const placeholder = document.getElementById('sidebar-placeholder');
   if (!placeholder) return; // página sem sidebar (login, selecionar-time)
   placeholder.outerHTML = sidebarHtml;
+  aplicarMenu();
 
   // ---------- POSICIONA O MENU NO ITEM ATIVO ----------
   const itemAtivo = document.querySelector('.nav-item.active');
