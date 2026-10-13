@@ -23,15 +23,17 @@ Passos:
 
    http://localhost:8080/login.html
 
-5. Login de teste:
+5. Login: as contas iniciais (admin, treinador, atleta) recebem uma senha
+   temporária na primeira subida. Veja com:
 
-   Perfil          Login       Senha
-   Administrador   admin       admin
-   Treinador       treinador   1234
-   Atleta          atleta      1234
+   docker logs laivy-backend | grep "Senha padrao"
+
+   O sistema pede uma senha nova no primeiro acesso.
 
 Para parar tudo: Ctrl+C no terminal, depois "docker compose down".
 Os dados ficam salvos (volumes do Docker) entre uma execução e outra.
 
-Já vem um arquivo .env preenchido com valores padrão - não precisa
-configurar nada, é só rodar o comando do passo 3.
+Antes da primeira vez: copie .env.example para .env e troque os valores
+(depois, "python3 scripts/rotacionar-segredos.py" gera segredos fortes).
+Este modo é só para desenvolvimento (http://localhost). Para colocar num
+servidor de verdade, siga o DEPLOY.md.

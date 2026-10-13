@@ -1,0 +1,167 @@
+:root{--verde:#00C97A;--azul:#0A1628;--branco:#F0F4FF;--cinza:#8899BB;--sidebar-w: 268px;
+ --card-bg:linear-gradient(135deg,#0D1E3C,#112244);--card-border:rgba(255,255,255,0.06);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);min-height:100vh;display:flex;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.main{margin-left:var(--sidebar-w);flex:1;padding:28px 32px;overflow-y:auto;}
+.page-header{margin-bottom:22px;}
+.page-header h1{font-family:'Bebas Neue',cursive;font-size:38px;letter-spacing:2px;line-height:1;}
+.page-header p{font-size:14px;color:var(--cinza);margin-top:4px;}
+
+.card-dark{background:var(--card-bg);border:1px solid var(--card-border);border-radius:18px;padding:22px;margin-bottom:20px;}
+.card-titulo{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;color:var(--cinza);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+
+.select-jogo{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--branco);font-family:'Barlow',sans-serif;font-size:14px;padding:10px 14px;width:100%;outline:none;cursor:pointer;margin-bottom:16px;}
+.select-jogo:focus{border-color:var(--verde);}
+.select-jogo option{background:#0D1E3C;}
+
+.esc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.esc-stat{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px;text-align:center;}
+.esc-stat-num{font-family:'Bebas Neue',cursive;font-size:30px;line-height:1;}
+.esc-stat-label{font-size:10px;color:var(--cinza);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:4px;}
+.btn-fechar-esc{width:100%;padding:12px;border-radius:10px;border:1.5px solid rgba(0,201,122,0.35);background:rgba(0,201,122,0.1);color:var(--verde);font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;cursor:pointer;transition:background .2s;}
+.btn-fechar-esc:hover:not(:disabled){background:rgba(0,201,122,0.22);}
+.btn-fechar-esc:disabled{opacity:.5;cursor:not-allowed;border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:var(--cinza);}
+.fechar-esc-aviso{font-size:11px;color:var(--cinza);text-align:center;margin:8px 0 20px;}
+
+.layout{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+
+/* QUADRA DE BASQUETE */
+.quadra-wrap{position:relative;width:100%;padding-bottom:56%;border-radius:12px;overflow:hidden;}
+.quadra-svg{position:absolute;top:0;left:0;width:100%;height:100%;}
+.jogadores-quadra{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+
+/* LEGENDA POSIÇÕES */
+.pos-legenda{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px;}
+.pos-leg-item{text-align:center;font-size:10px;color:var(--cinza);}
+.pos-leg-circulo{width:28px;height:28px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#0A1628;}
+
+/* LISTAS */
+.sec-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.jog-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.02);margin-bottom:8px;transition:all 0.2s;}
+.jog-item:hover{background:rgba(255,255,255,0.05);}
+.jog-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.jog-info{flex:1;min-width:0;}
+.jog-nome{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.jog-pos{font-size:11px;color:var(--cinza);margin-top:1px;}
+.btn-rm{background:rgba(255,80,80,0.12);border:1px solid rgba(255,80,80,0.2);color:#FF6B6B;border-radius:7px;padding:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;}
+.btn-rm:hover{background:rgba(255,80,80,0.25);}
+.btn-add{width:100%;padding:10px;border-radius:10px;font-family:'Bebas Neue',cursive;font-size:15px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;margin-top:6px;}
+.btn-add-tit{background:rgba(255,176,32,0.08);border:1.5px dashed rgba(255,176,32,0.35);color:#FFB020;}
+.btn-add-tit:hover{background:rgba(255,176,32,0.18);}
+.btn-add-res{background:rgba(78,201,255,0.06);border:1.5px dashed rgba(78,201,255,0.3);color:#4EC9FF;}
+.btn-add-res:hover{background:rgba(78,201,255,0.16);}
+
+.empty-st{text-align:center;padding:48px;color:var(--cinza);}
+
+/* MODAL */
+.modal-content{background:#0D1E3C!important;color:var(--branco)!important;border:1px solid rgba(255,176,32,0.2)!important;border-radius:18px!important;}
+.modal-header{border-bottom:1px solid rgba(255,255,255,0.08)!important;padding:18px 22px!important;}
+.modal-body{padding:18px 22px!important;}
+.modal-footer{border-top:1px solid rgba(255,255,255,0.08)!important;padding:14px 22px!important;}
+.btn-close{filter:invert(1)!important;}
+.inp-modal{width:100%;background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;color:#F0F4FF;font-family:'Barlow',sans-serif;padding:8px 10px;outline:none;}
+.inp-modal:focus{border-color:#FFB020;}
+.lbl-modal{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8899BB;display:block;margin-bottom:5px;}
+.card-atleta{border-radius:10px;padding:12px;text-align:center;cursor:pointer;position:relative;transition:all 0.15s;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);}
+.card-atleta:hover{background:rgba(255,255,255,0.07);}
+.card-atleta.selected{border-color:#FFB020;background:rgba(255,176,32,0.12);}
+.card-atleta.escalado{opacity:0.35;cursor:not-allowed;}
+.av-atleta{width:42px;height:42px;border-radius:50%;background:rgba(255,176,32,0.15);color:#FFB020;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;margin:0 auto 8px;}
+
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast-item{background:#0D1E3C;border:1px solid rgba(0,201,122,0.3);border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;}
+.toast-item.erro{border-color:rgba(255,80,80,0.3);}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── MODAL LOGOUT ── */
+
+
+
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+
+
+
+
+.btn-logout-cancel:hover{background:rgba(255,255,255,0.1);color:#F0F4FF;}
+
+.btn-logout-confirm:hover{background:rgba(255,80,80,0.3);}
+
+/* ── TEMA CLARO ── */
+/* ── BOTÃO TEMA ── */
+/* ── TABLE UX ── */
+.table-responsive{border-radius:14px;overflow:hidden;}
+.table{border-collapse:separate!important;border-spacing:0!important;width:100%;}
+.table thead th{
+  background:rgba(9,21,37,0.9)!important;color:var(--cinza)!important;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  border:none!important;font-weight:700;padding:14px 16px!important;
+  position:sticky;top:0;z-index:2;
+}
+.table thead th:first-child{border-radius:12px 0 0 0;}
+.table thead th:last-child{border-radius:0 12px 0 0;}
+.table tbody tr{
+  background:rgba(255,255,255,0.02)!important;
+  transition:background 0.15s,transform 0.15s;
+  cursor:default;
+}
+.table tbody tr:hover{
+  background:rgba(0,201,122,0.05)!important;
+  transform:translateX(2px);
+}
+.table tbody td{background:transparent!important;
+  padding:13px 16px!important;vertical-align:middle;
+  border-top:1px solid rgba(255,255,255,0.03)!important;
+  border-bottom:none!important;border-left:none!important;border-right:none!important;
+  font-size:13px;
+}
+.table tbody td:first-child{
+  border-left:3px solid transparent!important;
+  transition:border-color 0.15s;
+}
+.table tbody tr:hover td:first-child{border-left-color:var(--verde)!important;}
+.table tbody tr:last-child td:first-child{border-radius:0 0 0 10px;}
+.table tbody tr:last-child td:last-child{border-radius:0 0 10px 0;}
+.table .td-avatar{
+  width:36px;height:36px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:13px;flex-shrink:0;
+}
+.table .td-main{font-weight:700;color:var(--branco);}
+.table .td-sub{font-size:11px;color:var(--cinza);margin-top:2px;}
+.table .td-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+/* ── TEMA CLARO — Soft Blue-Grey ── */
+/* theme toggle in light mode */
+.btn-acao-sm:hover { transform: translateY(-1px); }
+.btn-ver  { background: rgba(78,201,255,0.10); color: #4EC9FF; border-color: rgba(78,201,255,0.25); }
+.btn-ver:hover  { background: rgba(78,201,255,0.22); }
+.btn-edit { background: rgba(255,176,32,0.10);  color: #FFB020; border-color: rgba(255,176,32,0.25); }
+.btn-edit:hover { background: rgba(255,176,32,0.22); }
+.btn-del  { background: rgba(255,80,80,0.10);   color: #FF6B6B; border-color: rgba(255,80,80,0.25); }
+.btn-del:hover  { background: rgba(255,80,80,0.22); }
+.btn-bask { background: rgba(255,176,32,0.10); color: #FFB020; border-color: rgba(255,176,32,0.2); }
+.btn-bask:hover { background: rgba(255,176,32,0.22); }
+/* action group spacing */
+.user-acoes, .desemp-acoes { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+
+.user-avatar.has-foto img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+
+/* ── TIME INDICATOR SIDEBAR ── */

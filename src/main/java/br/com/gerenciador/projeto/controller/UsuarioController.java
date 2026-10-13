@@ -77,9 +77,12 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody Map<String, String> body,
+            HttpServletRequest request,
             HttpServletResponse response) {
+        // Atrás do proxy HTTPS, o IP real vem do X-Forwarded-For
+        // (server.forward-headers-strategy=native no application.properties).
         UsuarioService.LoginResultado resultado = usuarioService.login(
-            body.get("login_usuario"), body.get("senha_usuario"), body.get("tipo_usuario"));
+            body.get("login_usuario"), body.get("senha_usuario"), body.get("tipo_usuario"), request.getRemoteAddr());
         setCookieToken(response, resultado.token);
         return ResponseEntity.ok(Map.<String, Object>of("usuario", resultado.usuario));
     }

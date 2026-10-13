@@ -1,0 +1,347 @@
+ :root {
+ --verde: #00C97A;
+ --azul: #0A1628;
+ --azul2: #112244;
+ --laranja: #FF6B1A;
+ --branco: #F0F4FF;
+ --cinza: #8899BB;
+ }
+
+ * { margin: 0; padding: 0; box-sizing: border-box; }
+
+ body {
+ font-family: 'Barlow', sans-serif;
+ background: radial-gradient(ellipse at 50% 42%, var(--azul2) 0%, var(--azul) 62%);
+ color: var(--branco);
+ min-height: 100vh;
+ overflow-x: hidden;
+ }
+
+ /* ── SPLASH + LOGIN NUMA TELA SÓ — recriação em código do vídeo "Laivy Splash Prancheta"
+    0–1.3s quadra a giz · 1.3–3.1s jogada · 3.1s cesta · 3.3–4.6s jogadores viram a marca
+    4.6–5.8s marca parada · 5.8–6.7s marca vai p/ o lugar e o login entra.
+    Clique/tecla, visita repetida na sessão ou "reduzir movimento" pulam direto p/ o fim. */
+ .stage {
+ position: relative; width: 100%; min-height: 100vh;
+ display: grid; grid-template-columns: 1fr 1fr; align-items: center; justify-items: center;
+ gap: 32px; padding: 32px 6vw;
+ }
+
+ #intro { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;
+ animation: some .7s ease-in 5.8s forwards; }
+ #intro .cartao { fill: rgba(24,44,88,.45); stroke: rgba(255,255,255,.06); stroke-width: 2; animation: surge .5s ease-out both; }
+ #intro .linha { fill: none; stroke: #E6ECF8; stroke-width: 5; stroke-dasharray: 1 2; stroke-dashoffset: 1;
+ animation: desenha .9s ease-out calc(.2s + var(--i) * .07s) forwards; }
+ #intro .desenho { animation: apaga .6s ease-in-out 3.3s forwards; }
+ #intro .def { fill: none; stroke: #FF6B1A; stroke-width: 5; stroke-linecap: round; transform-box: fill-box; transform-origin: center;
+ animation: pop .4s cubic-bezier(.34,1.56,.64,1) calc(.45s + var(--i) * .07s) both; }
+ #intro .rev { fill: none; stroke: #fff; stroke-width: 60; stroke-dasharray: 1 2; stroke-dashoffset: 1;
+ animation: desenha var(--d) ease-in-out var(--t) forwards; }
+ #intro .jogada { fill: none; stroke: #00C97A; stroke-width: 4; stroke-linecap: round; stroke-linejoin: miter; }
+ #intro .passe { stroke-dasharray: 14 11; stroke-linecap: butt; }
+ #intro .arremesso { stroke: #FF6B1A; stroke-dasharray: 12 10; stroke-linecap: butt; }
+ #intro .jog { transform-box: fill-box; transform-origin: center;
+ animation: pop .4s cubic-bezier(.34,1.56,.64,1) calc(.7s + var(--i) * .08s) both, junta .6s ease-in 3.3s forwards; }
+ #intro .jog circle { fill: #13244A; stroke: #F0F4FF; stroke-width: 5; animation: fica-verde .2s 3.3s forwards; }
+ #intro .cesta { fill: #00C97A; opacity: 0; animation: brilha .6s ease-out 3.05s forwards; }
+ #intro .onda { fill: none; stroke: #00C97A; stroke-width: 4; opacity: 0; transform-box: fill-box; transform-origin: center;
+ animation: onda .6s ease-out 3.05s forwards; }
+
+ .marca, .form-side { position: relative; z-index: 1; }
+ .marca { --s: clamp(64px, 8vw, 150px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: calc(var(--s) * .2);
+ animation: marca-centro .8s cubic-bezier(.65,0,.35,1) 5.8s both; }
+ .marca-icone { position: relative; flex-shrink: 0; width: var(--s); height: var(--s); border-radius: 20%;
+ background: var(--branco); box-shadow: 0 16px 50px rgba(0,201,122,.35), inset 0 0 0 2px rgba(0,201,122,.35);
+ padding: calc(var(--s) * .14);
+ animation: pop .5s cubic-bezier(.34,1.56,.64,1) 3.75s both; }
+ .marca-icone::after { content: ''; position: absolute; inset: -18%; border-radius: 50%; border: 3px solid var(--verde);
+ opacity: 0; pointer-events: none; animation: anel 1.3s ease-out 3.75s forwards; }
+ .marca-nome { font-family: 'Bebas Neue', sans-serif; font-size: calc(var(--s) * .84); letter-spacing: .06em; line-height: 1; white-space: nowrap; }
+ .marca-slogan { font-size: calc(var(--s) * .17); font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--verde);
+ margin-top: calc(var(--s) * -.08); animation: surge .6s ease-out 4.6s both; }
+ .marca-nome span { display: inline-block; animation: sobe .45s cubic-bezier(.2,.8,.2,1) calc(4s + var(--i) * .09s) both; }
+
+ .form-side { width: 100%; max-width: 540px; animation: entra .8s ease-out 5.95s both; }
+
+ @keyframes desenha { to { stroke-dashoffset: 0; } }
+ @keyframes surge { from { opacity: 0; } }
+ @keyframes some { to { opacity: 0; } }
+ @keyframes apaga { to { opacity: .3; } }
+ @keyframes pop { from { opacity: 0; transform: scale(0); } }
+ @keyframes junta { to { opacity: 0; transform: translate(calc(var(--x) * 1px), calc(var(--y) * 1px)) scale(.3); } }
+ @keyframes fica-verde { to { stroke: #00C97A; } }
+ @keyframes brilha { 30% { opacity: 1; } to { opacity: 0; } }
+ @keyframes onda { from { opacity: 1; transform: scale(.25); } to { opacity: 0; transform: scale(1); } }
+ @keyframes anel { from { opacity: .9; transform: scale(.7); } to { opacity: 0; transform: scale(2.3); } }
+ @keyframes sobe { from { opacity: 0; transform: translateY(45%); } }
+ @keyframes marca-centro { from { transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.35); } }
+ @keyframes entra { from { opacity: 0; transform: translateX(24px); } }
+
+ .rapido #intro { display: none; }
+ .rapido .marca, .rapido .marca *, .rapido .marca-icone::after, .rapido .form-side { animation: none !important; }
+
+ @media (max-width: 800px) {
+ .stage { grid-template-columns: 1fr; align-content: center; }
+ .marca { --s: 64px; }
+ .marca-slogan { font-size: 13px; }
+ }
+
+ .form-header {
+ margin-bottom: 40px;
+ }
+
+ .form-header h2 {
+ font-family: 'Bebas Neue', cursive;
+ font-size: clamp(44px, 3.3vw, 62px);
+ letter-spacing: 1px;
+ color: var(--branco);
+ line-height: 1;
+ }
+
+ .form-group {
+ margin-bottom: 26px;
+ }
+
+ .form-group label {
+ display: block;
+ font-size: 11px;
+ font-weight: 600;
+ letter-spacing: 2px;
+ text-transform: uppercase;
+ color: var(--cinza);
+ margin-bottom: 8px;
+ }
+
+ .form-group input {
+ width: 100%;
+ background: rgba(255,255,255,0.04);
+ border: 1.5px solid rgba(255,255,255,0.08);
+ border-radius: 12px;
+ padding: 14px 18px;
+ font-size: 15px;
+ color: var(--branco);
+ font-family: 'Barlow', sans-serif;
+ transition: all 0.3s ease;
+ outline: none;
+ }
+
+ .form-group input:focus {
+ border-color: var(--verde);
+ background: rgba(0,201,122,0.06);
+ box-shadow: 0 0 0 3px rgba(0,201,122,0.1);
+ }
+
+ .form-group input::placeholder { color: rgba(136,153,187,0.5); }
+
+ .select-tipo {
+ width: 100%;
+ background: rgba(255,255,255,0.04);
+ border: 1.5px solid rgba(255,255,255,0.08);
+ border-radius: 12px;
+ padding: 14px 18px;
+ font-size: 15px;
+ color: var(--branco);
+ font-family: 'Barlow', sans-serif;
+ transition: all 0.3s ease;
+ outline: none;
+ cursor: pointer;
+ }
+
+ .select-tipo:focus {
+ border-color: var(--verde);
+ background: rgba(0,201,122,0.06);
+ }
+
+ .select-tipo option { background: #0D1A30; color: var(--branco); }
+
+ .btn-login {
+ width: 100%;
+ padding: 20px;
+ background: linear-gradient(135deg, var(--verde), #00A865);
+ box-shadow: 0 10px 34px rgba(0,201,122,0.25);
+ border: none;
+ border-radius: 12px;
+ font-family: 'Bebas Neue', cursive;
+ font-size: 24px;
+ letter-spacing: 2px;
+ color: var(--azul);
+ cursor: pointer;
+ margin-top: 8px;
+ transition: all 0.3s ease;
+ position: relative;
+ overflow: hidden;
+ }
+
+ .btn-login::before {
+ content: '';
+ position: absolute;
+ top: 0; left: -100%;
+ width: 100%; height: 100%;
+ background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+ transition: left 0.5s ease;
+ }
+
+ .btn-login:hover::before { left: 100%; }
+ .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,201,122,0.4); }
+ .btn-login:active { transform: translateY(0); }
+
+ .form-footer {
+ margin-top: 24px;
+ text-align: center;
+ font-size: 13px;
+ color: var(--cinza);
+ }
+
+ .form-footer a {
+ color: var(--verde);
+ text-decoration: none;
+ font-weight: 600;
+ }
+
+ .form-footer a:hover { text-decoration: underline; }
+
+ .error-msg {
+ background: rgba(255,80,80,0.1);
+ border: 1px solid rgba(255,80,80,0.3);
+ border-radius: 8px;
+ padding: 10px 14px;
+ font-size: 13px;
+ color: #FF6B6B;
+ margin-bottom: 16px;
+ display: none;
+ }
+
+/* ── POPUP TROCA DE SENHA ── */
+#popupSenha {
+ position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+ background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+ z-index: 99999; display: none; align-items: center; justify-content: center;
+}
+#popupSenha.show { display: flex; }
+.ps-card {
+ background: linear-gradient(135deg, #0D1E3C, #112244);
+ border: 1px solid rgba(0,201,122,0.25);
+ border-radius: 22px; padding: 40px 44px; width: 100%; max-width: 440px;
+ animation: psIn 0.3s ease;
+}
+@keyframes psIn { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.ps-icon  { font-size: 46px; text-align: center; margin-bottom: 16px; }
+.ps-title { font-family: 'Bebas Neue', cursive; font-size: 28px; letter-spacing: 2px;
+ color: #F0F4FF; text-align: center; margin-bottom: 6px; }
+.ps-sub { font-size: 13px; color: #8899BB; text-align: center; margin-bottom: 28px; line-height: 1.6; }
+.ps-field { position: relative; margin-bottom: 14px; }
+.ps-field label { font-size: 10px; font-weight: 700; letter-spacing: 2px;
+ text-transform: uppercase; color: #8899BB; display: block; margin-bottom: 6px; }
+.ps-field input {
+ width: 100%; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.1);
+ border-radius: 10px; color: #F0F4FF; font-family: 'Barlow', sans-serif;
+ font-size: 15px; padding: 11px 44px 11px 14px; outline: none; transition: border-color 0.2s;
+}
+.ps-field input:focus { border-color: #00C97A; background: rgba(0,201,122,0.04); }
+.ps-field input.ok { border-color: #00C97A !important; }
+.ps-field input.err { border-color: #FF6B6B !important; background: rgba(255,80,80,0.04) !important; }
+.ps-eye { position: absolute; right: 12px; bottom: 11px; cursor: pointer;
+ font-size: 16px; color: #8899BB; user-select: none; }
+/* Requisitos visuais */
+.ps-reqs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 22px; }
+.ps-req {
+ display: flex; align-items: center; gap: 7px;
+ background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+ border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #8899BB;
+ transition: all 0.2s;
+}
+.ps-req.met { background: rgba(0,201,122,0.08); border-color: rgba(0,201,122,0.25); color: #00C97A; }
+.ps-req-icon { font-size: 14px; width: 16px; text-align: center; }
+/* Match indicator */
+.ps-match { font-size: 11px; margin-top: -8px; margin-bottom: 14px;
+ padding: 5px 10px; border-radius: 6px; display: none; }
+.ps-match.ok { display: block; background: rgba(0,201,122,0.08); color: #00C97A; }
+.ps-match.err { display: block; background: rgba(255,80,80,0.08); color: #FF6B6B; }
+/* Strength bar */
+.ps-strength-wrap { height: 4px; background: rgba(255,255,255,0.06);
+ border-radius: 2px; margin-bottom: 18px; overflow: hidden; }
+.ps-strength-bar { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+/* Button */
+.ps-btn {
+ width: 100%; padding: 13px; border: none; border-radius: 11px;
+ background: linear-gradient(135deg, #00C97A, #00A865);
+ color: #0A1628; font-family: 'Bebas Neue', cursive;
+ font-size: 18px; letter-spacing: 2px; cursor: pointer;
+ transition: all 0.2s; opacity: 0.45; pointer-events: none;
+}
+.ps-btn.ready { opacity: 1; pointer-events: auto; }
+.ps-btn.ready:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,201,122,0.35); }
+
+
+/* ── LOGIN ERROR ── */
+@keyframes shake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}
+  60%{transform:translateX(-6px)}
+  80%{transform:translateX(6px)}
+}
+.shake { animation: shake 0.5s ease; }
+.error-msg.shake { animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+.form-group input.err-field {
+  border-color: #FF6B6B !important;
+  background: rgba(255,80,80,0.04) !important;
+  box-shadow: 0 0 0 3px rgba(255,80,80,0.12) !important;
+}
+.form-group input.ok-field {
+  border-color: #00C97A !important;
+}
+
+/* ── TELA DE SUCESSO DO LOGIN ── */
+#loginLoading{
+  position:fixed;inset:0;z-index:9999;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  background:radial-gradient(ellipse at 50% 42%,#112244 0%,#0A1628 62%);
+  font-family:'Barlow',sans-serif;color:#F0F4FF;
+  opacity:0;transition:opacity .45s ease;
+}
+#loginLoading.show{opacity:1}
+.ll-mark{
+  position:relative;width:120px;height:120px;border-radius:23%;
+  background:#F0F4FF;
+  box-shadow:0 20px 60px rgba(0,201,122,.35), inset 0 0 0 2px rgba(0,201,122,.35);
+  display:flex;align-items:center;justify-content:center;
+  transform:scale(0);
+}
+#loginLoading.show .ll-mark{animation:llPop .5s cubic-bezier(.34,1.56,.64,1) .2s forwards}
+.ll-mark .ll-L{
+  position:absolute;inset:14%;width:72%;height:72%;
+  transition:opacity .3s ease .6s;
+}
+#loginLoading.show .ll-L{opacity:0}
+.ll-mark svg{position:absolute;inset:22%;width:56%;height:56%}
+.ll-mark path{stroke-dasharray:1;stroke-dashoffset:1}
+#loginLoading.show .ll-mark path{animation:llDraw .35s ease-in-out .65s forwards}
+.ll-ring{
+  position:absolute;left:50%;top:50%;width:120px;height:120px;border-radius:50%;
+  border:3px solid #00C97A;transform:translate(-50%,-50%) scale(1);opacity:0;pointer-events:none;
+}
+#loginLoading.show .ll-ring{animation:llRing .7s ease-out .55s}
+.ll-txt{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:40px;
+  opacity:0;transform:translateY(20px)}
+#loginLoading.show .ll-txt{animation:llUp .45s ease-out .8s forwards}
+.ll-nome{font-family:'Bebas Neue',sans-serif;font-size:64px;line-height:1;letter-spacing:1px;text-align:center;padding:0 16px}
+.ll-perfil{font-size:15px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#8899BB}
+.ll-bar{margin-top:28px;width:320px;max-width:80vw;height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+.ll-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#00A865,#00C97A)}
+#loginLoading.show .ll-bar i{animation:llBar 1.5s ease-in-out 1s forwards}
+.ll-status{position:relative;height:22px;width:320px;max-width:80vw;text-align:center;font-size:15px;color:#8899BB}
+.ll-status span{position:absolute;inset:0;transition:opacity .3s}
+.ll-status .ok{opacity:0;color:#00C97A;font-weight:600}
+#loginLoading.done .ll-status .carregando{opacity:0}
+#loginLoading.done .ll-status .ok{opacity:1}
+
+@keyframes llPop{to{transform:scale(1)}}
+@keyframes llDraw{to{stroke-dashoffset:0}}
+@keyframes llRing{0%{opacity:.8;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
+@keyframes llUp{to{opacity:1;transform:none}}
+@keyframes llBar{to{width:100%}}
+
+@media (prefers-reduced-motion:reduce){
+  #loginLoading *{animation-duration:.01s!important;animation-delay:0s!important}
+}

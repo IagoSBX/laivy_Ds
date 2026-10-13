@@ -89,6 +89,17 @@ public class JwtFilter implements Filter {
             return;
         }
 
+        // A API é só para o app: abrir /usuarios, /exames etc. direto na barra
+        // de endereço (navegação de página, Sec-Fetch-Dest=document) não mostra
+        // o JSON. As exportações da prancheta (.png/.pdf/.svg) abrem em aba
+        // nova de propósito, então continuam liberadas.
+        // shortcut: navegadores sem Sec-Fetch (muito antigos) não são barrados —
+        // não é um controle de acesso, a autorização continua logo abaixo.
+        if ("document".equals(req.getHeader("Sec-Fetch-Dest")) && !path.matches(".*\\.(png|pdf|svg)$")) {
+            responderErro(res, 404, "Pagina nao encontrada.");
+            return;
+        }
+
         // Corpo grande demais é recusado antes de ser lido pra memória.
         // ponytail: só olha o Content-Length; upload "chunked" sem tamanho declarado passa.
         if (req.getContentLengthLong() > MAX_CORPO_BYTES) {
@@ -114,7 +125,10 @@ public class JwtFilter implements Filter {
             && !casaComPrefixo(path, "/assistente/chat");
         if (ferramentaN8n) {
             String xToken = req.getHeader("X-Token");
-            if (xToken != null && !xToken.isBlank() && xToken.equals(assistenteToken)) {
+            // comparação em tempo constante: não vaza o token por timing
+            if (xToken != null && !xToken.isBlank() && java.security.MessageDigest.isEqual(
+                    xToken.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    assistenteToken.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
                 req.setAttribute(ATTR_TIPO, 1); // trata como Admin: leitura liberada para qualquer time
                 chain.doFilter(req, res);
                 return;

@@ -1,0 +1,4 @@
+/* A raiz de cada tela faz o papel que o <body> tinha nas páginas HTML
+   (o tema estiliza body como flex; aqui a tela é o único filho dele). */
+#root { display: contents; }
+:where(.pagina) { flex: 1; display: flex; min-height: 100vh; min-width: 0; }

@@ -50,7 +50,8 @@ services:
       - MAIL_FROM=${MAIL_FROM:-laivy@localhost}
       - APP_URL=${APP_URL:-http://localhost:8080}
     ports:
-      - "8080:8080"
+      # só esta máquina acessa (em HTTP); para servidor use docker-compose.prod.yml (HTTPS)
+      - "127.0.0.1:8080:8080"
     restart: unless-stopped
 
   n8n:
@@ -59,11 +60,11 @@ services:
     depends_on:
       - qdrant
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      # (basic auth foi removido no n8n 1.0: o editor é protegido pela conta
+      # de dono criada no primeiro acesso, e a porta só abre para esta máquina)
       - WEBHOOK_URL=http://localhost:5678
-      # As tools do workflow mandam X-Token={{ $env.N8N_TOKEN }} pro backend;
+      # O workflow confere o X-Token do backend e as tools mandam
+      # X-Token={{ $env.N8N_TOKEN }} de volta (n8n/workflows/laivy-chat.json);
       # o n8n 2.x bloqueia $env nos nós por padrão.
       - N8N_TOKEN=${N8N_TOKEN}
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false

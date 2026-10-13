@@ -16,6 +16,7 @@ import br.com.gerenciador.projeto.DAO.IUsuario;
  * a senha padrão, ela é trocada por uma senha temporária aleatória (com troca
  * obrigatória no primeiro acesso) que só aparece no log do container:
  *   docker logs laivy-backend | grep "Senha padrao"
+ * Também converte para BCrypt qualquer senha legada ainda em texto puro.
  */
 @Component
 public class SenhasPadraoGuard implements ApplicationRunner {
@@ -42,6 +43,16 @@ public class SenhasPadraoGuard implements ApplicationRunner {
                 System.out.println("[LAIVY] Senha padrao da conta '" + login
                     + "' substituida. Senha temporaria: " + nova + " (troca obrigatoria no primeiro acesso)");
             }));
+
+        // Senhas legadas em texto puro: o login só aceita BCrypt, então elas
+        // viram hash aqui, uma vez, sem mudar a senha de ninguém.
+        dao.findAll().stream()
+            .filter(u -> u.getSenha_usuario() != null && !u.getSenha_usuario().startsWith("$2"))
+            .forEach(u -> {
+                u.setSenha_usuario(BCrypt.hashpw(u.getSenha_usuario(), BCrypt.gensalt(12)));
+                dao.save(u);
+                System.out.println("[LAIVY] Senha em texto puro da conta '" + u.getLogin_usuario() + "' migrada para BCrypt.");
+            });
     }
 
     private static boolean usaSenha(String hash, String senha) {

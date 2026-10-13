@@ -1,0 +1,25 @@
+{
+  "name": "laivy-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test 'src/**/*.test.js'"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "chart.js": "^4.5.1",
+    "fullcalendar": "^6.1.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "postcss-prefix-selector": "^2.2.1",
+    "vite": "^8.3.4"
+  }
+}

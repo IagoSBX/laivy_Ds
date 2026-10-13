@@ -12,3 +12,13 @@ _prancheta_entrega/
 *.log
 .DS_Store
 .env
+frontend/node_modules/
+src/main/resources/static/
+backups/
+.env.prod
+n8n/backup/
+*.pptx
+*.docx
+*.zip
+*.mp4
+*.pdf

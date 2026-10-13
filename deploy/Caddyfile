@@ -1,0 +1,35 @@
+# Proxy HTTPS do LAIVY em produção. O Caddy obtém e renova sozinho o
+# certificado Let's Encrypt para {$DOMINIO} (o DNS precisa apontar para o
+# servidor e as portas 80/443 precisam estar abertas).
+{
+	email {$EMAIL_CERTIFICADO}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	reverse_proxy backend:8080
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		# Só o próprio site roda script. Estilos inline são do React/FullCalendar;
+		# fontes do Google Fonts e ícones do FullCalendar (data:); o ViaCEP preenche endereço pelo CEP; fotos e
+		# logos são data: (base64).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://viacep.com.br; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		-Server
+	}
+
+	# arquivos do build têm hash no nome: podem ficar em cache "para sempre"
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}
+
+# www.<domínio> só redireciona para o domínio principal (precisa do registro
+# DNS do www apontando para o servidor; o Caddy emite o certificado dele também)
+www.{$DOMINIO} {
+	redir https://{$DOMINIO}{uri} permanent
+}

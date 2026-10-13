@@ -2,7 +2,6 @@ package br.com.gerenciador.projeto.service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.mindrot.jbcrypt.BCrypt;
@@ -166,7 +165,7 @@ public class UsuarioService {
         }
     }
 
-    public LoginResultado login(String login, String senha, String tipoStr) {
+    public LoginResultado login(String login, String senha, String tipoStr, String ip) {
         if (login == null || senha == null || tipoStr == null)
             throw new BadRequestException("Campos obrigatorios ausentes.");
 
@@ -176,40 +175,28 @@ public class UsuarioService {
             throw new BadRequestException("tipo_usuario invalido.");
         }
 
-        String chave = login.trim().toLowerCase();
-        exigirNaoBloqueado(chave);
+        // Bloqueio por login+IP (errar a senha de alguém não trava o dono da
+        // conta, que entra de outro IP) e teto por IP (um IP não fica testando
+        // senhas em todas as contas).
+        String chave = login.trim().toLowerCase() + "|" + ip;
+        String chaveIp = "ip|" + ip;
+        exigirNaoBloqueado(chave, MAX_FALHAS);
+        exigirNaoBloqueado(chaveIp, MAX_FALHAS_POR_IP);
 
-        Optional<Usuario> opt = dao.buscarPorLoginTipo(login, tipo);
-        if (opt.isEmpty()) {
-            registrarFalha(chave);
-            throw new UnauthorizedException(ERRO_LOGIN);
-        }
-
-        Usuario u = opt.get();
-        String hash = u.getSenha_usuario();
-
-        // Suporta BCrypt (novo) e texto plano (legado).
-        // Se a senha legada bater, o hash é migrado para BCrypt na hora.
-        boolean senhaOk;
-        boolean legado = false;
-        if (hash != null && (hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$"))) {
-            senhaOk = BCrypt.checkpw(senha, hash);
-        } else {
-            senhaOk = senha.equals(hash);
-            legado  = senhaOk;
-        }
+        Usuario u = dao.buscarPorLoginTipo(login, tipo).orElse(null);
+        String hash = u != null ? u.getSenha_usuario() : null;
+        // Sempre roda um BCrypt, exista o login ou não: o tempo de resposta
+        // não pode revelar quais logins existem. Senhas em texto puro não são
+        // aceitas (o SenhasPadraoGuard migra as antigas para BCrypt na subida).
+        boolean hashValido = hash != null && hash.startsWith("$2");
+        boolean senhaOk = BCrypt.checkpw(senha, hashValido ? hash : HASH_FALSO) && hashValido;
 
         if (!senhaOk) {
             registrarFalha(chave);
+            registrarFalha(chaveIp);
             throw new UnauthorizedException(ERRO_LOGIN);
         }
         falhasLogin.remove(chave);
-
-        // Migração automática: substitui a senha em texto plano por BCrypt
-        if (legado) {
-            u.setSenha_usuario(BCrypt.hashpw(senha, BCrypt.gensalt(12)));
-            dao.save(u);
-        }
 
         String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
@@ -227,26 +214,32 @@ public class UsuarioService {
 
     // ── Limite de tentativas de login ────────────────────────────────────
     // Mesma mensagem para "usuário não existe" e "senha errada" (não revela
-    // quais logins existem). Após MAX_FALHAS erros seguidos, o login fica
-    // bloqueado por BLOQUEIO_MS.
-    // ponytail: em memória e por login — some no restart e não vale entre
-    // várias instâncias; mover pra banco/Redis se o sistema escalar.
+    // quais logins existem). Após MAX_FALHAS erros seguidos para o mesmo
+    // login a partir do mesmo IP, ou MAX_FALHAS_POR_IP erros de um IP em
+    // qualquer login, novas tentativas ficam bloqueadas por BLOQUEIO_MS.
+    // shortcut: em memória — some no restart e não vale entre várias
+    // instâncias; mover pra banco/Redis se o sistema rodar em mais de uma.
     private static final String ERRO_LOGIN = "Login, senha ou perfil incorretos.";
-    private static final int  MAX_FALHAS  = 5;
+    private static final int  MAX_FALHAS        = 5;
+    private static final int  MAX_FALHAS_POR_IP = 20;
     private static final long BLOQUEIO_MS = 15 * 60 * 1000L;
+    /** Hash BCrypt (custo 12) de um valor aleatório, só para igualar o tempo do login inexistente. */
+    private static final String HASH_FALSO = BCrypt.hashpw(java.util.UUID.randomUUID().toString(), BCrypt.gensalt(12));
     private final java.util.concurrent.ConcurrentHashMap<String, long[]> falhasLogin = new java.util.concurrent.ConcurrentHashMap<>();
 
-    private void exigirNaoBloqueado(String chave) {
+    private void exigirNaoBloqueado(String chave, int maximo) {
         long[] f = falhasLogin.get(chave); // {quantidade, instante da última falha}
         if (f == null) return;
         if (System.currentTimeMillis() - f[1] > BLOQUEIO_MS) { falhasLogin.remove(chave); return; }
-        if (f[0] >= MAX_FALHAS)
+        if (f[0] >= maximo)
             throw new TooManyRequestsException("Muitas tentativas. Tente novamente em 15 minutos.");
     }
 
     private void registrarFalha(String chave) {
-        falhasLogin.merge(chave, new long[]{1, System.currentTimeMillis()},
-            (a, b) -> new long[]{a[0] + 1, b[1]});
+        long agora = System.currentTimeMillis();
+        // limpa entradas vencidas para o mapa não crescer sem limite (chave inclui o IP)
+        if (falhasLogin.size() > 10_000) falhasLogin.values().removeIf(f -> agora - f[1] > BLOQUEIO_MS);
+        falhasLogin.merge(chave, new long[]{1, agora}, (a, b) -> new long[]{a[0] + 1, b[1]});
     }
 
     public static class TooManyRequestsException extends RuntimeException {

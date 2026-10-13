@@ -8,7 +8,15 @@ target/
 .project
 *.log
 laivyIA
-src/main/resources/application.properties
+# application.properties vai para o git (só lê variáveis de ambiente, sem segredos)
 .env
+.env.prod
 .env.bak
 CREDENCIAIS_LOCAIS.txt
+
+# Frontend React: dependências e build (o build sai em src/main/resources/static)
+frontend/node_modules/
+src/main/resources/static/
+
+# backups do servidor (scripts/backup.sh)
+backups/
