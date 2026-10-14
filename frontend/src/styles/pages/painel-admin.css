@@ -172,3 +172,30 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .quick-btn-vg:hover{background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.12);transform:translateY(-2px);}
 .quick-nome-vg{font-size:13px;font-weight:700;color:var(--branco);}
 .quick-desc-vg{font-size:11px;color:var(--cinza);margin-top:1px;}
+
+/* ---------- LOG DE ATIVIDADES ---------- */
+.log-card{padding:18px 24px;}
+.log-toolbar .select-filtro{max-width:220px;}
+.log-data{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cinza);}
+.log-data input{color-scheme:dark;padding:7px 10px;}
+.log-tabela{width:100%;border-collapse:collapse;font-size:13px;}
+.log-tabela th{text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--cinza);font-weight:700;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);white-space:nowrap;}
+.log-tabela td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:top;color:var(--branco);}
+.log-tabela tbody tr:hover{background:rgba(255,255,255,0.025);}
+.log-tabela tr.log-alerta{background:rgba(255,80,80,0.06);}
+.log-tabela tr.log-alerta td:first-child{box-shadow:inset 3px 0 0 #FF6B6B;}
+.log-quando,.log-ip{white-space:nowrap;color:var(--cinza)!important;font-variant-numeric:tabular-nums;}
+.log-nome{font-weight:600;}
+.log-sub{font-size:11px;color:var(--cinza);margin-top:2px;}
+.log-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap;background:rgba(255,255,255,0.06);color:var(--cinza);}
+.log-criar{background:rgba(0,201,122,0.12);color:var(--verde);}
+.log-editar{background:rgba(78,201,255,0.12);color:#4EC9FF;}
+.log-excluir{background:rgba(255,176,32,0.12);color:#FFB020;}
+.log-login,.log-logout{background:rgba(167,143,255,0.12);color:#A78FFF;}
+.log-senha{background:rgba(255,255,255,0.08);color:var(--branco);}
+.log-ia{background:rgba(0,201,122,0.08);color:#7FE3B8;}
+.log-login_falha,.log-login_bloqueado,.log-acesso_negado{background:rgba(255,80,80,0.12);color:#FF6B6B;}
+.log-paginacao{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;font-size:12px;color:var(--cinza);}
+.log-paginacao div{display:flex;align-items:center;gap:10px;}
+.log-paginacao button:disabled{opacity:.4;cursor:default;transform:none;}
+.log-rodape{margin:14px 0 0;font-size:11px;color:var(--cinza);opacity:.8;}

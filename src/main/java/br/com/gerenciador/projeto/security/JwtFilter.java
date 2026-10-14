@@ -48,7 +48,7 @@ public class JwtFilter implements Filter {
     private static final List<String> API_PREFIXOS = List.of(
         "/usuarios", "/times", "/atividades", "/calendarios",
         "/desempenhos", "/exames", "/escalacoes", "/visitantes",
-        "/assistente"
+        "/assistente", "/auditoria"
     );
 
     private static final List<String> API_PUBLICAS = List.of(

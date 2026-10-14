@@ -7,11 +7,15 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EntityScan("br.com.gerenciador.projeto.model")
 @EnableJpaRepositories("br.com.gerenciador.projeto.DAO")
 @ServletComponentScan
+@EnableAsync        // log de auditoria gravado em segundo plano
+@EnableScheduling   // limpeza diária do log de auditoria
 public class ProjetoApplication extends SpringBootServletInitializer {
 
     @Override

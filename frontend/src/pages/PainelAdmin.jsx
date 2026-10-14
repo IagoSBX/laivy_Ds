@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import CampoData from '../components/CampoData.jsx';
+import LogAtividades from '../components/LogAtividades.jsx';
 import Modal from '../components/Modal.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import ToastsIcone from '../components/ToastsIcone.jsx';
@@ -87,7 +88,7 @@ export default function PainelAdmin() {
   const [toasts, toast] = useToasts();
 
   const abaUrl = params.get('tab');
-  const aba = ['visao', 'times', 'treinadores'].includes(abaUrl) ? abaUrl : 'visao';
+  const aba = ['visao', 'times', 'treinadores', 'log'].includes(abaUrl) ? abaUrl : 'visao';
   const mudarAba = (id) => setParams({ tab: id }, { replace: true });
 
   // ---------- TIMES ----------
@@ -330,6 +331,7 @@ export default function PainelAdmin() {
           <button className={'tab' + (aba === 'visao' ? ' active' : '')} onClick={() => mudarAba('visao')}>Visão Geral</button>
           <button className={'tab' + (aba === 'times' ? ' active' : '')} onClick={() => mudarAba('times')}>Times</button>
           <button className={'tab' + (aba === 'treinadores' ? ' active' : '')} onClick={() => mudarAba('treinadores')}>Treinadores</button>
+          <button className={'tab' + (aba === 'log' ? ' active' : '')} onClick={() => mudarAba('log')}>Log de atividades</button>
         </div>
 
         {/* ═══════════ VISÃO GERAL ═══════════ */}
@@ -427,6 +429,11 @@ export default function PainelAdmin() {
               })}
             </div>
           </div>
+        </div>
+
+        {/* ═══════════ LOG DE ATIVIDADES ═══════════ */}
+        <div className={'secao' + (aba === 'log' ? ' visible' : '')}>
+          <LogAtividades ativo={aba === 'log'} usuarios={usuarios} times={times || []} />
         </div>
 
         {/* ═══════════ TREINADORES ═══════════ */}

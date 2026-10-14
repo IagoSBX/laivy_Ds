@@ -94,8 +94,11 @@ public class UsuarioController {
         // invalida todas as sessões desse usuário — o JWT não vale mais nem copiado.
         if (request.getCookies() != null) {
             for (jakarta.servlet.http.Cookie c : request.getCookies()) {
-                if ("jwtToken".equals(c.getName()) && jwtUtil.validar(c.getValue()))
-                    usuarioService.encerrarSessoes(jwtUtil.getId(c.getValue()));
+                if ("jwtToken".equals(c.getName()) && jwtUtil.validar(c.getValue())) {
+                    Integer id = jwtUtil.getId(c.getValue());
+                    usuarioService.encerrarSessoes(id);
+                    usuarioService.registrarLogin(id, "LOGOUT", "Saiu do sistema", 204, request.getRemoteAddr());
+                }
             }
         }
         ResponseCookie cookie = ResponseCookie.from("jwtToken", "")

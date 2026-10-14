@@ -28,6 +28,7 @@ public class UsuarioService {
     @Autowired private IUsuario  dao;
     @Autowired private TimeDAO   timeDAO;
     @Autowired private JwtUtil   jwtUtil;
+    @Autowired private AuditoriaService auditoria;
     @PersistenceContext private EntityManager entityManager;
 
     /** Gera hash BCrypt, evitando re-hashear algo que já é um hash BCrypt. */
@@ -180,10 +181,16 @@ public class UsuarioService {
         // senhas em todas as contas).
         String chave = login.trim().toLowerCase() + "|" + ip;
         String chaveIp = "ip|" + ip;
-        exigirNaoBloqueado(chave, MAX_FALHAS);
-        exigirNaoBloqueado(chaveIp, MAX_FALHAS_POR_IP);
-
         Usuario u = dao.buscarPorLoginTipo(login, tipo).orElse(null);
+        Integer idTentado = u != null ? u.getId_usuario() : null;
+        try {
+            exigirNaoBloqueado(chave, MAX_FALHAS);
+            exigirNaoBloqueado(chaveIp, MAX_FALHAS_POR_IP);
+        } catch (TooManyRequestsException e) {
+            registrarLogin(idTentado, "LOGIN_BLOQUEADO", "Login bloqueado por excesso de tentativas", 429, ip);
+            throw e;
+        }
+
         String hash = u != null ? u.getSenha_usuario() : null;
         // Sempre roda um BCrypt, exista o login ou não: o tempo de resposta
         // não pode revelar quais logins existem. Senhas em texto puro não são
@@ -194,13 +201,23 @@ public class UsuarioService {
         if (!senhaOk) {
             registrarFalha(chave);
             registrarFalha(chaveIp);
+            // o login digitado não vai para o log: às vezes é a senha digitada no campo errado
+            registrarLogin(idTentado, "LOGIN_FALHA",
+                u != null ? "Errou a senha ao entrar" : "Tentativa de login com usuário ou perfil inexistente", 401, ip);
             throw new UnauthorizedException(ERRO_LOGIN);
         }
         falhasLogin.remove(chave);
+        registrarLogin(u.getId_usuario(), "LOGIN", "Entrou no sistema", 200, ip);
 
         String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
         return new LoginResultado(u, token);
+    }
+
+    /** Login, logout e tentativas com erro vão para o log de atividades. */
+    public void registrarLogin(Integer idUsuario, String acao, String descricao, int status, String ip) {
+        auditoria.registrar(new AuditoriaService.Evento(java.time.LocalDateTime.now(), idUsuario, null,
+            acao, descricao, "usuarios", idUsuario, null, "POST", null, status, status < 400, ip));
     }
 
     /** Logout: invalida todos os tokens já emitidos para este usuário. */
