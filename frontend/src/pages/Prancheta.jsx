@@ -2,6 +2,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import { iniciarPrancheta } from '../prancheta/editorPrancheta.js';
 import useMotor from '../lib/useMotor.js';
 import useTitulo from '../lib/useTitulo.js';
+import { usuarioLogado } from '../lib/sessao.js';
 import '../styles/pages/prancheta.css';
 
 // Casca da prancheta tática. O editor (quadra SVG, arraste, ferramentas,
@@ -10,10 +11,13 @@ import '../styles/pages/prancheta.css';
 // estado React: o motor é o dono deles.
 export default function Prancheta() {
   useTitulo('Prancheta Tática · LAIVY');
-  useMotor(iniciarPrancheta);
+  // atleta só visualiza: sem ferramentas, salvar, vínculos nem IA (o CSS em
+  // .somente-leitura esconde os controles; o motor não liga arraste/desenho)
+  const somenteLeitura = usuarioLogado().tipo_usuario === 3;
+  useMotor((opcoes) => iniciarPrancheta({ ...opcoes, somenteLeitura }));
 
   return (
-    <div className="pagina pg-prancheta">
+    <div className={'pagina pg-prancheta' + (somenteLeitura ? ' somente-leitura' : '')}>
       <Sidebar />
 
       <main className="main">
@@ -26,9 +30,10 @@ export default function Prancheta() {
 
         <header className="topo">
           <div className="topo-esq">
-            <input id="nome-jogada" className="campo-nome" type="text" placeholder="Nome da jogada" maxLength={120} autoComplete="off" />
-            <select id="tipo-jogada" className="campo-tipo" aria-label="Tipo de jogada"></select>
+            <input id="nome-jogada" className="campo-nome" type="text" placeholder="Nome da jogada" maxLength={120} autoComplete="off" readOnly={somenteLeitura} />
+            <select id="tipo-jogada" className="campo-tipo" aria-label="Tipo de jogada" disabled={somenteLeitura}></select>
             <span id="status" className="status"></span>
+            {somenteLeitura && <span className="status">Somente visualização</span>}
           </div>
           <div className="topo-dir">
             <div className="menu-exportar">

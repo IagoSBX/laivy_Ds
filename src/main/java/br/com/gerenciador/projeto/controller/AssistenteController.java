@@ -32,12 +32,15 @@ public class AssistenteController {
     public ResponseEntity<Map> chat(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         try {
             return ResponseEntity.ok(assistenteService.chat(body, authTipo(request), authId(request)));
-        } catch (BadRequestException e) {
+        } catch (BadRequestException | br.com.gerenciador.projeto.exception.ForbiddenException e) {
+            // 400 (e não 403) de propósito: o front trata 401/403 como sessão
+            // expirada e desloga. Aqui é só um pedido que não pode ser atendido
+            // (ex.: recomendação de atleta de outro time) e a mensagem é exibida.
             return ResponseEntity.badRequest().body(Map.of("erro", e.getMessage()));
         } catch (Exception e) {
             System.err.println("[LAIVY] Falha ao chamar o n8n: " + e.getMessage());
             return ResponseEntity.status(503)
-                .body(Map.of("erro", "Assistente indisponível. Verifique se o n8n está rodando."));
+                .body(Map.of("erro", "Assistente indisponível no momento. Tente novamente em instantes."));
         }
     }
 

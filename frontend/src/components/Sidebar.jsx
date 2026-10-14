@@ -40,9 +40,13 @@ const NAV = [
 
 // ---------- RECOLHER / EXPANDIR ----------
 // Sem escolha salva, recolhe sozinho em janelas estreitas (tela dividida).
+// No celular o menu não recolhe: vira uma gaveta (ver styles/responsivo.css).
 const CHAVE_MENU = 'sidebarRecolhida';
+const CELULAR = '(max-width: 768px)';
+const ehCelular = () => window.matchMedia(CELULAR).matches;
 function lerPreferencia() { try { return localStorage.getItem(CHAVE_MENU); } catch { return null; } }
 function menuRecolhido() {
+  if (ehCelular()) return false;
   const pref = lerPreferencia();
   return pref === null ? window.innerWidth < 1000 : pref === '1';
 }
@@ -112,6 +116,15 @@ export default function Sidebar({ ocultarGestao = false }) {
     try { localStorage.setItem(CHAVE_MENU, recolhida ? '0' : '1'); } catch { /* sem storage */ }
     setRecolhida(!recolhida);
   }
+
+  // celular: gaveta aberta/fechada (classe no <html>, como o sb-recolhida);
+  // fecha sozinha ao trocar de tela
+  const [gavetaAberta, setGavetaAberta] = useState(false);
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('sb-gaveta-aberta', gavetaAberta);
+  }, [gavetaAberta]);
+  useEffect(() => { setGavetaAberta(false); }, [pathname]);
+  useEffect(() => () => document.documentElement.classList.remove('sb-gaveta-aberta'), []);
 
   // posiciona o menu no item ativo
   useEffect(() => {
@@ -218,7 +231,16 @@ export default function Sidebar({ ocultarGestao = false }) {
         </div>
       </div>
 
+      {/* só aparecem no celular (styles/responsivo.css) */}
+      <button type="button" className="btn-menu-movel" onClick={() => setGavetaAberta(true)} aria-label="Abrir menu" aria-expanded={gavetaAberta}>
+        <Svg size={22}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></Svg>
+      </button>
+      <div className="sb-fundo" onClick={() => setGavetaAberta(false)} aria-hidden="true" />
+
       <aside className="sidebar">
+        <button type="button" className="btn-fechar-gaveta" onClick={() => setGavetaAberta(false)} aria-label="Fechar menu">
+          <Svg size={20}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Svg>
+        </button>
         <button type="button" className="btn-recolher" onClick={alternarMenu} aria-expanded={!recolhida}
           aria-label={recolhida ? 'Expandir menu' : 'Recolher menu'} title={recolhida ? 'Expandir menu' : 'Recolher menu'}>
           <Svg size={14} sw={2.5}><polyline points="15 18 9 12 15 6" /></Svg>
@@ -238,7 +260,7 @@ export default function Sidebar({ ocultarGestao = false }) {
             <Fragment key={grupo.section}>
               <div className="nav-section">{grupo.section}</div>
               {grupo.items.map((item) => (
-                <Link key={item.href} to={item.href} className={'nav-item' + (item.href === pathname ? ' active' : '')} title={item.label}>
+                <Link key={item.href} to={item.href} className={'nav-item' + (item.href === pathname ? ' active' : '')} title={item.label} onClick={() => setGavetaAberta(false)}>
                   <span className="nav-icon" style={{ display: 'inline-flex' }}><Svg>{ICONS[item.icon]}</Svg></span>
                   <span>{item.label}</span>
                   <span className="nav-alert" title="Requer atenção" style={avisos[item.href] ? { display: 'flex' } : undefined}>!</span>

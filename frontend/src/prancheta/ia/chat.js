@@ -116,7 +116,11 @@ export function iniciarChatIA({ comandos, idTime }) {
         addMsg('Sem permissão para usar a IA neste time (ou sessão expirada).', 'erro');
         return;
       }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        addMsg(e.erro || 'Não consegui me conectar ao assistente. Tente novamente em instantes.', 'erro');
+        return;
+      }
 
       const data = await res.json();
       const resultados = executarAcoes(data.acoes);
@@ -126,7 +130,7 @@ export function iniciarChatIA({ comandos, idTime }) {
         addMsg(`Não consegui ${ROTULO_ACAO[r.tipo] || 'executar uma ação'}: ${r.erro}`, 'erro'));
     } catch (e) {
       removeTyping();
-      addMsg('Não consegui me conectar ao assistente. Verifique se o n8n está rodando.', 'erro');
+      addMsg('Não consegui me conectar ao assistente. Tente novamente em instantes.', 'erro');
     } finally {
       enviando = false;
       enviarBtn.disabled = false;

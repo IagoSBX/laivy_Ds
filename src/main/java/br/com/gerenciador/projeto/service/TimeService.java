@@ -49,7 +49,9 @@ public class TimeService {
         if (time.getAtivo_time() == null) time.setAtivo_time(1);
         if (time.getTreinador() != null && time.getTreinador().getId_usuario() != null)
             usuarioDAO.findById(time.getTreinador().getId_usuario()).ifPresent(time::setTreinador);
-        return timeDAO.save(time);
+        Time salvo = timeDAO.save(time);
+        vincularTreinadorAoTime(salvo);
+        return salvo;
     }
 
     public Time atualizar(Integer id, Time dados, Integer authTipo) {
@@ -65,7 +67,24 @@ public class TimeService {
         if (dados.getLogo_time()       != null) t.setLogo_time(dados.getLogo_time());
         if (dados.getTreinador() != null && dados.getTreinador().getId_usuario() != null)
             usuarioDAO.findById(dados.getTreinador().getId_usuario()).ifPresent(t::setTreinador);
-        return timeDAO.save(t);
+        Time salvo = timeDAO.save(t);
+        vincularTreinadorAoTime(salvo);
+        return salvo;
+    }
+
+    /**
+     * As permissões de treinador (AuthUtil.podeGerenciarTime) valem para o time
+     * de que ele é MEMBRO. O treinador responsável que ainda não está em time
+     * nenhum vira membro deste — senão ele enxerga o time mas leva 403 em tudo.
+     * Quem já é membro de outro time não é movido (um usuário tem um time só);
+     * para isso existe o "Atribuir Time" do Painel Admin.
+     */
+    private void vincularTreinadorAoTime(Time time) {
+        Usuario treinador = time.getTreinador();
+        if (treinador != null && AuthUtil.ehTreinador(treinador.getTipo_usuario()) && treinador.getTime() == null) {
+            treinador.setTime(time);
+            usuarioDAO.save(treinador);
+        }
     }
 
     // Admin gerencia qualquer time; Treinador só o próprio.

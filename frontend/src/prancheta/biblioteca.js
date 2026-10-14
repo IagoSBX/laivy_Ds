@@ -8,7 +8,7 @@ import * as api from './api/jogadas.js';
  * Biblioteca de jogadas (antes js/prancheta/biblioteca.js, que rodava no import).
  * Iniciada pela tela React (pages/BibliotecaJogadas.jsx) depois que a casca existe.
  */
-export function iniciarBiblioteca({ navegar }) {
+export function iniciarBiblioteca({ navegar, somenteLeitura = false }) {
   // Mesma resolução de time que a prancheta usa: URL primeiro (deep link),
   // timeSelecionado do localStorage depois (entrada pela sidebar).
   const params = new URLSearchParams(location.search);
@@ -121,7 +121,8 @@ export function iniciarBiblioteca({ navegar }) {
       }
     };
 
-    acoes.append(btnAbrir, btnDuplicar, btnArquivar);
+    // atleta só abre para ver; duplicar/arquivar são do treinador (o backend também recusa)
+    acoes.append(btnAbrir, ...(somenteLeitura ? [] : [btnDuplicar, btnArquivar]));
     card.append(thumb, corpo, acoes);
     return card;
   }
@@ -170,8 +171,11 @@ export function iniciarBiblioteca({ navegar }) {
   // ---------------------------------------------------------------------
 
   Object.entries(TIPOS).forEach(([v, r]) => el('filtro-tipo').appendChild(new Option(r, v)));
-  el('link-nova').onclick = e => { e.preventDefault(); navegar(`/prancheta.html?time=${ID_TIME}`); };
-  el('link-nova').href = `/prancheta.html?time=${ID_TIME}`;
+  const linkNova = el('link-nova'); // não existe para o atleta
+  if (linkNova) {
+    linkNova.onclick = e => { e.preventDefault(); navegar(`/prancheta.html?time=${ID_TIME}`); };
+    linkNova.href = `/prancheta.html?time=${ID_TIME}`;
+  }
 
   el('filtro-tipo').onchange = () => carregar({ reset: true });
   el('busca').oninput = () => {

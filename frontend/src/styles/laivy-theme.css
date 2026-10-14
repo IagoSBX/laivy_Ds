@@ -71,8 +71,11 @@ html.sb-recolhida .time-indicator .ti-trocar,
 html.sb-recolhida .user-info > div:last-child,
 html.sb-recolhida .btn-logout span { display: none; }
 html.sb-recolhida .sidebar-logo { padding: 0 15px 28px; justify-content: center; }
-html.sb-recolhida .nav-section { font-size: 0; padding: 0; margin: 10px 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
-html.sb-recolhida .nav-item { justify-content: center; padding: 13px 0; gap: 0; }
+html.sb-recolhida .nav-section { font-size: 0; padding: 0; margin: 6px 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+html.sb-recolhida .nav-item { justify-content: center; padding: 9px 0; gap: 0; }
+/* recolhido: menos respiro para os 9 itens caberem sem rolagem em telas de notebook */
+html.sb-recolhida nav { padding: 12px 0; }
+html.sb-recolhida .nav-section:first-child { border-top: 0; margin: 0; }
 html.sb-recolhida .nav-alert { position: absolute; margin: -18px 0 0 22px; }
 html.sb-recolhida .painel-admin-link,
 html.sb-recolhida .time-indicator { justify-content: center; padding-left: 0; padding-right: 0; }
@@ -119,6 +122,9 @@ html.sb-recolhida .user-info { justify-content: center; padding-left: 0; padding
 .logo-texts .t2 { font-size: 11px; color: var(--cinza); letter-spacing: .3px; white-space: nowrap; }
 
 nav { flex: 1; padding: 22px 0; overflow-y: auto; }
+/* recolhido: sem a barra de rolagem verde (a rolagem continua funcionando em telas muito baixas) */
+html.sb-recolhida nav { scrollbar-width: none; }
+html.sb-recolhida nav::-webkit-scrollbar { display: none; }
 .nav-section {
   font-size: 11px;
   font-weight: 700;

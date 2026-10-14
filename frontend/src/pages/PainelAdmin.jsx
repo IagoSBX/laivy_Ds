@@ -321,7 +321,7 @@ export default function PainelAdmin() {
         <div className="page-header">
           <div>
             <h1>Painel Admin</h1>
-            <p>Visão consolidada de times e treinadores do sistema</p>
+            <p>Visão consolidada de times e treinadores</p>
           </div>
         </div>
 

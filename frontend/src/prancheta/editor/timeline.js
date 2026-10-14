@@ -5,7 +5,7 @@ import { clonarFrame } from '../dominio/schema.js';
  * delta. Custa alguns KB e elimina os bugs de reordenar, excluir o frame do
  * meio e editar um frame isolado.
  */
-export function criarTimeline({ elemento, store, historico, aoMudar }) {
+export function criarTimeline({ elemento, store, historico, aoMudar, somenteLeitura = false }) {
 
   function render() {
     const { jogada, frameAtual } = store.get();
@@ -18,7 +18,7 @@ export function criarTimeline({ elemento, store, historico, aoMudar }) {
       b.innerHTML = `<span class="frame-num">Frame ${i + 1}</span>` +
         (f.descricao ? `<span class="frame-desc">${escapar(f.descricao)}</span>` : '');
       b.onclick = () => { store.aplicar(s => { s.frameAtual = i; }); aoMudar(); };
-      b.oncontextmenu = ev => { ev.preventDefault(); menu(i); };
+      if (!somenteLeitura) b.oncontextmenu = ev => { ev.preventDefault(); menu(i); };
       elemento.appendChild(b);
     });
 
@@ -28,7 +28,7 @@ export function criarTimeline({ elemento, store, historico, aoMudar }) {
     mais.textContent = '+ Novo frame';
     mais.title = 'Duplica o frame atual preservando os ids dos jogadores';
     mais.onclick = novoFrame;
-    elemento.appendChild(mais);
+    if (!somenteLeitura) elemento.appendChild(mais);
   }
 
   /**

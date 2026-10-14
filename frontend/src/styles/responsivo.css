@@ -1,0 +1,126 @@
+/* ============================================================
+   LAIVY — Ajustes de layout responsivo
+   O CSS de cada tela (styles/pages) fica preso a :where(.pg-<tela>), com
+   especificidade zero; por isso as regras daqui usam ".pagina ..." e vencem
+   sem !important. Tudo que é só de celular fica dentro do @media no fim:
+   acima de 768px o layout é exatamente o do desktop.
+   ============================================================ */
+
+/* Menu recolhido: cada tela redefine --sidebar-w na raiz dela; no HTML antigo
+   o html.sb-recolhida vencia o :root, então aqui ele precisa vencer a raiz. */
+html.sb-recolhida :where(.pagina) { --sidebar-w: 76px; }
+
+/* Prancheta somente leitura (atleta): só vê a jogada e a animação. Fica aqui,
+   e não em pages/prancheta.css, porque lá o seletor vira "descendente da raiz"
+   e a classe está na própria raiz. */
+.pagina.somente-leitura :is(#status, #btn-salvar, #barra-ferramentas, #barra-seta-subtipos,
+  #btn-desfazer, #btn-refazer, #btn-resetar, .painel .bloco:not(.legenda), #iaBotao, #iaPainel) {
+  display: none !important;
+}
+
+/* botões e fundo da gaveta só existem no celular */
+.btn-menu-movel, .btn-fechar-gaveta, .sb-fundo { display: none; }
+
+@media (max-width: 768px) {
+
+  /* ---------- MENU EM GAVETA ---------- */
+  .pagina .sidebar {
+    width: min(280px, 85vw);
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    z-index: 1040;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, .5);
+  }
+  html.sb-gaveta-aberta .pagina .sidebar { transform: none; }
+  .pagina .btn-recolher { display: none; }
+  .pagina .sidebar-logo { padding-right: 56px; }   /* espaço para o X de fechar */
+
+  .pagina .btn-menu-movel {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; top: 12px; left: 12px; z-index: 1030;
+    width: 42px; height: 42px; border-radius: 12px;
+    background: #0D1E3C; color: var(--branco, #F0F4FF);
+    border: 1px solid rgba(0, 201, 122, 0.35);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+  }
+  .pagina .btn-fechar-gaveta {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 14px; right: 12px;
+    width: 34px; height: 34px; border-radius: 10px;
+    background: rgba(255, 255, 255, .06); color: var(--cinza, #8899BB); border: 0;
+  }
+  html.sb-gaveta-aberta .pagina .sb-fundo {
+    display: block; position: fixed; inset: 0; z-index: 1035;
+    background: rgba(5, 12, 24, .6);
+  }
+  html.sb-gaveta-aberta body { overflow: hidden; }
+
+  /* ---------- ÁREA PRINCIPAL ---------- */
+  .pagina .main {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100vw;
+    padding: 66px 14px 24px;
+    overflow-x: hidden;
+  }
+
+  /* ---------- CABEÇALHOS ---------- */
+  .pagina .page-header, .pagina .topbar { flex-wrap: wrap; gap: 12px; }
+  .pagina .page-header h1, .pagina .topbar-left h1 { font-size: 30px; }
+
+  /* ---------- NÚMEROS DO TOPO: 2 por linha ---------- */
+  .pagina .stats-row, .pagina .stats-grid, .pagina .esc-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .pagina .stats-row .stat-card { padding: 12px 14px; min-width: 0; }
+
+  /* ---------- DUAS COLUNAS VIRAM UMA ---------- */
+  .pagina .layout, .pagina .cal-layout, .pagina .grid-main,
+  .pagina .content-grid, .pagina .info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ---------- GRADES DE CARTÕES: um por linha ---------- */
+  .pagina .cards-grid, .pagina .times-grid, .pagina .grade-biblioteca {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ---------- ABAS E FILTROS ---------- */
+  .pagina .tabs { max-width: 100%; overflow-x: auto; }
+  .pagina .tabs .tab { white-space: nowrap; flex-shrink: 0; }
+  .pagina .toolbar > * { flex: 1 1 auto; }
+  .pagina .toolbar .search-wrap { flex-basis: 100%; }
+  .pagina .toolbar .search-bar { width: 100%; }
+  .pagina .toolbar .ml-auto { margin-left: 0; }
+
+  /* ---------- PERFIL DO ATLETA ---------- */
+  .pagina .hero-card { flex-direction: column; text-align: center; padding: 22px 16px; gap: 16px; }
+  .pagina .hero-badges { justify-content: center; flex-wrap: wrap; }
+  .pagina .hero-stats { flex-wrap: wrap; justify-content: center; gap: 14px 22px; }
+
+  /* ---------- CALENDÁRIO (FullCalendar) ---------- */
+  .pagina .fc .fc-header-toolbar { flex-wrap: wrap; gap: 8px; }
+  .pagina .fc .fc-toolbar-title { font-size: 20px; }
+
+  /* ---------- PRANCHETA ---------- */
+  .pagina .topo-esq, .pagina .topo-dir { flex-wrap: wrap; width: 100%; }
+  .pagina .topo-esq .campo-nome { flex: 1 1 100%; min-width: 0; }
+  .pagina .corpo { grid-template-columns: minmax(0, 1fr); }
+  .pagina .barra-ferramentas { flex-wrap: wrap; }
+
+  /* ---------- ASSISTENTE (tela de altura cheia com margens próprias) ---------- */
+  .pagina.pg-assistente .main { height: 100dvh; padding-bottom: 12px; }
+  .pagina .chips-wrap, .pagina .chat-container { padding-left: 0; padding-right: 0; }
+  .pagina.pg-assistente .topbar { padding: 0; }
+  .pagina .chat-container { padding-bottom: 0; }
+  .pagina .chat-box { padding: 14px; }
+  .pagina .input-wrap { padding: 10px; gap: 8px; }
+
+  /* ---------- TABELAS rolam de lado dentro do cartão ---------- */
+  .pagina .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ---------- MODAIS ---------- */
+  /* o popup de escalação (atividades) tem a grade inline "quadra | listas" */
+  .pagina #modalEscalacao .modal-body > div:nth-child(2) { grid-template-columns: minmax(0, 1fr) !important; }
+}

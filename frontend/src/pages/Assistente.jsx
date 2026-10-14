@@ -115,16 +115,16 @@ export default function Assistente() {
           anexoBase64: arquivo ? await lerBase64(arquivo) : undefined,
         }),
       });
-      if (res.status === 400) {
+      if (!res.ok) {
+        // o backend explica o motivo (sem permissão, anexo inválido, IA fora do ar...)
         const e = await res.json().catch(() => ({}));
-        addMsg(e.erro || 'Não consegui processar o anexo.', 'erro');
+        addMsg(e.erro || (res.status === 400 ? 'Não consegui processar o pedido.' : 'Não consegui me conectar ao assistente. Tente novamente em instantes.'), 'erro');
         return;
       }
-      if (!res.ok) throw new Error('Erro');
       const data = await res.json();
       addMsg(data.output || data.resposta || data.erro || 'Não consegui gerar uma resposta.', 'bot');
     } catch {
-      addMsg('Não consegui me conectar ao assistente. Verifique se o n8n está rodando em localhost:5678.', 'erro');
+      addMsg('Não consegui me conectar ao assistente. Tente novamente em instantes.', 'erro');
     } finally {
       setDigitando(false);
       inputRef.current?.focus();

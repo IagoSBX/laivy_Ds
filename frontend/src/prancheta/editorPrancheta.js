@@ -22,7 +22,7 @@ import { iniciarChatIA } from './ia/chat.js';
  * HTML existe, e devolve uma função que desfaz o que é global (listeners em
  * document/window, animação, toasts) quando a tela sai.
  */
-export function iniciarPrancheta({ navegar }) {
+export function iniciarPrancheta({ navegar, somenteLeitura = false }) {
   let encerrado = false;
   const limpezas = [];
   const ouvir = (alvo, evento, fn) => { alvo.addEventListener(evento, fn); limpezas.push(() => alvo.removeEventListener(evento, fn)); };
@@ -113,6 +113,7 @@ export function iniciarPrancheta({ navegar }) {
   // ---------------------------------------------------------------------
 
   async function salvar() {
+    if (somenteLeitura) return; // atleta só visualiza (o backend também recusa)
     const s = store.get();
     const erros = validarJogada(s.jogada);
     if (erros.length) {
@@ -479,7 +480,7 @@ export function iniciarPrancheta({ navegar }) {
     renderizador = criarRenderizador(svg);
 
     timeline = criarTimeline({
-      elemento: el('linha-frames'), store, historico, aoMudar: () => { desenhar(); agendarRascunho(); }
+      elemento: el('linha-frames'), store, historico, somenteLeitura, aoMudar: () => { desenhar(); agendarRascunho(); }
     });
 
     player = criarPlayer({
@@ -494,7 +495,8 @@ export function iniciarPrancheta({ navegar }) {
       }
     });
 
-    ativarArrasto({
+    // somente leitura: sem arrastar nem desenhar na quadra
+    if (!somenteLeitura) ativarArrasto({
       svg, grupoQuadra: svg, store, historico, enquadramento,
       aoSoltar: (id, pos) => aplicarNoFrame(frame => {
         const t = frame.tokens.find(k => k.id === id);
@@ -507,7 +509,7 @@ export function iniciarPrancheta({ navegar }) {
       }
     });
 
-    ativarFerramentas({
+    if (!somenteLeitura) ativarFerramentas({
       svg, grupoQuadra: svg, store, historico, enquadramento,
       frameAtual, aplicarNoFrame, render: desenhar, agendarRascunho
     });
@@ -521,7 +523,7 @@ export function iniciarPrancheta({ navegar }) {
     await carregarAtividades();
     atualizarBotaoVincular();
 
-    iniciarChatIA({ comandos, idTime: ID_TIME });
+    if (!somenteLeitura) iniciarChatIA({ comandos, idTime: ID_TIME });
 
     if (ID_JOGADA) {
       const dados = await api.buscar(ID_TIME, ID_JOGADA);

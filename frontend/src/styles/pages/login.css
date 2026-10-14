@@ -240,8 +240,11 @@
 .ps-field input:focus { border-color: #00C97A; background: rgba(0,201,122,0.04); }
 .ps-field input.ok { border-color: #00C97A !important; }
 .ps-field input.err { border-color: #FF6B6B !important; background: rgba(255,80,80,0.04) !important; }
-.ps-eye { position: absolute; right: 12px; bottom: 11px; cursor: pointer;
- font-size: 16px; color: #8899BB; user-select: none; }
+.ps-eye { position: absolute; right: 8px; bottom: 7px; cursor: pointer; display: flex;
+ background: none; border: 0; border-radius: 6px; padding: 6px; color: #8899BB; }
+.ps-eye:hover, .ps-eye:focus-visible { color: #00C97A; background: rgba(0,201,122,0.08); outline: none; }
+/* o Edge desenha o próprio "ver senha" dentro do campo: some, fica só o nosso */
+.ps-field input::-ms-reveal, .ps-field input::-ms-clear { display: none; }
 /* Requisitos visuais */
 .ps-reqs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 22px; }
 .ps-req {

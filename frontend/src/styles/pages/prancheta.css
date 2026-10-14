@@ -378,3 +378,4 @@ body { -webkit-text-size-adjust: 100%; }
 .toast-sucesso .toast-icone { background: rgba(0,201,122,.2); color: var(--verde); }
 .toast-erro { border-color: rgba(224,101,77,.4); }
 .toast-erro .toast-icone { background: rgba(224,101,77,.2); color: #E0654D; }
+

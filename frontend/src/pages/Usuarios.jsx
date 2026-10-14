@@ -493,9 +493,9 @@ export default function Usuarios() {
                     </button>
                   </div>
                   <ul className="senha-reqs" id="reqs-senha" aria-live="polite">
-                    <li data-req="len" className={reqs.len ? 'ok' : ''}>Mínimo de 8 caracteres</li>
-                    <li data-req="letra" className={reqs.letra ? 'ok' : ''}>Pelo menos uma letra</li>
-                    <li data-req="num" className={reqs.num ? 'ok' : ''}>Pelo menos um número</li>
+                    <li data-req="len" className={reqs.len ? 'ok' : ''}>Mín. 8 caracteres</li>
+                    <li data-req="letra" className={reqs.letra ? 'ok' : ''}>Uma letra</li>
+                    <li data-req="num" className={reqs.num ? 'ok' : ''}>Um número</li>
                   </ul>
                   <Hint r={val.senha} />
                 </div>

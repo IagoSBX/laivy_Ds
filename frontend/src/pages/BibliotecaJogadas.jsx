@@ -3,13 +3,16 @@ import Sidebar from '../components/Sidebar.jsx';
 import { iniciarBiblioteca } from '../prancheta/biblioteca.js';
 import useMotor from '../lib/useMotor.js';
 import useTitulo from '../lib/useTitulo.js';
+import { usuarioLogado } from '../lib/sessao.js';
 import '../styles/pages/prancheta.css';
 
 // Casca da biblioteca; a grade de cartões (com miniaturas desenhadas pelo
 // mesmo renderizador do editor) é montada por prancheta/biblioteca.js.
 export default function BibliotecaJogadas() {
   useTitulo('Biblioteca de jogadas · LAIVY');
-  useMotor(iniciarBiblioteca);
+  // atleta só visualiza as jogadas (criar/editar é do treinador)
+  const somenteLeitura = usuarioLogado().tipo_usuario === 3;
+  useMotor((opcoes) => iniciarBiblioteca({ ...opcoes, somenteLeitura }));
 
   return (
     <div className="pagina pg-prancheta">
@@ -21,7 +24,7 @@ export default function BibliotecaJogadas() {
             <h1>Biblioteca de Jogadas</h1>
             <p>Jogadas salvas do time, prontas pra reaproveitar em qualquer treino ou jogo.</p>
           </div>
-          <a id="link-nova" className="btn btn-primario" href="#">+ Nova jogada</a>
+          {!somenteLeitura && <a id="link-nova" className="btn btn-primario" href="#">+ Nova jogada</a>}
         </div>
 
         <div className="barra-filtros">
