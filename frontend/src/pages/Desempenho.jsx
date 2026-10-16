@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import ThOrdenavel from '../components/ThOrdenavel.jsx';
 import { authFetch, getJson, iniciais } from '../lib/api.js';
 import { ordenar } from '../lib/ordenacao.js';
-import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
+import { ehPreparo, timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import { enterAvanca } from '../lib/validacao.js';
@@ -44,7 +44,9 @@ export default function Desempenho() {
   const [params] = useSearchParams();
   const user = usuarioLogado();
   const isAtleta = user.tipo_usuario === 3;
-  const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+  // desempenho: Admin, Treinador e Preparador Físico editam; atleta e período de teste só veem
+  const somenteLeitura = !ehPreparo(user);
+  const isAdmin = ehPreparo(user);
   const ts = timeSelecionado();
   const urlTime = (base) => (ts ? base + '?idTime=' + ts.id : base);
 
@@ -127,12 +129,12 @@ export default function Desempenho() {
 
   // ---------- AÇÕES ----------
   function mudarAba(id) {
-    if (id === 'form' && isAtleta) { toast('Acesso restrito: você não tem permissão para criar avaliações.', false); return; }
+    if (id === 'form' && somenteLeitura) { toast('Acesso restrito: você não tem permissão para criar avaliações.', false); return; }
     setAba(id);
   }
 
   function abrirEdicao(id) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     const d = lista0.find((x) => x.id_desempenho === id);
     if (!d) return;
     setForm({ usuario_id: d.usuario?.id_usuario ? String(d.usuario.id_usuario) : '', data_desempenho: d.data_desempenho || '', posicao_usuario: d.posicao_usuario || '' });
@@ -149,7 +151,7 @@ export default function Desempenho() {
 
   async function salvar(e) {
     e.preventDefault();
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     const payload = {
       usuario: { id_usuario: parseInt(form.usuario_id) },
       data_desempenho: form.data_desempenho,
@@ -167,7 +169,7 @@ export default function Desempenho() {
   }
 
   function confirmarDel(d) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     setDelAlvo({ id: d.id_desempenho, nome: d.usuario?.nome_usuario || '—' });
   }
 
@@ -205,7 +207,7 @@ export default function Desempenho() {
         {/* TABS */}
         <div className="tabs">
           <button className={'tab' + (aba === 'lista' ? ' active' : '')} onClick={() => mudarAba('lista')}> Lista</button>
-          {!isAtleta && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => mudarAba('form')}> Novo Registro</button>}
+          {!somenteLeitura && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => mudarAba('form')}> Novo Registro</button>}
           <button className={'tab' + (aba === 'ranking' ? ' active' : '')} onClick={() => mudarAba('ranking')}> Ranking</button>
         </div>
 
@@ -229,7 +231,7 @@ export default function Desempenho() {
                 <button className={'view-btn' + (visao === 'cards' ? ' active' : '')} onClick={() => setVisao('cards')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></button>
                 <button className={'view-btn' + (visao === 'tabela' ? ' active' : '')} onClick={() => setVisao('tabela')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg></button>
               </div>
-              {!isAtleta && <button className="btn-novo" onClick={() => mudarAba('form')}>+ Novo</button>}
+              {!somenteLeitura && <button className="btn-novo" onClick={() => mudarAba('form')}>+ Novo</button>}
             </div>
 
             {/* CARDS */}

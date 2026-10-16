@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import { iniciarBiblioteca } from '../prancheta/biblioteca.js';
 import useMotor from '../lib/useMotor.js';
 import useTitulo from '../lib/useTitulo.js';
-import { usuarioLogado } from '../lib/sessao.js';
+import { ehGestor, usuarioLogado } from '../lib/sessao.js';
 import '../styles/pages/prancheta.css';
 
 // Casca da biblioteca; a grade de cartões (com miniaturas desenhadas pelo
@@ -11,7 +11,7 @@ import '../styles/pages/prancheta.css';
 export default function BibliotecaJogadas() {
   useTitulo('Biblioteca de jogadas · LAIVY');
   // atleta só visualiza as jogadas (criar/editar é do treinador)
-  const somenteLeitura = usuarioLogado().tipo_usuario === 3;
+  const somenteLeitura = !ehGestor(usuarioLogado()); // atleta, preparador e período de teste só visualizam
   useMotor((opcoes) => iniciarBiblioteca({ ...opcoes, somenteLeitura }));
 
   return (

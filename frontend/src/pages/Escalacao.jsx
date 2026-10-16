@@ -4,7 +4,7 @@ import Modal from '../components/Modal.jsx';
 import QuadraEscalacao from '../components/QuadraEscalacao.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import { authFetch, getJson, iniciais } from '../lib/api.js';
-import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
+import { ehGestor, timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import '../styles/pages/escalacao.css';
@@ -31,8 +31,9 @@ export default function Escalacao() {
   useTitulo('Escalação — LAIVY');
   const [params] = useSearchParams();
   const user = usuarioLogado();
-  const isAtleta = user.tipo_usuario === 3;
-  const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+  // escalação: só quem gerencia o time edita (preparador e período de teste só veem)
+  const somenteLeitura = !ehGestor(user);
+  const isAdmin = ehGestor(user);
   const ts = timeSelecionado();
   const urlTime = (base) => (ts ? base + '?idTime=' + ts.id : base);
 
@@ -74,7 +75,7 @@ export default function Escalacao() {
   const pronta = tit.length >= 5;
 
   function abrirModal(titular) {
-    if (isAtleta) { toast('Acesso restrito: apenas treinadores podem modificar a escalação.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito: apenas treinadores podem modificar a escalação.', false); return; }
     setTipoAdd(titular);
     setAtletaSel(null);
     setTipoSel(String(titular));
@@ -83,7 +84,7 @@ export default function Escalacao() {
   }
 
   async function confirmarAdicao() {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     if (!atletaSel) { toast('Selecione um atleta!', false); return; }
     const camisa = parseInt(num) || null;
     const titular = parseInt(tipoSel);
@@ -124,14 +125,14 @@ export default function Escalacao() {
   }
 
   function remover(id) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     authFetch('/escalacoes/' + id, { method: 'DELETE' }).catch(() => {});
     setEscDados((x) => x.filter((e) => e.id_escalacao !== id));
     toast('Jogador removido!');
   }
 
   function fecharEscalacao() {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     if (tit.length < 5) {
       toast('Para fechar a escalação são necessários pelo menos 5 titulares (tem ' + tit.length + ').', false);
       return;
@@ -242,7 +243,7 @@ export default function Escalacao() {
                     {tit.length ? tit.map(item)
                       : <div style={{ textAlign: 'center', padding: 14, color: '#8899BB', fontSize: 12 }}>Nenhum titular ainda</div>}
                   </div>
-                  {!isAtleta && <button className="btn-add btn-add-tit" onClick={() => abrirModal(1)}>+ Adicionar Titular</button>}
+                  {!somenteLeitura && <button className="btn-add btn-add-tit" onClick={() => abrirModal(1)}>+ Adicionar Titular</button>}
                 </div>
                 <div className="card-dark">
                   <div className="sec-label">
@@ -253,7 +254,7 @@ export default function Escalacao() {
                     {res.length ? res.map(item)
                       : <div style={{ textAlign: 'center', padding: 14, color: '#8899BB', fontSize: 12 }}>Nenhum reserva ainda</div>}
                   </div>
-                  {!isAtleta && <button className="btn-add btn-add-res" onClick={() => abrirModal(0)}>+ Adicionar Reserva</button>}
+                  {!somenteLeitura && <button className="btn-add btn-add-res" onClick={() => abrirModal(0)}>+ Adicionar Reserva</button>}
                 </div>
               </div>
             </div>
@@ -268,7 +269,7 @@ export default function Escalacao() {
       </main>
 
       {/* MODAL ADICIONAR JOGADOR (atleta não modifica a escalação) */}
-      <Modal id="modalAdd" tamanho="lg" aberto={modalAberto && !isAtleta} onFechar={() => setModalAberto(false)}>
+      <Modal id="modalAdd" tamanho="lg" aberto={modalAberto && !somenteLeitura} onFechar={() => setModalAberto(false)}>
         <div className="modal-header">
           <h5 className="modal-title" style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 22, letterSpacing: 1 }}>{tipoAdd ? ' Adicionar Titular' : ' Adicionar Reserva'}</h5>
           <button className="btn-close" onClick={() => setModalAberto(false)}></button>

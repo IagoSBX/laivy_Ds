@@ -1,0 +1,26 @@
+:root { --verde: #00C97A; --azul: #0A1628; --branco: #F0F4FF; --cinza: #8899BB; --card-bg: linear-gradient(135deg, #0D1E3C, #112244); }
+body { display: block; font-family: 'Barlow', sans-serif; background: var(--azul); color: var(--branco); min-height: 100vh; }
+
+.cc-main { max-width: 920px; margin: 0 auto; padding: 32px 16px 48px; }
+.cc-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.cc-topo h1 { font-family: 'Bebas Neue', cursive; font-size: 38px; letter-spacing: 2px; line-height: 1; }
+.cc-topo p { font-size: 14px; color: var(--cinza); margin-top: 6px; }
+.cc-sair { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--cinza); font: 600 13px 'Barlow', sans-serif; padding: 8px 16px; cursor: pointer; }
+.card-dark { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 28px; }
+.cc-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
+
+.form-control, .form-select { background: rgba(255,255,255,0.05) !important; border: 1.5px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; color: var(--branco) !important; font-family: 'Barlow', sans-serif; }
+.form-control:focus { border-color: var(--verde) !important; box-shadow: 0 0 0 3px rgba(0,201,122,0.15) !important; }
+.form-control.is-invalid { border-color: #FF6B6B !important; }
+.form-control.is-valid { border-color: var(--verde) !important; }
+.form-control::placeholder { color: rgba(136,153,187,0.4) !important; }
+label.form-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cinza); margin-bottom: 6px; display: block; }
+.required { color: #FF6B6B; }
+.field-hint { display: none; font-size: 12px; margin-top: 4px; }
+.field-hint.show { display: block; }
+.field-hint.ok { color: var(--verde); }
+.field-hint.err { color: #FF6B6B; }
+
+.cc-erro { padding: 10px 14px; border-radius: 10px; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: #FF8A8A; font-size: 14px; }
+.cc-btn { background: var(--verde); color: var(--azul); border: none; border-radius: 10px; font: 700 15px 'Barlow', sans-serif; padding: 12px 28px; cursor: pointer; }
+.cc-btn:disabled { opacity: .6; cursor: wait; }

@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import ThOrdenavel from '../components/ThOrdenavel.jsx';
 import { authFetch, getJson, iniciais, lerImagem } from '../lib/api.js';
 import { ordenar } from '../lib/ordenacao.js';
-import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
+import { ehPreparo, timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import { enterAvanca } from '../lib/validacao.js';
@@ -67,7 +67,9 @@ export default function Exames() {
   const [params] = useSearchParams();
   const user = usuarioLogado();
   const isAtleta = user.tipo_usuario === 3;
-  const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+  // exames: Admin, Treinador e Preparador Físico editam; atleta e período de teste só veem
+  const somenteLeitura = !ehPreparo(user);
+  const isAdmin = ehPreparo(user);
   const ts = timeSelecionado();
   const urlTime = (base) => (ts ? base + '?idTime=' + ts.id : base);
 
@@ -136,7 +138,7 @@ export default function Exames() {
   }
 
   function abrirEdicao(id) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     const e = dados.find((x) => x.id_exame === id);
     if (!e) return;
     setForm({
@@ -153,7 +155,7 @@ export default function Exames() {
 
   async function salvar(ev) {
     ev.preventDefault();
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     if (!periodoOk) { toast('A data de fim não pode ser anterior à data de início.', false); return; }
     const payload = {
       data_inicio_exame: form.data_inicio_exame,
@@ -256,7 +258,7 @@ export default function Exames() {
         {/* TABS */}
         <div className="tabs">
           <button className={'tab' + (aba === 'lista' ? ' active' : '')} onClick={() => setAba('lista')}> Lista</button>
-          {!isAtleta && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => setAba('form')}> Novo Exame</button>}
+          {!somenteLeitura && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => setAba('form')}> Novo Exame</button>}
         </div>
 
         {/* TAB LISTA */}
@@ -280,7 +282,7 @@ export default function Exames() {
                 <button className={'view-btn' + (visao === 'cards' ? ' active' : '')} title="Cards" onClick={() => setVisao('cards')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></button>
                 <button className={'view-btn' + (visao === 'tabela' ? ' active' : '')} title="Tabela" onClick={() => setVisao('tabela')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg></button>
               </div>
-              {!isAtleta && <button className="btn-novo" onClick={() => setAba('form')}>+ Novo</button>}
+              {!somenteLeitura && <button className="btn-novo" onClick={() => setAba('form')}>+ Novo</button>}
             </div>
 
             {/* CARDS */}

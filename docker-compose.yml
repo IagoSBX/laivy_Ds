@@ -49,6 +49,10 @@ services:
       - SMTP_STARTTLS=${SMTP_STARTTLS:-false}
       - MAIL_FROM=${MAIL_FROM:-laivy@localhost}
       - APP_URL=${APP_URL:-http://localhost:8080}
+      # Planos via PIX: sem MERCADOPAGO_ACCESS_TOKEN o dev usa PIX simulado
+      # (botão "Simular pagamento" na tela de planos).
+      - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN:-}
+      - PAGAMENTO_SIMULADO=${PAGAMENTO_SIMULADO:-true}
     ports:
       # só esta máquina acessa (em HTTP); para servidor use docker-compose.prod.yml (HTTPS)
       - "127.0.0.1:8080:8080"

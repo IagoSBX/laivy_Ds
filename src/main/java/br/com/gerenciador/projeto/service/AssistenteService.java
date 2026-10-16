@@ -39,6 +39,7 @@ public class AssistenteService {
     @Autowired private JogadaService jogadaService;
     @Autowired private UsuarioService usuarioService;
     @Autowired private ExameDAO exameDAO;
+    @Autowired private AssinaturaService assinaturas;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -83,6 +84,7 @@ public class AssistenteService {
     private static String nomePerfil(Integer tipo) {
         if (AuthUtil.ehAdmin(tipo)) return "Admin";
         if (AuthUtil.ehTreinador(tipo)) return "Treinador";
+        if (AuthUtil.ehPreparador(tipo)) return "Preparador Físico";
         return "Atleta";
     }
 
@@ -108,8 +110,12 @@ public class AssistenteService {
         }
         payload.put("idUsuario", authId);
         payload.put("tipo_usuario", authTipo);
-        if (!AuthUtil.ehAdmin(authTipo))
-            payload.put("idTime", AuthUtil.timeDoUsuario(authId, usuarioDAO));
+        if (!AuthUtil.ehAdmin(authTipo)) {
+            Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
+            if (!assinaturas.iaLiberada(meuTime))
+                throw new ForbiddenException("A IA não faz parte do plano do seu time. Ela está nos planos Pro e Full.");
+            payload.put("idTime", meuTime);
+        }
         Object idAtleta = payload.get("idAtleta");
         if (idAtleta != null) {
             try {

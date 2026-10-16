@@ -96,6 +96,7 @@ label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transfor
 .badge-admin{background:rgba(0,201,122,0.15);color:var(--verde);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge-treinador{background:rgba(78,201,255,0.15);color:#4EC9FF;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .badge-atleta{background:rgba(255,176,32,0.15);color:#FFB020;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-preparador{background:rgba(181,123,255,0.15);color:#B57BFF;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .empty-state{text-align:center;padding:48px 24px;color:var(--cinza);}
 .empty-state .empty-icon{font-size:40px;margin-bottom:12px;}
 /* CEP LOADING */

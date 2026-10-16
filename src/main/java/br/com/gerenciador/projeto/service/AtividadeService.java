@@ -84,10 +84,11 @@ public class AtividadeService {
     public Atividade cadastrar(Atividade atividade, Integer authTipo, Integer authId) {
         validarFormulario(atividade);
         Integer idTimeDesejado = idTime(atividade);
-        if (AuthUtil.ehTreinador(authTipo)) {
-            // Treinador só pode cadastrar atividade para o próprio time.
+        if (AuthUtil.ehTreinador(authTipo) || AuthUtil.ehPreparador(authTipo)) {
+            // Treinador/Preparador só cadastram atividade para o próprio time.
             Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
-            if (meuTime == null || (idTimeDesejado != null && !idTimeDesejado.equals(meuTime)))
+            if (meuTime == null || (idTimeDesejado != null && !idTimeDesejado.equals(meuTime))
+                    || !AuthUtil.podeGerenciarPreparo(authTipo, authId, meuTime, usuarioDAO))
                 throw new ForbiddenException("Sem permissao para cadastrar atividade para este time.");
             idTimeDesejado = meuTime;
         } else if (!AuthUtil.ehAdmin(authTipo)) {
@@ -108,7 +109,7 @@ public class AtividadeService {
 
     public Atividade atualizar(Integer id, Atividade dados, Integer authTipo, Integer authId) {
         Atividade a = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(a), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(a), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar esta atividade.");
 
         Atividade validacao = new Atividade();
@@ -164,7 +165,7 @@ public class AtividadeService {
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
         Atividade a = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(a), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(a), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir esta atividade.");
         atividadeDAO.deleteById(id);
     }

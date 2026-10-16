@@ -65,7 +65,7 @@ public class DesempenhoService {
         Usuario u = usuarioDAO.findById(desempenho.getUsuario().getId_usuario())
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
         Integer idTimeAlvo = u.getTime() != null ? u.getTime().getId_time() : null;
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTimeAlvo, usuarioDAO))
             throw new ForbiddenException("Sem permissao para cadastrar desempenho para este usuario.");
         desempenho.setUsuario(u);
         return desempenhoDAO.save(desempenho);
@@ -73,7 +73,7 @@ public class DesempenhoService {
 
     public Desempenho atualizar(Integer id, Desempenho dados, Integer authTipo, Integer authId) {
         Desempenho d = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(d), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(d), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar este desempenho.");
 
         if (dados.getData_desempenho()  != null) d.setData_desempenho(dados.getData_desempenho());
@@ -88,7 +88,7 @@ public class DesempenhoService {
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
         Desempenho d = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(d), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(d), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir este desempenho.");
         desempenhoDAO.deleteById(id);
     }

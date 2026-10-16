@@ -4,7 +4,7 @@ import prefixer from 'postcss-prefix-selector';
 
 // Rotas da API do Spring — em dev o Vite repassa para o backend em :8080.
 const API = ['/usuarios', '/times', '/atividades', '/calendarios', '/desempenhos',
-  '/exames', '/escalacoes', '/visitantes', '/assistente'];
+  '/exames', '/escalacoes', '/visitantes', '/assistente', '/auditoria', '/assinaturas'];
 
 // Todas as telas agora vivem no mesmo bundle, então o CSS de cada uma
 // (src/styles/pages/<tela>.css) fica preso à raiz .pg-<tela>, e o Bootstrap

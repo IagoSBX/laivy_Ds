@@ -18,6 +18,7 @@ public class TimeService {
 
     @Autowired private TimeDAO timeDAO;
     @Autowired private IUsuario usuarioDAO;
+    @Autowired private AssinaturaService assinaturas;
 
     public List<Time> listarTodos() {
         return timeDAO.findAll();
@@ -42,12 +43,20 @@ public class TimeService {
         return membros;
     }
 
-    // Somente Admin cria/edita/exclui times (o cadastro de time é uma ação administrativa).
-    public Time criar(Time time, Integer authTipo) {
-        if (!AuthUtil.ehAdmin(authTipo))
-            throw new ForbiddenException("Somente Admin pode cadastrar times.");
+    // Admin cria/edita/exclui times. O treinador que pagou um plano cria o
+    // próprio time uma vez (ele é o responsável e vira membro).
+    public Time criar(Time time, Integer authTipo, Integer authId) {
+        if (!AuthUtil.ehAdmin(authTipo)) {
+            Usuario eu = authId != null ? usuarioDAO.findById(authId).orElse(null) : null;
+            if (eu == null || assinaturas.situacao(eu) != AssinaturaService.Situacao.ATIVO)
+                throw new ForbiddenException("Somente Admin pode cadastrar times.");
+            if (eu.getTime() != null)
+                throw new br.com.gerenciador.projeto.exception.BadRequestException("Você já tem um time cadastrado.");
+            time.setTreinador(eu);
+            time.setAtivo_time(1);
+        }
         if (time.getAtivo_time() == null) time.setAtivo_time(1);
-        if (time.getTreinador() != null && time.getTreinador().getId_usuario() != null)
+        if (AuthUtil.ehAdmin(authTipo) && time.getTreinador() != null && time.getTreinador().getId_usuario() != null)
             usuarioDAO.findById(time.getTreinador().getId_usuario()).ifPresent(time::setTreinador);
         Time salvo = timeDAO.save(time);
         vincularTreinadorAoTime(salvo);
@@ -93,6 +102,8 @@ public class TimeService {
             throw new ForbiddenException("Sem permissao para gerenciar membros deste time.");
         Usuario u = usuarioDAO.findById(idUsuario)
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
+        boolean jaEsta = u.getTime() != null && id.equals(u.getTime().getId_time());
+        if (Integer.valueOf(3).equals(u.getTipo_usuario()) && !jaEsta) assinaturas.exigirVagas(id, 1);
         timeDAO.findById(id).ifPresent(u::setTime);
         return usuarioDAO.save(u);
     }

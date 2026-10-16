@@ -17,12 +17,19 @@ import java.util.List;
  * HttpOnly "jwtToken", enviado automaticamente pelo navegador.
  *
  * Tudo mais (arquivos estáticos, favicon, /error) passa direto.
- * Rotas públicas: POST /usuarios/login, /logout, /esqueci-senha e /redefinir-senha
+ * Rotas públicas: POST /usuarios/login, /logout, /esqueci-senha, /redefinir-senha,
+ * /cadastro, /confirmar-email, /reenviar-confirmacao e o webhook do PIX.
+ *
+ * Depois do token, barreiras por situação da conta (resposta 403 com "codigo"):
+ *   SENHA           senha temporária: só a troca da própria senha
+ *   CADASTRO        convidado por e-mail: só completar os próprios dados
+ *   PLANO           treinador autocadastrado sem plano nem teste: só /assinaturas
+ *   SOMENTE_LEITURA treinador em período de teste: só leitura (GET) e /assinaturas
  *
  * Após validar o token, o filtro expõe a identidade do usuário
  * autenticado como atributos da requisição:
  *   authId    → id_usuario   (Integer)
- *   authTipo  → tipo_usuario (Integer: 1=Admin, 2=Treinador, 3=Atleta)
+ *   authTipo  → tipo_usuario (Integer: 1=Admin, 2=Treinador, 3=Atleta, 4=Preparador Físico)
  *   authLogin → login_usuario(String)
  */
 @Component
@@ -38,6 +45,9 @@ public class JwtFilter implements Filter {
     @Autowired
     private br.com.gerenciador.projeto.DAO.IUsuario usuarioDAO;
 
+    @Autowired
+    private br.com.gerenciador.projeto.service.AssinaturaService assinaturas;
+
     /** Maior corpo aceito nas rotas de API (anexo de 5 MB do chat vira ~6,7 MB em base64). */
     private static final long MAX_CORPO_BYTES = 8L * 1024 * 1024;
 
@@ -48,14 +58,18 @@ public class JwtFilter implements Filter {
     private static final List<String> API_PREFIXOS = List.of(
         "/usuarios", "/times", "/atividades", "/calendarios",
         "/desempenhos", "/exames", "/escalacoes", "/visitantes",
-        "/assistente", "/auditoria"
+        "/assistente", "/auditoria", "/assinaturas"
     );
 
     private static final List<String> API_PUBLICAS = List.of(
         "/usuarios/login",
         "/usuarios/logout",
         "/usuarios/esqueci-senha",
-        "/usuarios/redefinir-senha"
+        "/usuarios/redefinir-senha",
+        "/usuarios/cadastro",
+        "/usuarios/confirmar-email",
+        "/usuarios/reenviar-confirmacao",
+        "/assinaturas/webhook"
     );
 
     // Casa o path com o prefixo respeitando limite de segmento:
@@ -153,7 +167,26 @@ public class JwtFilter implements Filter {
             boolean trocandoPropriaSenha = "PUT".equalsIgnoreCase(req.getMethod())
                 && path.equals("/usuarios/" + id + "/senha");
             if (Integer.valueOf(1).equals(usuario.getPrimeiro_login()) && !trocandoPropriaSenha) {
-                responderErro(res, 403, "Troque sua senha temporaria antes de continuar.");
+                responderErro(res, 403, "Troque sua senha temporaria antes de continuar.", "SENHA");
+                return;
+            }
+            // Convidado por e-mail: antes de usar o sistema, preenche os próprios dados.
+            boolean completandoCadastro = path.equals("/usuarios/" + id + "/completar-cadastro")
+                || ("GET".equalsIgnoreCase(req.getMethod()) && path.equals("/usuarios/" + id));
+            if (usuario.getCadastro_completo() == 0 && !completandoCadastro && !trocandoPropriaSenha) {
+                responderErro(res, 403, "Complete seu cadastro antes de continuar.", "CADASTRO");
+                return;
+            }
+            // Treinador autocadastrado: sem plano só a tela de planos; no teste, só leitura.
+            var situacao = assinaturas.situacao(usuario);
+            boolean rotaDePlano = casaComPrefixo(path, "/assinaturas");
+            if (situacao == br.com.gerenciador.projeto.service.AssinaturaService.Situacao.SEM_PLANO && !rotaDePlano) {
+                responderErro(res, 403, "Escolha um plano para continuar.", "PLANO");
+                return;
+            }
+            if (situacao == br.com.gerenciador.projeto.service.AssinaturaService.Situacao.TESTE
+                    && !"GET".equalsIgnoreCase(req.getMethod()) && !rotaDePlano && !trocandoPropriaSenha) {
+                responderErro(res, 403, "Periodo de teste: somente visualizacao. Assine um plano para editar.", "SOMENTE_LEITURA");
                 return;
             }
 
@@ -170,9 +203,14 @@ public class JwtFilter implements Filter {
     }
 
     private static void responderErro(HttpServletResponse res, int status, String msg) throws IOException {
+        responderErro(res, status, msg, null);
+    }
+
+    /** codigo: diz ao front para onde mandar o usuário (ver authFetch). Mensagens sem aspas/acentos. */
+    private static void responderErro(HttpServletResponse res, int status, String msg, String codigo) throws IOException {
         res.setStatus(status);
         res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().write("{\"erro\":\"" + msg + "\"}");
+        res.getWriter().write("{\"erro\":\"" + msg + "\"" + (codigo != null ? ",\"codigo\":\"" + codigo + "\"" : "") + "}");
     }
 
     private static String extrairTokenDoCookie(HttpServletRequest req) {

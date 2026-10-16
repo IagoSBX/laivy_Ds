@@ -282,6 +282,14 @@ export default function Sidebar({ ocultarGestao = false }) {
             <div className="ti-dot" style={{ background: ts.cor || '#00C97A' }} /><div className="ti-nome">{ts.nome || 'Time'}</div><div className="ti-trocar">Trocar</div>
           </Link>
         )}
+        {/* Treinador autocadastrado: dias de teste ou atalho para o plano */}
+        {user.situacao && (
+          <Link to="/planos.html" className={'plano-indicator' + (user.situacao === 'TESTE' ? ' teste' : '')} title="Planos">
+            {user.situacao === 'TESTE'
+              ? <>Teste · {Math.max(0, Math.ceil((new Date(user.teste_fim) - new Date()) / 86400000))} dia(s) · <strong>Assinar</strong></>
+              : <>Meu plano</>}
+          </Link>
+        )}
         <div className="sidebar-footer">
           <div className="user-info" onClick={abrirPerfil} title="Ver perfil">
             <div className={'user-avatar' + (user.foto_usuario ? ' has-foto' : '')}><Avatar user={user} /></div>

@@ -30,7 +30,7 @@ public class ExameService {
     /** Pode cadastrar/editar/excluir exames deste usuário: Admin, ou Treinador do mesmo time (não o próprio atleta). */
     private boolean podeGerenciar(Usuario alvo, Integer authTipo, Integer authId) {
         Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
-        return AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, usuarioDAO);
+        return AuthUtil.podeGerenciarPreparo(authTipo, authId, idTimeAlvo, usuarioDAO);
     }
 
     // dados de saude sensiveis: nunca listar tudo para quem nao for Admin.
@@ -38,7 +38,7 @@ public class ExameService {
         if (AuthUtil.ehAdmin(authTipo))
             return idTime != null ? exameDAO.buscarPorTime(idTime) : exameDAO.findAll();
 
-        if (AuthUtil.ehTreinador(authTipo)) {
+        if (AuthUtil.ehTreinador(authTipo) || AuthUtil.ehPreparador(authTipo)) {
             Integer meuTime = AuthUtil.timeDoUsuario(authId, usuarioDAO);
             if (meuTime == null) return List.of();
             if (idTime != null && !idTime.equals(meuTime))

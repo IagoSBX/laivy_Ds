@@ -64,6 +64,7 @@ public class AcessoService {
             + "Senha temporária: " + senha + "\n\n"
             + "Para entrar, use o login e a senha temporária acima e escolha o perfil " + perfil(u.getTipo_usuario()) + ".\n"
             + "No primeiro acesso você vai criar a sua própria senha. Ninguém da equipe tem acesso a ela.\n"
+            + (u.getCadastro_completo() == 0 ? "Em seguida, complete seus dados (documentos, endereço e contato) para liberar o acesso.\n" : "")
             + "Esqueceu a senha depois? Use \"Esqueci minha senha\" na tela de login.\n"
             + "Se você não esperava este e-mail, pode ignorá-lo.");
     }
@@ -77,6 +78,17 @@ public class AcessoService {
             + "Para criar uma senha nova, abra o link abaixo em até " + validadeMinutos + " minutos:\n"
             + appUrl + "/redefinir-senha.html?token=" + token + "\n\n"
             + "O link só pode ser usado uma vez. Se você não pediu a redefinição, ignore este e-mail: sua senha atual continua valendo.");
+    }
+
+    /** Link de confirmação do e-mail do treinador que se cadastrou sozinho. */
+    public boolean enviarConfirmacaoEmail(Usuario u, String token, int validadeHoras) {
+        return enviar(u, "Confirme seu e-mail no LAIVY",
+            "Olá, " + u.getNome_usuario() + "!\n\n"
+            + "Recebemos o cadastro da sua conta de treinador no LAIVY.\n"
+            + "Para ativá-la, abra o link abaixo em até " + validadeHoras + " horas:\n"
+            + appUrl + "/confirmar-email.html?token=" + token + "\n\n"
+            + "Depois, entre com este e-mail (ou com o login " + u.getLogin_usuario() + "), a senha que você criou e o perfil Treinador.\n"
+            + "Se não foi você que se cadastrou, ignore este e-mail: a conta não será ativada.");
     }
 
     private boolean enviar(Usuario u, String assunto, String texto) {
@@ -99,6 +111,7 @@ public class AcessoService {
         return switch (tipo) {
             case 1 -> "Administrador";
             case 2 -> "Treinador";
+            case 4 -> "Preparador Físico";
             default -> "Atleta";
         };
     }

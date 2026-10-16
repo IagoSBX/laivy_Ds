@@ -1,0 +1,43 @@
+:root { --verde: #00C97A; --azul: #0A1628; --branco: #F0F4FF; --cinza: #8899BB; }
+body { display: block; font-family: 'Barlow', sans-serif; background: radial-gradient(ellipse at 50% 0%, #112244 0%, var(--azul) 60%); color: var(--branco); min-height: 100vh; }
+
+.pl-topo { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; }
+.pl-marca { display: flex; align-items: center; gap: 10px; font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 3px; }
+.pl-marca img { width: 34px; height: 34px; }
+.pl-acoes { display: flex; gap: 8px; }
+.pl-link { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--cinza); font: 600 13px 'Barlow', sans-serif; padding: 8px 16px; cursor: pointer; }
+.pl-link:hover { color: var(--branco); background: rgba(255,255,255,0.1); }
+
+.pl-main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 48px; }
+.pl-main h1 { font-family: 'Bebas Neue', cursive; font-size: 44px; letter-spacing: 2px; }
+.pl-main h2 { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+.pl-sub { color: var(--cinza); font-size: 14px; margin-top: 4px; }
+.pl-rodape { margin-top: 24px; text-align: center; }
+.pl-erro { margin: 14px 0; padding: 12px 14px; border-radius: 10px; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.3); color: #FF8A8A; font-size: 14px; }
+.pl-ativo { margin: 16px 0; padding: 16px 18px; border-radius: 14px; background: rgba(0,201,122,0.08); border: 1px solid rgba(0,201,122,0.3); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+.pl-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 24px; }
+.pl-card { background: linear-gradient(135deg, #0D1E3C, #112244); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+.pl-destaque { border-color: rgba(0,201,122,0.5); box-shadow: 0 0 0 1px rgba(0,201,122,0.25), 0 12px 30px rgba(0,201,122,0.08); }
+.pl-atual { outline: 2px solid var(--verde); }
+.pl-teste { border-style: dashed; }
+.pl-nome { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cinza); }
+.pl-preco { font-family: 'Bebas Neue', cursive; font-size: 38px; letter-spacing: 1px; }
+.pl-preco span { font-family: 'Barlow', sans-serif; font-size: 14px; color: var(--cinza); margin-left: 4px; }
+.pl-card ul { list-style: none; padding: 0; margin: 0 0 6px; display: grid; gap: 6px; font-size: 14px; flex: 1; }
+.pl-card li::before { content: '✓'; color: var(--verde); font-weight: 700; margin-right: 8px; }
+
+.pl-btn { background: var(--verde); color: var(--azul); border: none; border-radius: 10px; font: 700 14px 'Barlow', sans-serif; padding: 11px 16px; cursor: pointer; }
+.pl-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.pl-btn:disabled { opacity: .55; cursor: wait; }
+.pl-sec { background: rgba(255,255,255,0.08); color: var(--branco); border: 1px solid rgba(255,255,255,0.15); }
+
+.pl-pix { margin-top: 20px; padding: 20px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,201,122,0.35); }
+.pl-pix-corpo { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.pl-qr { width: 220px; height: 220px; background: #fff; border-radius: 12px; padding: 8px; }
+.pl-pix-texto { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+.pl-pix-texto label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--cinza); }
+.pl-pix-texto textarea { width: 100%; min-height: 96px; resize: vertical; background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--branco); font: 13px monospace; padding: 10px; word-break: break-all; }
+.pl-pulso { color: var(--verde); animation: pl-pulso 1.6s ease-in-out infinite; }
+@keyframes pl-pulso { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .pl-pulso { animation: none; } }

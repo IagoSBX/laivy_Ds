@@ -8,7 +8,7 @@ import ThOrdenavel from '../components/ThOrdenavel.jsx';
 import ToastsIcone from '../components/ToastsIcone.jsx';
 import { authFetch, getJson, iniciais } from '../lib/api.js';
 import { ordenar } from '../lib/ordenacao.js';
-import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
+import { ehGestor, ehPreparo, timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import { enterAvanca } from '../lib/validacao.js';
@@ -58,8 +58,9 @@ export default function Atividades() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const user = usuarioLogado();
-  const isAtleta = user.tipo_usuario === 3;
-  const isAdmin = user.tipo_usuario === 1 || user.tipo_usuario === 2;
+  // atividades: Admin, Treinador e Preparador Físico editam; atleta e período de teste só veem
+  const somenteLeitura = !ehPreparo(user);
+  const isAdmin = ehPreparo(user);
   const ts = timeSelecionado();
   const urlTime = (base) => (ts ? base + '?idTime=' + ts.id : base);
 
@@ -93,7 +94,7 @@ export default function Atividades() {
 
   useEffect(() => {
     // Responsável só pode ser Admin ou Treinador (tipo 1 ou 2), não atleta
-    getJson(urlTime('/usuarios')).then((d) => setResponsaveis(d.filter((u) => u.tipo_usuario === 1 || u.tipo_usuario === 2))).catch(() => {});
+    getJson(urlTime('/usuarios')).then((d) => setResponsaveis(d.filter((u) => u.tipo_usuario === 1 || u.tipo_usuario === 2 || u.tipo_usuario === 4))).catch(() => {});
     carregar();
     if (params.get('novo') === '1') mudarAba('form');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,7 +111,7 @@ export default function Atividades() {
   const valorOrdem = ORDENACAO.find((o) => o.campo === ordem.campo && o.direcao === ordem.direcao)?.valor || '';
 
   function mudarAba(id) {
-    if (id === 'form' && isAtleta) { toast('Acesso restrito: você não tem permissão para criar atividades.', false); return; }
+    if (id === 'form' && somenteLeitura) { toast('Acesso restrito: você não tem permissão para criar atividades.', false); return; }
     setAba(id);
   }
 
@@ -130,7 +131,7 @@ export default function Atividades() {
   }
 
   function abrirEdicao(id) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     const a = lista0.find((x) => x.id_atividade === id);
     if (!a) return;
     setForm({
@@ -146,7 +147,7 @@ export default function Atividades() {
 
   async function salvar(e) {
     e.preventDefault();
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     if (form.recorrente && form.fim_recorrencia && form.fim_recorrencia < form.data_atividade.slice(0, 10)) {
       toast('A data final da recorrência não pode ser anterior ao primeiro treino.', false);
       return;
@@ -192,7 +193,7 @@ export default function Atividades() {
 
   // ---------- FINALIZAR JOGO ----------
   async function abrirFinalizarJogo(id) {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     const a = lista0.find((x) => x.id_atividade === id);
     if (!a) return;
     let escalacao = [];
@@ -205,7 +206,7 @@ export default function Atividades() {
   }
 
   async function confirmarFinalizarJogo() {
-    if (isAtleta) { toast('Acesso restrito.', false); return; }
+    if (somenteLeitura) { toast('Acesso restrito.', false); return; }
     // 1. placar e status da atividade
     try {
       await authFetch('/atividades/' + fj.id, {
@@ -275,7 +276,7 @@ export default function Atividades() {
 
         <div className="tabs">
           <button className={'tab' + (aba === 'lista' ? ' active' : '')} onClick={() => mudarAba('lista')}> Lista</button>
-          {!isAtleta && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => mudarAba('form')}> Nova Atividade</button>}
+          {!somenteLeitura && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={() => mudarAba('form')}> Nova Atividade</button>}
         </div>
 
         <div className={'secao' + (aba === 'lista' ? ' visible' : '')}>
@@ -301,7 +302,7 @@ export default function Atividades() {
                 <button className={'view-btn' + (visao === 'cards' ? ' active' : '')} onClick={() => setVisao('cards')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></button>
                 <button className={'view-btn' + (visao === 'tabela' ? ' active' : '')} onClick={() => setVisao('tabela')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg></button>
               </div>
-              {!isAtleta && <button className="btn-novo" onClick={() => mudarAba('form')}>+ Nova</button>}
+              {!somenteLeitura && <button className="btn-novo" onClick={() => mudarAba('form')}>+ Nova</button>}
             </div>
 
             <div className={'cards-wrapper' + (visao === 'cards' ? ' visible' : '')}>
@@ -337,7 +338,7 @@ export default function Atividades() {
                           )}
                         </div>
                       </div>
-                      <button className="btn-esc-card" onClick={(e) => { e.stopPropagation(); abrirEscalacao(a); }}> {isAtleta ? 'Ver Escalação' : 'Montar Escalação'}</button>
+                      <button className="btn-esc-card" onClick={(e) => { e.stopPropagation(); abrirEscalacao(a); }}> {!ehGestor(user) ? 'Ver Escalação' : 'Montar Escalação'}</button>
                       {isAdmin && a.tipo_atividade === 2 && a.status_atividade !== 2 && (
                         <button className="btn-esc-card" style={{ background: 'rgba(0,201,122,0.08)', borderColor: 'rgba(0,201,122,0.3)', color: '#00C97A', marginTop: 6 }}
                           onClick={(e) => { e.stopPropagation(); abrirFinalizarJogo(a.id_atividade); }}> Finalizar Jogo / Lançar Pontos</button>

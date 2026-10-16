@@ -2,3 +2,10 @@
    (o tema estiliza body como flex; aqui a tela é o único filho dele). */
 #root { display: contents; }
 :where(.pagina) { flex: 1; display: flex; min-height: 100vh; min-width: 0; }
+
+/* Sidebar: atalho para os planos do treinador autocadastrado */
+.sidebar .plano-indicator { display: block; margin: 8px 16px 0; padding: 8px 12px; border-radius: 10px; font-size: 12px; text-align: center;
+  color: var(--cinza, #8899BB); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); text-decoration: none; }
+.sidebar .plano-indicator.teste { color: #FFB020; background: rgba(255,176,32,0.08); border-color: rgba(255,176,32,0.3); }
+.sidebar .plano-indicator:hover { filter: brightness(1.15); }
+html.sb-recolhida .sidebar .plano-indicator { display: none; }

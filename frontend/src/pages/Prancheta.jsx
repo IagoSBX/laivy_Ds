@@ -2,7 +2,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import { iniciarPrancheta } from '../prancheta/editorPrancheta.js';
 import useMotor from '../lib/useMotor.js';
 import useTitulo from '../lib/useTitulo.js';
-import { usuarioLogado } from '../lib/sessao.js';
+import { ehGestor, usuarioLogado } from '../lib/sessao.js';
 import '../styles/pages/prancheta.css';
 
 // Casca da prancheta tática. O editor (quadra SVG, arraste, ferramentas,
@@ -13,7 +13,7 @@ export default function Prancheta() {
   useTitulo('Prancheta Tática · LAIVY');
   // atleta só visualiza: sem ferramentas, salvar, vínculos nem IA (o CSS em
   // .somente-leitura esconde os controles; o motor não liga arraste/desenho)
-  const somenteLeitura = usuarioLogado().tipo_usuario === 3;
+  const somenteLeitura = !ehGestor(usuarioLogado()); // atleta, preparador e período de teste só visualizam
   useMotor((opcoes) => iniciarPrancheta({ ...opcoes, somenteLeitura }));
 
   return (

@@ -156,6 +156,47 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── POST /usuarios/cadastro (pública) ─────────────────────────────────
+    // Treinador cria a própria conta; só entra depois de confirmar o e-mail.
+    @PostMapping("/cadastro")
+    public ResponseEntity<Map<String, Object>> cadastro(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.cadastrarTreinador(body, request.getRemoteAddr()));
+    }
+
+    // ── POST /usuarios/confirmar-email (pública) ──────────────────────────
+    @PostMapping("/confirmar-email")
+    public Map<String, Object> confirmarEmail(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        return usuarioService.confirmarEmail(body.get("token"), request.getRemoteAddr());
+    }
+
+    // ── POST /usuarios/reenviar-confirmacao (pública) ─────────────────────
+    @PostMapping("/reenviar-confirmacao")
+    public Map<String, Object> reenviarConfirmacao(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        usuarioService.reenviarConfirmacao(body.get("email"), request.getRemoteAddr());
+        return Map.of("mensagem", "Se a conta existir e ainda não estiver confirmada, enviamos um novo link. Confira a caixa de entrada e o spam.");
+    }
+
+    // ── POST /usuarios/convites ───────────────────────────────────────────
+    // { "emails": [...], "tipo": 3 (Atleta) | 4 (Preparador Físico), "idTime": só para Admin }
+    @PostMapping("/convites")
+    public List<Map<String, Object>> convidar(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        Object emails = body.get("emails");
+        List<String> lista = emails instanceof List<?> l ? l.stream().map(String::valueOf).toList() : List.of();
+        return usuarioService.convidar(lista, inteiro(body.get("tipo")), inteiro(body.get("idTime")),
+            authId(request), authTipo(request));
+    }
+
+    private static Integer inteiro(Object v) {
+        if (v instanceof Number n) return n.intValue();
+        try { return v != null ? Integer.valueOf(v.toString()) : null; } catch (NumberFormatException e) { return null; }
+    }
+
+    // ── PUT /usuarios/{id}/completar-cadastro ─────────────────────────────
+    @PutMapping("/{id}/completar-cadastro")
+    public Usuario completarCadastro(@PathVariable Integer id, @RequestBody Usuario dados, HttpServletRequest request) {
+        return usuarioService.completarCadastro(id, dados, authId(request), authTipo(request));
+    }
+
     // ── DELETE /usuarios/{id} ─────────────────────────────────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Integer id, HttpServletRequest request) {

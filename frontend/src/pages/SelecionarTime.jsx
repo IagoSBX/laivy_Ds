@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { authFetch, getJson, iniciais, lerImagem, sair } from '../lib/api.js';
 import { TIPOS, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
@@ -68,7 +68,8 @@ export default function SelecionarTime() {
   const user = usuarioLogado();
   const isAdmin = user.tipo_usuario === 1;
   const isTreina = user.tipo_usuario === 2;
-  const isAtleta = user.tipo_usuario === 3;
+  const isAtleta = user.tipo_usuario === 3 || user.tipo_usuario === 4; // atleta e preparador: só o próprio time
+  const emTeste = user.situacao === 'TESTE';
 
   const [estado, setEstado] = useState({ fase: 'carregando' }); // carregando | erro | vazio | ok | entrando
   const [logoutAberto, setLogoutAberto] = useState(false);
@@ -99,7 +100,9 @@ export default function SelecionarTime() {
         lista = lista.filter((t) => {
           const eResponsavel = t.treinador && t.treinador.id_usuario === user.id_usuario;
           const eMembro = user.time && String(user.time.id_time) === String(t.id_time);
-          return eResponsavel || eMembro;
+          // período de teste sem time próprio: o time de demonstração (só leitura)
+          const demo = emTeste && !user.time && t.demo_time === 1;
+          return eResponsavel || eMembro || demo;
         });
       }
       // Admin vê todos os times ativos
@@ -240,7 +243,14 @@ export default function SelecionarTime() {
             <div className="empty-state">
               <div className="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg></div>
               <div className="empty-title">Nenhum time disponível</div>
-              <div className="empty-msg">Você ainda não foi adicionado a um time.<br />Solicite ao administrador que faça isso.</div>
+              {user.situacao === 'ATIVO' ? (
+                <>
+                  <div className="empty-msg">Seu plano está ativo. Cadastre o seu time para começar.</div>
+                  <Link to="/novo-time.html" className="btn-criar" style={{ display: "inline-block", marginTop: 16, textDecoration: "none", width: "auto" }}>Criar meu time</Link>
+                </>
+              ) : (
+                <div className="empty-msg">Você ainda não foi adicionado a um time.<br />Solicite ao administrador que faça isso.</div>
+              )}
             </div>
           )}
           {estado.fase === 'ok' && (

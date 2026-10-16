@@ -44,7 +44,7 @@ public class TimeController {
 
     @PostMapping
     public ResponseEntity<Time> criar(@RequestBody Time time, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(timeService.criar(time, authTipo(request)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(timeService.criar(time, authTipo(request), authId(request)));
     }
 
     @PutMapping("/{id}")

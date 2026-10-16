@@ -84,14 +84,14 @@ public class CalendarioService {
                 .orElseThrow(() -> new BadRequestException("Atividade nao encontrada."));
             calendario.setAtividade(a);
         }
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(calendario), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(calendario), usuarioDAO))
             throw new ForbiddenException("Sem permissao para cadastrar este registro de calendario.");
         return calendarioDAO.save(calendario);
     }
 
     public Calendario atualizar(Integer id, Calendario dados, Integer authTipo, Integer authId) {
         Calendario c = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(c), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(c), usuarioDAO))
             throw new ForbiddenException("Sem permissao para editar este registro de calendario.");
 
         if (dados.getObservacoes()   != null) c.setObservacoes(dados.getObservacoes());
@@ -106,7 +106,7 @@ public class CalendarioService {
 
     public void deletar(Integer id, Integer authTipo, Integer authId) {
         Calendario c = buscar(id);
-        if (!AuthUtil.podeGerenciarTime(authTipo, authId, idTime(c), usuarioDAO))
+        if (!AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime(c), usuarioDAO))
             throw new ForbiddenException("Sem permissao para excluir este registro de calendario.");
         calendarioDAO.deleteById(id);
     }

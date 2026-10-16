@@ -6,7 +6,8 @@ import br.com.gerenciador.projeto.model.Usuario;
 
 /**
  * Regras de autorização por papel/time, compartilhadas pelos controllers de domínio.
- * Papel (tipo_usuario): 1=Admin (acesso total), 2=Treinador (restrito ao próprio time), 3=Atleta.
+ * Papel (tipo_usuario): 1=Admin (acesso total), 2=Treinador (restrito ao próprio time), 3=Atleta,
+ * 4=Preparador Físico (no próprio time: atividades, exames, desempenho e convite de atletas).
  */
 public class AuthUtil {
 
@@ -20,8 +21,27 @@ public class AuthUtil {
         return authTipo != null && authTipo == 2;
     }
 
-    /** Id do time do usuário autenticado, ou null se não tiver time vinculado. */
+    public static boolean ehPreparador(Integer authTipo) {
+        return authTipo != null && authTipo == 4;
+    }
+
+    /**
+     * Id do time do usuário autenticado, ou null se não tiver time vinculado.
+     * Treinador em período de teste ainda sem time próprio enxerga o time de
+     * demonstração (só leitura: o JwtFilter barra a escrita e
+     * {@link #podeGerenciarTime} só vale para o time próprio).
+     */
     public static Integer timeDoUsuario(Integer authId, IUsuario usuarioDAO) {
+        Usuario u = authId != null ? usuarioDAO.findById(authId).orElse(null) : null;
+        if (u == null) return null;
+        if (u.getTime() != null) return u.getTime().getId_time();
+        if (ehTreinador(u.getTipo_usuario()) && u.emTeste())
+            return usuarioDAO.idsTimesDemo().stream().findFirst().orElse(null);
+        return null;
+    }
+
+    /** Time de que o usuário é membro de fato (sem o time de demonstração do teste). */
+    private static Integer timeProprio(Integer authId, IUsuario usuarioDAO) {
         if (authId == null) return null;
         return usuarioDAO.findById(authId)
             .map(Usuario::getTime)
@@ -36,7 +56,18 @@ public class AuthUtil {
     public static boolean podeGerenciarTime(Integer authTipo, Integer authId, Integer idTimeAlvo, IUsuario usuarioDAO) {
         if (ehAdmin(authTipo)) return true;
         if (!ehTreinador(authTipo) || idTimeAlvo == null) return false;
-        Integer meuTime = timeDoUsuario(authId, usuarioDAO);
+        Integer meuTime = timeProprio(authId, usuarioDAO);
+        return meuTime != null && meuTime.equals(idTimeAlvo);
+    }
+
+    /**
+     * Atividades, exames e desempenho: além de quem gerencia o time, o
+     * Preparador Físico do próprio time.
+     */
+    public static boolean podeGerenciarPreparo(Integer authTipo, Integer authId, Integer idTimeAlvo, IUsuario usuarioDAO) {
+        if (podeGerenciarTime(authTipo, authId, idTimeAlvo, usuarioDAO)) return true;
+        if (!ehPreparador(authTipo) || idTimeAlvo == null) return false;
+        Integer meuTime = timeProprio(authId, usuarioDAO);
         return meuTime != null && meuTime.equals(idTimeAlvo);
     }
 

@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import IntroLogin from '../components/IntroLogin.jsx';
 import NovaSenha from '../components/NovaSenha.jsx';
+import { destinoInicial, TIPOS as PERFIS } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import '../styles/pages/login.css';
 
-const PERFIS = { 1: 'Administrador', 2: 'Treinador', 3: 'Atleta' };
 export default function Login() {
   useTitulo('LAIVY — For those who live the game');
   const navigate = useNavigate();
@@ -21,7 +21,8 @@ export default function Login() {
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [tipo, setTipo] = useState('1');
-  const [erro, setErro] = useState(null); // { msg, login: bool, senha: bool }
+  const [erro, setErro] = useState(null); // { msg, login: bool, senha: bool, confirmar: bool }
+  const [reenvio, setReenvio] = useState(null); // mensagem depois de reenviar a confirmação
   const [shake, setShake] = useState(0);
 
   const [userPendente, setUserPendente] = useState(null); // aguardando troca de senha
@@ -73,7 +74,22 @@ export default function Login() {
     if (errSenha) { setSenha(''); senhaRef.current?.focus(); }
   }
 
-  function limparErro() { setErro(null); }
+  function limparErro() { setErro(null); setReenvio(null); }
+
+  // Treinador que se cadastrou e ainda não clicou no link do e-mail
+  async function reenviarConfirmacao() {
+    try {
+      const res = await fetch('/usuarios/reenviar-confirmacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: login.trim() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      setReenvio(d.mensagem || d.erro || 'Tente novamente em instantes.');
+    } catch {
+      setReenvio('Servidor offline. Tente novamente em instantes.');
+    }
+  }
 
   async function fazerLogin(e) {
     e.preventDefault();
@@ -90,6 +106,12 @@ export default function Login() {
         const msg = data.erro || 'Credenciais inválidas.';
         if (msg.includes('não encontrado') || msg.includes('perfil')) mostrarErro(msg, true, false);
         else mostrarErro(msg, false, true);
+        return;
+      }
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        setErro({ msg: data.erro || 'Confirme seu e-mail antes de entrar.', confirmar: true });
+        setShake((n) => n + 1);
         return;
       }
       if (!res.ok) { mostrarErro('Erro no servidor. Tente novamente.', false, false); return; }
@@ -154,7 +176,7 @@ export default function Login() {
       if (res.ok) {
         const data = await res.json();
         // /senha renova o cookie do token no backend; aqui só atualizamos os dados exibidos
-        localStorage.setItem('usuario', JSON.stringify(data.usuario || data));
+        localStorage.setItem('usuario', JSON.stringify({ situacao: userPendente.situacao, ...(data.usuario || data) }));
         setUserPendente(null);
         mostrarLoginLoading();
       } else {
@@ -173,7 +195,7 @@ export default function Login() {
     const u = JSON.parse(localStorage.getItem('usuario') || '{}');
     const nome = u.nome_usuario || u.login_usuario || '';
     setLoading({ nome: nome ? 'Bem-vindo, ' + nome.split(' ')[0] : 'Bem-vindo', perfil: PERFIS[Number(u.tipo_usuario)] || '', done: false });
-    const destino = Number(u.tipo_usuario) === 1 ? '/painel-admin.html' : '/selecionar-time.html';
+    const destino = destinoInicial(u);
     setTimeout(() => setLoading((l) => l && { ...l, done: true }), 2500);
     setTimeout(() => navigate(destino), 3100);
   }
@@ -231,12 +253,17 @@ export default function Login() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
               <span>{erro?.msg || 'Usuário ou senha inválidos.'}</span>
             </div>
+            {erro?.confirmar && (
+              reenvio
+                ? <div style={{ marginTop: 8, fontSize: 13 }}>{reenvio}</div>
+                : <button type="button" className="link-esqueci" style={{ marginTop: 8 }} onClick={reenviarConfirmacao}>Reenviar e-mail de confirmação</button>
+            )}
           </div>
 
           <form id="formLogin" onSubmit={fazerLogin}>
             <div className="form-group">
-              <label htmlFor="loginInput">Login</label>
-              <input type="text" id="loginInput" placeholder="Seu login (enviado por e-mail)" required autoComplete="username"
+              <label htmlFor="loginInput">Login ou e-mail</label>
+              <input type="text" id="loginInput" placeholder="Seu login ou e-mail" required autoComplete="username"
                 className={erro?.login ? 'err-field' : ''}
                 value={login} onChange={(e) => { setLogin(e.target.value); limparErro(); }} />
             </div>
@@ -254,11 +281,15 @@ export default function Login() {
                 <option value="1">Administrador</option>
                 <option value="2">Treinador</option>
                 <option value="3">Atleta</option>
+                <option value="4">Preparador Físico</option>
               </select>
             </div>
 
             <button type="submit" className="btn-login">Entrar</button>
             <button type="button" className="link-esqueci" onClick={abrirEsqueci}>Esqueci minha senha</button>
+            <Link to="/cadastro.html" className="link-esqueci" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+              É treinador e ainda não tem conta? <strong>Cadastre-se</strong>
+            </Link>
           </form>
         </section>
       </main>

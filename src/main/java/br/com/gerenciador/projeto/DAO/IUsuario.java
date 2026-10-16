@@ -15,7 +15,8 @@ public interface IUsuario extends JpaRepository<Usuario, Integer> {
      * Busca por login + tipo sem checar senha.
      * Usado pelo novo fluxo JWT: a senha é verificada no controller via BCrypt.
      */
-    @Query("SELECT u FROM Usuario u WHERE u.login_usuario = :login AND u.tipo_usuario = :tipo")
+    // Entra pelo login ou pelo e-mail (o e-mail é único).
+    @Query("SELECT u FROM Usuario u WHERE (u.login_usuario = :login OR LOWER(u.email_usuario) = LOWER(:login)) AND u.tipo_usuario = :tipo")
     Optional<Usuario> buscarPorLoginTipo(
         @Param("login") String login,
         @Param("tipo")  Integer tipo
@@ -42,4 +43,14 @@ public interface IUsuario extends JpaRepository<Usuario, Integer> {
 
     @Query("SELECT u FROM Usuario u WHERE u.cpf_usuario = :cpf")
     List<Usuario> buscarPorCpf(@Param("cpf") String cpf);
+
+    @Query("SELECT u FROM Usuario u WHERE u.confirmacao_hash = :hash")
+    Optional<Usuario> buscarPorConfirmacaoHash(@Param("hash") String hash);
+
+    @Query("SELECT u FROM Usuario u WHERE LOWER(u.email_usuario) = LOWER(:email)")
+    Optional<Usuario> buscarPorEmail(@Param("email") String email);
+
+    /** Time(s) de demonstração — o que o treinador em período de teste enxerga. */
+    @Query("SELECT t.id_time FROM Time t WHERE t.demo_time = 1 ORDER BY t.id_time")
+    List<Integer> idsTimesDemo();
 }

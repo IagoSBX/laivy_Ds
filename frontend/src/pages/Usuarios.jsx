@@ -6,7 +6,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import ThOrdenavel from '../components/ThOrdenavel.jsx';
 import { authFetch, getJson, iniciais, lerImagem } from '../lib/api.js';
 import { ordenar } from '../lib/ordenacao.js';
-import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
+import { ehGestor, timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import {
@@ -15,8 +15,15 @@ import {
 } from '../lib/validacao.js';
 import '../styles/pages/usuarios.css';
 
-const TIPO_COR = { 1: '#00C97A', 2: '#4EC9FF', 3: '#FFB020' };
-const TIPO_BG = { 1: 'rgba(0,201,122,0.2)', 2: 'rgba(78,201,255,0.2)', 3: 'rgba(255,176,32,0.2)' };
+const TIPO_COR = { 1: '#00C97A', 2: '#4EC9FF', 3: '#FFB020', 4: '#B57BFF' };
+const TIPO_BG = { 1: 'rgba(0,201,122,0.2)', 2: 'rgba(78,201,255,0.2)', 3: 'rgba(255,176,32,0.2)', 4: 'rgba(181,123,255,0.2)' };
+
+const STATUS_CONVITE = {
+  enviado: ['Convite enviado', true],
+  ja_cadastrado: ['E-mail já cadastrado', false],
+  invalido: ['E-mail inválido', false],
+  falha_email: ['Cadastrado, mas o e-mail não saiu — use "Reenviar acesso"', false],
+};
 
 const ORDENACAO = [
   { valor: 'nome_asc', label: 'Nome (A-Z)', campo: 'nome_usuario', tipo: 'texto', direcao: 'asc' },
@@ -40,7 +47,7 @@ const OBRIGATORIOS = [
 ];
 
 function Badge({ tipo }) {
-  const m = { 1: ['badge-admin', ' Admin'], 2: ['badge-treinador', ' Treinador'], 3: ['badge-atleta', ' Atleta'] };
+  const m = { 1: ['badge-admin', ' Admin'], 2: ['badge-treinador', ' Treinador'], 3: ['badge-atleta', ' Atleta'], 4: ['badge-preparador', ' Preparador'] };
   const [cls, txt] = m[tipo] || ['badge-atleta', '—'];
   return <span className={cls}>{txt}</span>;
 }
@@ -59,7 +66,11 @@ export default function Usuarios() {
   const isAdmin = user.tipo_usuario === 1;
   const ts = timeSelecionado();
   const urlTime = (base) => (ts ? base + '?idTime=' + ts.id : base);
-  const podeEditar = isAdmin || isTreina;
+  const podeEditar = ehGestor(user);
+  // Treinador e Preparador Físico não preenchem cadastro: convidam por e-mail
+  // (a pessoa completa os próprios dados no primeiro acesso). Admin usa o formulário.
+  const podeConvidar = !isAdmin && (podeEditar || user.tipo_usuario === 4);
+  const [convite, setConvite] = useState(null); // { texto, tipo, enviando, resultado }
 
   const [todos, setTodos] = useState(null); // null = ainda carregando
   const [busca, setBusca] = useState('');
@@ -89,7 +100,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     carregar();
-    if (params.get('novo') === '1') abrirNovoUsuario();
+    if (params.get('novo') === '1') novo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -141,6 +152,27 @@ export default function Usuarios() {
     if (isTreina && user.time) setForm((f) => ({ ...f, time: String(user.time.id_time) }));
     carregarTimesForm();
     setAba('form');
+  }
+
+  function novo() {
+    if (isAdmin) abrirNovoUsuario();
+    else if (podeConvidar) setConvite({ texto: '', tipo: '3' });
+  }
+
+  async function enviarConvites(e) {
+    e.preventDefault();
+    const emails = convite.texto.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+    if (!emails.length) { toast('Informe pelo menos um e-mail.', false); return; }
+    setConvite((c) => ({ ...c, enviando: true }));
+    try {
+      const r = await authFetch('/usuarios/convites', { method: 'POST', body: JSON.stringify({ emails, tipo: Number(convite.tipo) }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(d.erro || 'Não foi possível enviar os convites.', false); setConvite((c) => ({ ...c, enviando: false })); return; }
+      setConvite((c) => ({ ...c, enviando: false, resultado: d, texto: '' }));
+      carregar();
+    } catch {
+      setConvite((c) => c && { ...c, enviando: false });
+    }
   }
 
   function abrirEdicao(id) {
@@ -348,7 +380,8 @@ export default function Usuarios() {
 
         <div className="tabs">
           <button className={'tab' + (aba === 'lista' ? ' active' : '')} onClick={() => setAba('lista')}> Lista</button>
-          {!isAtleta && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={abrirNovoUsuario}> Novo Usuário</button>}
+          {isAdmin && <button className={'tab' + (aba === 'form' ? ' active' : '')} onClick={abrirNovoUsuario}> Novo Usuário</button>}
+          {podeConvidar && <button className="tab" onClick={novo}> Convidar por e-mail</button>}
         </div>
 
         {/* LISTA */}
@@ -361,6 +394,7 @@ export default function Usuarios() {
                 <option value="1"> Administrador</option>
                 <option value="2"> Treinador</option>
                 <option value="3"> Atleta</option>
+                <option value="4"> Preparador Físico</option>
               </select>
               <div>
                 <select className="select-filtro sort-dropdown" value={valorOrdem}
@@ -373,7 +407,7 @@ export default function Usuarios() {
                 <button className={'view-btn' + (visao === 'cards' ? ' active' : '')} onClick={() => setVisao('cards')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg></button>
                 <button className={'view-btn' + (visao === 'tabela' ? ' active' : '')} onClick={() => setVisao('tabela')}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg></button>
               </div>
-              {!isAtleta && <button className="btn-novo" onClick={abrirNovoUsuario}>+ Novo</button>}
+              {(isAdmin || podeConvidar) && <button className="btn-novo" onClick={novo}>{isAdmin ? '+ Novo' : '+ Convidar'}</button>}
             </div>
 
             <div className={'cards-wrapper' + (visao === 'cards' ? ' visible' : '')}>
@@ -517,6 +551,7 @@ export default function Usuarios() {
                       <option value="1"> Administrador</option>
                       <option value="2"> Treinador</option>
                       <option value="3"> Atleta</option>
+                      <option value="4"> Preparador Físico</option>
                     </select>
                   ) : (
                     <div className="form-control" style={{ background: 'rgba(255,176,32,0.1)', borderColor: 'rgba(255,176,32,0.3)', color: '#FFB020', fontWeight: 600, cursor: 'default' }}>Atleta</div>
@@ -662,6 +697,39 @@ export default function Usuarios() {
             <button className="btn-acao-sm btn-edit" style={{ padding: '7px 20px' }} onClick={reenviarAcesso}>Reenviar</button>
           </div>
         </div>
+      </Modal>
+
+      <Modal id="modalConvite" aberto={!!convite} onFechar={() => setConvite(null)}>
+        <form className="modal-body" style={{ padding: 28 }} onSubmit={enviarConvites}>
+          <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 22, marginBottom: 6 }}>Convidar por e-mail</div>
+          <div style={{ fontSize: 13, color: 'var(--cinza)', marginBottom: 16 }}>
+            Cada pessoa recebe um login e uma senha temporária já ligados ao time{ts?.nome ? ' ' + ts.nome : ''}. No primeiro acesso ela cria a própria senha e completa os dados.
+          </div>
+          {isTreina && (
+            <div style={{ marginBottom: 14 }}>
+              <label className="form-label" htmlFor="conv-tipo">Perfil</label>
+              <select id="conv-tipo" className="form-select" value={convite?.tipo || '3'} onChange={(e) => setConvite((c) => ({ ...c, tipo: e.target.value }))}>
+                <option value="3">Atleta</option>
+                <option value="4">Preparador Físico</option>
+              </select>
+            </div>
+          )}
+          <label className="form-label" htmlFor="conv-emails">E-mails</label>
+          <textarea id="conv-emails" className="form-control" rows={5} placeholder={'um por linha, ou separados por vírgula\natleta1@email.com\natleta2@email.com'}
+            value={convite?.texto || ''} onChange={(e) => setConvite((c) => ({ ...c, texto: e.target.value }))} />
+          {convite?.resultado && (
+            <ul style={{ listStyle: 'none', padding: 0, margin: '14px 0 0', fontSize: 13 }}>
+              {convite.resultado.map((r) => {
+                const [txt, ok] = STATUS_CONVITE[r.status] || [r.status, false];
+                return <li key={r.email} style={{ color: ok ? 'var(--verde)' : '#FFB020', marginBottom: 4 }}>{ok ? '✓' : '!'} {r.email} — {txt}</li>;
+              })}
+            </ul>
+          )}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConvite(null)}>Fechar</button>
+            <button type="submit" className="btn-acao-sm btn-edit" style={{ padding: '7px 20px' }} disabled={convite?.enviando}>{convite?.enviando ? 'Enviando…' : 'Enviar convites'}</button>
+          </div>
+        </form>
       </Modal>
 
       <div className="toast-wrap">

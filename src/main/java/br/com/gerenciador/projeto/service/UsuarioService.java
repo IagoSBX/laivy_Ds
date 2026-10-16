@@ -2,6 +2,7 @@ package br.com.gerenciador.projeto.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.mindrot.jbcrypt.BCrypt;
@@ -30,6 +31,7 @@ public class UsuarioService {
     @Autowired private JwtUtil   jwtUtil;
     @Autowired private AuditoriaService auditoria;
     @Autowired private AcessoService acesso;
+    @Autowired private AssinaturaService assinaturas;
     @PersistenceContext private EntityManager entityManager;
 
     /** Gera hash BCrypt, evitando re-hashear algo que já é um hash BCrypt. */
@@ -70,7 +72,7 @@ public class UsuarioService {
     public static Usuario sanitizarParaListagem(Usuario u, Integer authId, Integer authTipo, Integer meuTime) {
         boolean ehDono = authId != null && authId.equals(u.getId_usuario());
         Integer timeDoAlvo = u.getTime() != null ? u.getTime().getId_time() : null;
-        boolean treinadorDoTime = AuthUtil.ehTreinador(authTipo)
+        boolean treinadorDoTime = (AuthUtil.ehTreinador(authTipo) || AuthUtil.ehPreparador(authTipo))
             && meuTime != null && meuTime.equals(timeDoAlvo);
         if (AuthUtil.ehAdmin(authTipo) || ehDono || treinadorDoTime) return u;
 
@@ -96,8 +98,13 @@ public class UsuarioService {
     }
 
     public List<Usuario> listarTodos(Integer idTime, Integer authId, Integer authTipo) {
-        List<Usuario> lista = idTime != null ? dao.buscarPorTime(idTime) : dao.findAll();
         Integer meuTime = AuthUtil.timeDoUsuario(authId, dao);
+        // Só o Admin lista pessoas de outros times (com o autocadastro, qualquer um tem conta).
+        if (!AuthUtil.ehAdmin(authTipo)) {
+            if (meuTime == null || (idTime != null && !idTime.equals(meuTime))) return new java.util.ArrayList<>();
+            idTime = meuTime;
+        }
+        List<Usuario> lista = idTime != null ? dao.buscarPorTime(idTime) : dao.findAll();
         lista.forEach(u -> sanitizarParaListagem(u, authId, authTipo, meuTime));
         return lista;
     }
@@ -148,6 +155,12 @@ public class UsuarioService {
         // Treinador sempre cadastra Atleta, evitando autopromoção/promoção indevida.
         if (!AuthUtil.ehAdmin(authTipo) || usuario.getTipo_usuario() == null)
             usuario.setTipo_usuario(3);
+        // situação da conta é do sistema, nunca do JSON
+        usuario.setAutocadastro(0);
+        usuario.setEmail_confirmado(1);
+        usuario.setCadastro_completo(1);
+        usuario.setTeste_inicio(null);
+        usuario.setTeste_fim(null);
 
         if (AuthUtil.ehTreinador(authTipo)) {
             // Treinador só pode vincular o novo cadastro ao próprio time.
@@ -156,6 +169,9 @@ public class UsuarioService {
         } else if (usuario.getTime() != null && usuario.getTime().getId_time() != null) {
             timeDAO.findById(usuario.getTime().getId_time()).ifPresent(usuario::setTime);
         }
+
+        if (usuario.getTipo_usuario() == 3 && usuario.getTime() != null)
+            assinaturas.exigirVagas(usuario.getTime().getId_time(), 1);
 
         usuario.setCpf_usuario(normalizarCpf(usuario.getCpf_usuario()));
         substituirCpfAnterior(usuario.getCpf_usuario(), null);
@@ -212,8 +228,10 @@ public class UsuarioService {
         Usuario alvo = dao.findById(id)
             .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
         Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
-        boolean treinadorDoAtleta = Integer.valueOf(3).equals(alvo.getTipo_usuario())
-            && AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
+        Integer tipoAlvo = alvo.getTipo_usuario();
+        boolean treinadorDoAtleta = (Integer.valueOf(3).equals(tipoAlvo) || Integer.valueOf(4).equals(tipoAlvo))
+            && AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao)
+            || Integer.valueOf(3).equals(tipoAlvo) && AuthUtil.podeGerenciarPreparo(authTipo, authId, idTimeAlvo, dao);
         if (!AuthUtil.ehAdmin(authTipo) && !treinadorDoAtleta)
             throw new ForbiddenException("Sem permissao para reenviar o acesso deste usuario.");
         if (alvo.getEmail_usuario() == null || alvo.getEmail_usuario().isBlank())
@@ -354,11 +372,191 @@ public class UsuarioService {
             throw new UnauthorizedException(ERRO_LOGIN);
         }
         falhasLogin.remove(chave);
+        if (u.getEmail_confirmado() == 0)
+            throw new ForbiddenException("Confirme seu e-mail antes de entrar: enviamos um link para " + u.getEmail_usuario() + ".");
         registrarLogin(u.getId_usuario(), "LOGIN", "Entrou no sistema", 200, ip);
+        AssinaturaService.Situacao situacao = assinaturas.situacao(u);
+        u.setSituacao(situacao != null ? situacao.name() : null);
 
         String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
         return new LoginResultado(u, token);
+    }
+
+    // ── Autocadastro do treinador ────────────────────────────────────────
+    // Ele escolhe a própria senha, mas só entra depois de clicar no link do
+    // e-mail (prova que o e-mail é dele). Depois do login vai para os planos.
+    private static final int VALIDADE_CONFIRMACAO_HORAS = 24;
+    private static final String EMAIL_REGEX = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
+
+    @Transactional
+    public Map<String, Object> cadastrarTreinador(Map<String, String> dados, String ip) {
+        if (excedeuPedidos("cadastro|" + ip, 5, 60 * 60 * 1000L))
+            throw new TooManyRequestsException("Muitos cadastros a partir desta rede. Tente novamente mais tarde.");
+        String nome  = texto(dados, "nome_usuario");
+        String email = texto(dados, "email_usuario").toLowerCase();
+        String cel   = texto(dados, "cel_usuario");
+        String senha = dados.get("senha_usuario");
+        if (nome.length() < 3 || nome.length() > 100) throw new BadRequestException("Informe seu nome completo.");
+        if (!email.matches(EMAIL_REGEX) || email.length() > 100) throw new BadRequestException("Informe um e-mail válido.");
+        if (senhaFraca(senha)) throw new BadRequestException(ERRO_SENHA_FRACA);
+
+        Usuario u = dao.buscarPorEmail(email).orElse(null);
+        boolean refazendo = u != null && u.getAutocadastro() == 1 && u.getEmail_confirmado() == 0;
+        if (u != null && !refazendo)
+            throw new BadRequestException("Este e-mail já tem conta no LAIVY. Entre com ele ou use \"Esqueci minha senha\".");
+        if (u == null) {
+            u = new Usuario();
+            u.setEmail_usuario(email);
+            u.setTipo_usuario(2);
+            u.setAutocadastro(1);
+            u.setEmail_confirmado(0);
+            u.setPrimeiro_login(0); // a senha já é dele
+        }
+        u.setNome_usuario(nome);
+        u.setCel_usuario(cel.isEmpty() ? null : cel);
+        if (u.getLogin_usuario() == null) u.setLogin_usuario(gerarLogin(u));
+        u.setSenha_usuario(hashSenha(senha));
+        String token = novoToken();
+        u.setConfirmacao_hash(sha256(token));
+        u.setConfirmacao_expira(java.time.LocalDateTime.now().plusHours(VALIDADE_CONFIRMACAO_HORAS));
+        Usuario salvo = dao.saveAndFlush(u);
+        // e-mail falhou: a exceção desfaz o cadastro, e a pessoa tenta de novo
+        if (!acesso.enviarConfirmacaoEmail(salvo, token, VALIDADE_CONFIRMACAO_HORAS))
+            throw new BadRequestException("Não consegui enviar o e-mail de confirmação para " + email + ". Confira o endereço e tente de novo.");
+        registrarLogin(salvo.getId_usuario(), "CADASTRO", "Treinador se cadastrou (aguardando confirmação do e-mail)", 201, ip);
+        return Map.of("email", email, "login", salvo.getLogin_usuario());
+    }
+
+    @Transactional
+    public Map<String, Object> confirmarEmail(String token, String ip) {
+        String erro = "Link de confirmação inválido ou expirado. Peça um novo na tela de login.";
+        if (token == null || token.length() != 43) throw new BadRequestException(erro);
+        Usuario u = dao.buscarPorConfirmacaoHash(sha256(token)).orElseThrow(() -> new BadRequestException(erro));
+        if (u.getConfirmacao_expira() == null || u.getConfirmacao_expira().isBefore(java.time.LocalDateTime.now()))
+            throw new BadRequestException(erro);
+        u.setEmail_confirmado(1);
+        u.setConfirmacao_hash(null);
+        u.setConfirmacao_expira(null);
+        dao.save(u);
+        registrarLogin(u.getId_usuario(), "CADASTRO", "Confirmou o e-mail", 200, ip);
+        return Map.of("login", u.getLogin_usuario());
+    }
+
+    /** Resposta sempre igual, exista o e-mail ou não. */
+    @Transactional
+    public void reenviarConfirmacao(String email, String ip) {
+        if (excedeuPedidos("ip|" + ip, MAX_PEDIDOS_POR_IP, 60 * 60 * 1000L))
+            throw new TooManyRequestsException("Muitos pedidos. Tente novamente mais tarde.");
+        if (email == null || email.isBlank() || email.length() > 255) return;
+        dao.buscarPorEmail(email.trim()).ifPresent(u -> {
+            if (u.getEmail_confirmado() != 0) return;
+            if (excedeuPedidos("conta|" + u.getId_usuario(), MAX_PEDIDOS_POR_CONTA, 15 * 60 * 1000L)) return;
+            String token = novoToken();
+            u.setConfirmacao_hash(sha256(token));
+            u.setConfirmacao_expira(java.time.LocalDateTime.now().plusHours(VALIDADE_CONFIRMACAO_HORAS));
+            dao.save(u);
+            acesso.enviarConfirmacaoEmail(u, token, VALIDADE_CONFIRMACAO_HORAS);
+        });
+    }
+
+    private static String texto(Map<String, String> dados, String campo) {
+        String v = dados.get(campo);
+        return v == null ? "" : v.trim();
+    }
+
+    private static String novoToken() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    // ── Convite por e-mail ───────────────────────────────────────────────
+    // O treinador (ou o preparador, só para atletas) informa os e-mails; cada
+    // um recebe login + senha temporária já ligados ao time. No primeiro
+    // acesso a pessoa troca a senha e completa os próprios dados.
+    private static final int MAX_CONVITES = 50;
+
+    @Transactional
+    public List<Map<String, Object>> convidar(List<String> emails, Integer tipo, Integer idTimeAdmin, Integer authId, Integer authTipo) {
+        int perfil = tipo == null ? 3 : tipo;
+        if (perfil != 3 && perfil != 4) throw new BadRequestException("Perfil inválido: convide Atleta ou Preparador Físico.");
+
+        Integer idTime = AuthUtil.ehAdmin(authTipo) ? idTimeAdmin : AuthUtil.timeDoUsuario(authId, dao);
+        if (idTime == null) throw new BadRequestException("Selecione o time antes de convidar.");
+        boolean pode = perfil == 4
+            ? AuthUtil.podeGerenciarTime(authTipo, authId, idTime, dao)      // preparador: só o treinador convida
+            : AuthUtil.podeGerenciarPreparo(authTipo, authId, idTime, dao);  // atleta: treinador ou preparador
+        if (!pode) throw new ForbiddenException(perfil == 4
+            ? "Somente o treinador do time pode convidar preparadores físicos."
+            : "Sem permissao para convidar para este time.");
+        var time = timeDAO.findById(idTime).orElseThrow(() -> new NotFoundException("Time nao encontrado."));
+
+        java.util.LinkedHashSet<String> unicos = new java.util.LinkedHashSet<>();
+        for (String e : emails == null ? List.<String>of() : emails)
+            if (e != null && !e.isBlank()) unicos.add(e.trim().toLowerCase());
+        if (unicos.isEmpty()) throw new BadRequestException("Informe pelo menos um e-mail.");
+        if (unicos.size() > MAX_CONVITES) throw new BadRequestException("Convide no máximo " + MAX_CONVITES + " e-mails por vez.");
+
+        List<Map<String, Object>> resultado = new java.util.ArrayList<>();
+        List<String> novos = new java.util.ArrayList<>();
+        for (String email : unicos) {
+            if (!email.matches(EMAIL_REGEX) || email.length() > 100) resultado.add(Map.of("email", email, "status", "invalido"));
+            else if (dao.existeEmail(email)) resultado.add(Map.of("email", email, "status", "ja_cadastrado"));
+            else novos.add(email);
+        }
+        if (perfil == 3) assinaturas.exigirVagas(idTime, novos.size());
+
+        for (String email : novos) {
+            Usuario u = new Usuario();
+            u.setEmail_usuario(email);
+            u.setNome_usuario(email.substring(0, email.indexOf('@'))); // provisório, até completar o cadastro
+            u.setTipo_usuario(perfil);
+            u.setTime(time);
+            u.setCadastro_completo(0);
+            u.setLogin_usuario(gerarLogin(u));
+            String senhaTemporaria = AcessoService.gerarSenhaTemporaria();
+            u.setSenha_usuario(hashSenha(senhaTemporaria));
+            u.setPrimeiro_login(1);
+            Usuario salvo = dao.saveAndFlush(u);
+            boolean enviado = acesso.enviarSenhaTemporaria(salvo, senhaTemporaria, true);
+            resultado.add(Map.of("email", email, "status", enviado ? "enviado" : "falha_email", "id_usuario", salvo.getId_usuario()));
+        }
+        return resultado;
+    }
+
+    /** Primeiro acesso do convidado: preenche os dados pessoais (os mesmos do cadastro completo). */
+    private static final String[][] OBRIGATORIOS_CADASTRO = {
+        {"nome_usuario", "nome"}, {"cel_usuario", "celular"}, {"cpf_usuario", "CPF"},
+        {"data_nasc_usuario", "data de nascimento"}, {"cep_usuario", "CEP"}, {"endereco_usuario", "endereço"},
+        {"numero_usuario", "número"}, {"bairro_usuario", "bairro"}, {"cidade_usuario", "cidade"}, {"estado_usuario", "estado"},
+    };
+
+    @Transactional
+    public Usuario completarCadastro(Integer id, Usuario dados, Integer authId, Integer authTipo) {
+        if (authId == null || !authId.equals(id))
+            throw new ForbiddenException("Sem permissao para completar este cadastro.");
+        dados.setEmail_usuario(null); // o e-mail do convite fica (é o login de recuperação)
+        dados.setTime(null);
+        Usuario u = atualizar(id, dados, authId, authTipo);
+        java.util.Map<String, Object> valores = new java.util.HashMap<>();
+        valores.put("nome_usuario", u.getNome_usuario());
+        valores.put("cel_usuario", u.getCel_usuario());
+        valores.put("cpf_usuario", u.getCpf_usuario());
+        valores.put("data_nasc_usuario", u.getData_nasc_usuario());
+        valores.put("cep_usuario", u.getCep_usuario());
+        valores.put("endereco_usuario", u.getEndereco_usuario());
+        valores.put("numero_usuario", u.getNumero_usuario());
+        valores.put("bairro_usuario", u.getBairro_usuario());
+        valores.put("cidade_usuario", u.getCidade_usuario());
+        valores.put("estado_usuario", u.getEstado_usuario());
+        List<String> faltando = java.util.Arrays.stream(OBRIGATORIOS_CADASTRO)
+            .filter(c -> valores.get(c[0]) == null || valores.get(c[0]).toString().isBlank())
+            .map(c -> c[1]).toList();
+        if (!faltando.isEmpty())
+            throw new BadRequestException("Preencha: " + String.join(", ", faltando) + ".");
+        u.setCadastro_completo(1);
+        return dao.save(u);
     }
 
     /** Login, logout e tentativas com erro vão para o log de atividades. */

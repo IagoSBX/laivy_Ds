@@ -58,7 +58,45 @@ public class Usuario {
     private Boolean acesso_enviado;
 
     @Column(name = "tipo_usuario", nullable = false)
-    private Integer tipo_usuario; // 1=Admin, 2=Treinador, 3=Atleta
+    private Integer tipo_usuario; // 1=Admin, 2=Treinador, 3=Atleta, 4=Preparador Físico
+
+    // Treinador que se cadastrou sozinho e paga um plano (ver AssinaturaService). Só o sistema muda.
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "autocadastro", nullable = false)
+    private Integer autocadastro = 0;
+
+    // Autocadastro: só entra depois de clicar no link do e-mail de confirmação.
+    @JsonIgnore
+    @Column(name = "email_confirmado", nullable = false)
+    private Integer email_confirmado = 1;
+
+    @JsonIgnore
+    @Column(name = "confirmacao_hash", length = 64)
+    private String confirmacao_hash;
+
+    @JsonIgnore
+    @Column(name = "confirmacao_expira")
+    private java.time.LocalDateTime confirmacao_expira;
+
+    // 0 = convidado por e-mail que ainda não preencheu os dados pessoais (o JwtFilter só libera completar o cadastro).
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "cadastro_completo", nullable = false)
+    private Integer cadastro_completo = 1;
+
+    // Período de teste (só visualização do time demo). Uma vez por conta.
+    @JsonIgnore
+    @Column(name = "teste_inicio")
+    private java.time.LocalDateTime teste_inicio;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Column(name = "teste_fim")
+    private java.time.LocalDateTime teste_fim;
+
+    // Só no login e em /assinaturas/minha: TESTE, SEM_PLANO ou ATIVO (null = não paga plano).
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String situacao;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "data_nasc_usuario")
@@ -173,6 +211,29 @@ public class Usuario {
 
     public Integer getTipo_usuario() { return tipo_usuario; }
     public void setTipo_usuario(Integer tipo_usuario) { this.tipo_usuario = tipo_usuario; }
+
+    public Integer getAutocadastro() { return autocadastro != null ? autocadastro : 0; }
+    public void setAutocadastro(Integer autocadastro) { this.autocadastro = autocadastro; }
+    public Integer getEmail_confirmado() { return email_confirmado != null ? email_confirmado : 1; }
+    public void setEmail_confirmado(Integer email_confirmado) { this.email_confirmado = email_confirmado; }
+    public String getConfirmacao_hash() { return confirmacao_hash; }
+    public void setConfirmacao_hash(String confirmacao_hash) { this.confirmacao_hash = confirmacao_hash; }
+    public java.time.LocalDateTime getConfirmacao_expira() { return confirmacao_expira; }
+    public void setConfirmacao_expira(java.time.LocalDateTime confirmacao_expira) { this.confirmacao_expira = confirmacao_expira; }
+    public Integer getCadastro_completo() { return cadastro_completo != null ? cadastro_completo : 1; }
+    public void setCadastro_completo(Integer cadastro_completo) { this.cadastro_completo = cadastro_completo; }
+    public java.time.LocalDateTime getTeste_inicio() { return teste_inicio; }
+    public void setTeste_inicio(java.time.LocalDateTime teste_inicio) { this.teste_inicio = teste_inicio; }
+    public java.time.LocalDateTime getTeste_fim() { return teste_fim; }
+    public void setTeste_fim(java.time.LocalDateTime teste_fim) { this.teste_fim = teste_fim; }
+    public String getSituacao() { return situacao; }
+    public void setSituacao(String situacao) { this.situacao = situacao; }
+
+    /** Está no período de teste agora (independe de já ter pago). */
+    @JsonIgnore
+    public boolean emTeste() {
+        return teste_fim != null && teste_fim.isAfter(java.time.LocalDateTime.now());
+    }
 
     public LocalDate getData_nasc_usuario() { return data_nasc_usuario; }
     public void setData_nasc_usuario(LocalDate data_nasc_usuario) { this.data_nasc_usuario = data_nasc_usuario; }

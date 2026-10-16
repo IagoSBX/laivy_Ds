@@ -32,6 +32,11 @@ public class Time {
     @Column(name = "ativo_time")
     private Integer ativo_time; // 1=ativo, 0=inativo
 
+    // 1 = time de demonstração (dados fictícios) que quem está no teste vê. Só a migração V11 cria.
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY)
+    @Column(name = "demo_time", nullable = false)
+    private Integer demo_time = 0;
+
     @Column(name = "logo_time", columnDefinition = "MEDIUMTEXT")
     private String logo_time; // Base64
 
@@ -61,6 +66,8 @@ public class Time {
     public void setDescricao_time(String descricao_time) { this.descricao_time = descricao_time; }
     public Integer getAtivo_time() { return ativo_time; }
     public void setAtivo_time(Integer ativo_time) { this.ativo_time = ativo_time; }
+    public Integer getDemo_time() { return demo_time != null ? demo_time : 0; }
+    public void setDemo_time(Integer demo_time) { this.demo_time = demo_time; }
     public String getLogo_time() { return logo_time; }
     public void setLogo_time(String logo_time) { this.logo_time = logo_time; }
     public Usuario getTreinador() { return treinador; }

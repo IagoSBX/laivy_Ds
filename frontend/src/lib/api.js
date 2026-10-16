@@ -1,4 +1,8 @@
-// fetch com o cookie do JWT. Sessão expirada (401/403) volta para o login,
+// O backend manda um "codigo" no 403 quando a conta precisa de algo antes
+// de seguir (ver JwtFilter): cada um leva para a tela que resolve.
+const DESTINO_POR_CODIGO = { PLANO: '/planos.html', CADASTRO: '/completar-cadastro.html' };
+
+// fetch com o cookie do JWT. Sessão expirada (401) volta para o login,
 // como o authFetch que cada página antiga repetia.
 export async function authFetch(url, opts = {}) {
   const res = await fetch(url, {
@@ -6,6 +10,18 @@ export async function authFetch(url, opts = {}) {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
   });
+  if (res.status === 403) {
+    const { erro, codigo } = await res.clone().json().catch(() => ({}));
+    if (DESTINO_POR_CODIGO[codigo]) {
+      if (window.location.pathname !== DESTINO_POR_CODIGO[codigo]) window.location.href = DESTINO_POR_CODIGO[codigo];
+      throw new Error(erro || 'Acesso bloqueado');
+    }
+    // período de teste ou ação que o perfil não tem: avisa, mas não derruba a sessão
+    if (codigo === 'SOMENTE_LEITURA' || (!codigo && erro)) {
+      alert(codigo === 'SOMENTE_LEITURA' ? 'Período de teste: somente visualização. Assine um plano para editar.' : erro);
+      throw new Error(erro || 'Sem permissão');
+    }
+  }
   if (res.status === 401 || res.status === 403) {
     localStorage.clear();
     window.location.href = '/login.html';
