@@ -10,8 +10,8 @@ import { timeSelecionado, usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
 import useToasts from '../lib/useToasts.js';
 import {
-  buscarCep, classeValidacao, enterAvanca, hoje, idade, mascaraCEP, mascaraCPF, mascaraTelefone, regrasSenha,
-  validarCPF, validarEmail, validarNascimento, validarNome, validarSenha, validarTelefone,
+  buscarCep, classeValidacao, enterAvanca, hoje, idade, mascaraCEP, mascaraCPF, mascaraTelefone,
+  validarCPF, validarEmail, validarNascimento, validarNome, validarTelefone,
 } from '../lib/validacao.js';
 import '../styles/pages/usuarios.css';
 
@@ -26,14 +26,14 @@ const ORDENACAO = [
 ];
 
 const FORM_VAZIO = {
-  foto_usuario: '', nome_usuario: '', email_usuario: '', login_usuario: '', senha_usuario: '', tipo_usuario: '3',
+  foto_usuario: '', nome_usuario: '', email_usuario: '', login_usuario: '', tipo_usuario: '3',
   cel_usuario: '', cpf_usuario: '', data_nasc_usuario: '', cep_usuario: '', endereco_usuario: '', numero_usuario: '',
   complemento_usuario: '', bairro_usuario: '', cidade_usuario: '', estado_usuario: '', time: '',
 };
 
 // campos obrigatórios no cadastro de usuário novo
 const OBRIGATORIOS = [
-  ['nome_usuario', 'Nome'], ['email_usuario', 'Email'], ['login_usuario', 'Login'], ['senha_usuario', 'Senha'],
+  ['nome_usuario', 'Nome'], ['email_usuario', 'Email'],
   ['cel_usuario', 'Celular'], ['cpf_usuario', 'CPF'], ['data_nasc_usuario', 'Data de nascimento'], ['cep_usuario', 'CEP'],
   ['endereco_usuario', 'Endereço'], ['numero_usuario', 'Número'], ['bairro_usuario', 'Bairro'], ['cidade_usuario', 'Cidade'],
   ['estado_usuario', 'Estado'],
@@ -76,7 +76,7 @@ export default function Usuarios() {
   const [editId, setEditId] = useState('');
   const [val, setVal] = useState({}); // resultado das validações por campo
   const [invalidos, setInvalidos] = useState({}); // obrigatórios vazios no envio
-  const [verSenha, setVerSenha] = useState(false);
+  const [reenviarAlvo, setReenviarAlvo] = useState(null); // { id, nome }
   const [cepCarregando, setCepCarregando] = useState(false);
   const [timesForm, setTimesForm] = useState({ opcoes: [], placeholder: 'Carregando...' });
 
@@ -133,7 +133,6 @@ export default function Usuarios() {
     setEditId('');
     setVal({});
     setInvalidos({});
-    setVerSenha(false);
   }
 
   function abrirNovoUsuario() {
@@ -152,7 +151,7 @@ export default function Usuarios() {
     setForm({
       foto_usuario: u.foto_usuario || '',
       nome_usuario: u.nome_usuario || '', email_usuario: u.email_usuario || '', login_usuario: u.login_usuario || '',
-      senha_usuario: '', tipo_usuario: String(u.tipo_usuario || 3), cel_usuario: u.cel_usuario || '',
+      tipo_usuario: String(u.tipo_usuario || 3), cel_usuario: u.cel_usuario || '',
       cpf_usuario: u.cpf_usuario || '', data_nasc_usuario: u.data_nasc_usuario || '',
       endereco_usuario: u.endereco_usuario || '', bairro_usuario: u.bairro_usuario || '',
       numero_usuario: u.numero_usuario || '', complemento_usuario: u.complemento_usuario || '',
@@ -198,12 +197,11 @@ export default function Usuarios() {
   const VALIDADORES = {
     'inp-nome': () => validarNome(form.nome_usuario),
     'inp-email': () => validarEmail(form.email_usuario),
-    'inp-senha': () => validarSenha(form.senha_usuario, !!editId),
     'inp-nasc': () => validarNascimento(form.data_nasc_usuario),
     'inp-cpf': () => validarCPF(form.cpf_usuario),
     'inp-cel': () => validarTelefone(form.cel_usuario),
   };
-  const CHAVE_VAL = { 'inp-nome': 'nome', 'inp-email': 'email', 'inp-senha': 'senha', 'inp-nasc': 'nasc', 'inp-cpf': 'cpf', 'inp-cel': 'cel' };
+  const CHAVE_VAL = { 'inp-nome': 'nome', 'inp-email': 'email', 'inp-nasc': 'nasc', 'inp-cpf': 'cpf', 'inp-cel': 'cel' };
   function campoValido(campo) {
     const fn = VALIDADORES[campo.id];
     if (fn) {
@@ -211,8 +209,7 @@ export default function Usuarios() {
       valida(CHAVE_VAL[campo.id], r);
       if (r && !r.ok) return false;
     }
-    const senhaOpcionalNaEdicao = campo.id === 'inp-senha' && editId;
-    return !campo.required || senhaOpcionalNaEdicao || campo.value.trim() !== '';
+    return !campo.required || campo.value.trim() !== '';
   }
 
   async function salvar(e) {
@@ -223,7 +220,6 @@ export default function Usuarios() {
       email: validarEmail(form.email_usuario),
       cpf: validarCPF(form.cpf_usuario),
       cel: validarTelefone(form.cel_usuario),
-      senha: validarSenha(form.senha_usuario, !!editId),
       nasc: validarNascimento(form.data_nasc_usuario),
     };
     setVal((v) => ({ ...v, ...r }));
@@ -244,8 +240,6 @@ export default function Usuarios() {
     if (Object.values(r).some((x) => x && !x.ok)) { toast('Corrija os campos destacados antes de salvar.', false); return; }
 
     const { time, ...d } = form;
-    // Novo usuário sempre tem primeiro_login=1 (deve trocar a senha no primeiro acesso)
-    if (!editId) d.primeiro_login = 1;
     // o backend só aceita times que o usuário logado pode gerenciar
     if (time) d.time = { id_time: parseInt(time) };
 
@@ -256,11 +250,29 @@ export default function Usuarios() {
         toast(erro.erro || 'Não foi possível salvar. Confira os dados e tente novamente.', false);
         return;
       }
-      toast(editId ? 'Usuário atualizado!' : 'Usuário cadastrado! O usuário deverá trocar a senha no primeiro acesso. ');
+      // a senha temporária vai direto para o e-mail do usuário; aqui só sabemos se saiu
+      const salvo = await res.json().catch(() => ({}));
+      if (editId) toast('Usuário atualizado!');
+      else if (salvo.acesso_enviado) toast('Usuário cadastrado com o login "' + salvo.login_usuario + '". Login e senha temporária foram enviados para ' + salvo.email_usuario + '.');
+      else toast('Usuário cadastrado com o login "' + salvo.login_usuario + '", mas o e-mail com o acesso não foi enviado. Confira o endereço e use "Reenviar acesso" na edição.', false);
       cancelarForm();
       carregar();
     } catch {
       toast('Erro ao salvar.', false);
+    }
+  }
+
+  // ---------- REENVIAR ACESSO ----------
+  async function reenviarAcesso() {
+    if (!reenviarAlvo) return;
+    try {
+      const res = await authFetch('/usuarios/' + reenviarAlvo.id + '/reenviar-acesso', { method: 'POST' });
+      const r = await res.json().catch(() => ({}));
+      if (!res.ok) { toast(r.erro || 'Não foi possível reenviar o acesso.', false); return; }
+      toast('Login e nova senha temporária enviados para ' + r.email_usuario + '.');
+      setReenviarAlvo(null);
+    } catch {
+      toast('Erro ao reenviar o acesso.', false);
     }
   }
 
@@ -305,7 +317,6 @@ export default function Usuarios() {
     </>
   );
 
-  const reqs = regrasSenha(form.senha_usuario);
   const cls = (campo, chave) => 'form-control' + (invalidos[campo] ? ' is-invalid' : classeValidacao(val[chave]));
   const vu = verUsuario;
 
@@ -475,29 +486,28 @@ export default function Usuarios() {
                     value={form.email_usuario} onChange={(e) => { set('email_usuario', e.target.value); valida('email', validarEmail(e.target.value)); }} />
                   <Hint r={val.email} />
                 </div>
-                {/* Login */}
+                {/* Login: gerado pelo sistema no cadastro e não muda depois */}
                 <div className="col-md-4">
                   <label className="form-label" htmlFor="inp-login">Login</label>
-                  <input className={cls('login_usuario')} id="inp-login" placeholder="login de acesso" required
-                    value={form.login_usuario} onChange={(e) => set('login_usuario', e.target.value)} />
+                  {editId ? (
+                    <input className="form-control" id="inp-login" value={form.login_usuario} readOnly title="O login é gerado pelo sistema e não pode ser alterado" />
+                  ) : (
+                    <div className="acesso-box">Gerado automaticamente pelo sistema e enviado para o e-mail do usuário.</div>
+                  )}
                 </div>
-                {/* Senha */}
+                {/* Senha: ninguém além do próprio usuário define ou vê a senha */}
                 <div className="col-md-4">
-                  <label className="form-label" htmlFor="inp-senha">Senha</label>
-                  <div className="senha-wrap">
-                    <input type={verSenha ? 'text' : 'password'} className={cls('senha_usuario', 'senha')} id="inp-senha" placeholder="••••••••" aria-describedby="reqs-senha" required
-                      value={form.senha_usuario} onChange={(e) => { set('senha_usuario', e.target.value); valida('senha', validarSenha(e.target.value, !!editId)); }} />
-                    <button type="button" className="btn-olho" onClick={() => setVerSenha((v) => !v)} aria-label={verSenha ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={verSenha}>
-                      <svg className="ico-ver" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                      <svg className="ico-ocultar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-                    </button>
-                  </div>
-                  <ul className="senha-reqs" id="reqs-senha" aria-live="polite">
-                    <li data-req="len" className={reqs.len ? 'ok' : ''}>Mín. 8 caracteres</li>
-                    <li data-req="letra" className={reqs.letra ? 'ok' : ''}>Uma letra</li>
-                    <li data-req="num" className={reqs.num ? 'ok' : ''}>Um número</li>
-                  </ul>
-                  <Hint r={val.senha} />
+                  <label className="form-label">Senha</label>
+                  {editId ? (
+                    <div className="acesso-box">
+                      <span>Só o usuário conhece a própria senha.</span>
+                      {(isAdmin || form.tipo_usuario === '3') && (
+                        <button type="button" className="btn-acao-sm btn-edit" onClick={() => setReenviarAlvo({ id: editId, nome: form.nome_usuario })}>Reenviar acesso</button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="acesso-box">Login e senha temporária vão para o e-mail informado. O usuário cria a senha dele no primeiro acesso.</div>
+                  )}
                 </div>
                 {/* Perfil: cadastro novo é sempre Atleta; edição mantém o perfil real do usuário */}
                 <div className="col-md-4">
@@ -639,6 +649,17 @@ export default function Usuarios() {
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
             <button className="btn btn-secondary btn-sm" onClick={() => setDelAlvo(null)}>Cancelar</button>
             <button onClick={excluir} style={{ background: 'rgba(255,80,80,0.15)', border: '1px solid rgba(255,80,80,0.3)', color: '#FF6B6B', padding: '7px 20px', borderRadius: 8, fontFamily: "'Bebas Neue',cursive", fontSize: 15, cursor: 'pointer' }}>Excluir</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal id="modalReenviar" tamanho="sm" aberto={!!reenviarAlvo} onFechar={() => setReenviarAlvo(null)}>
+        <div className="modal-body" style={{ padding: 28, textAlign: 'center' }}>
+          <div style={{ fontFamily: "'Bebas Neue',cursive", fontSize: 20, marginBottom: 8 }}>Reenviar acesso?</div>
+          <div style={{ fontSize: 13, color: 'var(--cinza)', marginBottom: 20 }}>{reenviarAlvo ? 'O login e uma nova senha temporária serão enviados para o e-mail cadastrado de "' + reenviarAlvo.nome + '". A senha atual deixa de valer e ele cria uma nova no próximo acesso.' : ''}</div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setReenviarAlvo(null)}>Cancelar</button>
+            <button className="btn-acao-sm btn-edit" style={{ padding: '7px 20px' }} onClick={reenviarAcesso}>Reenviar</button>
           </div>
         </div>
       </Modal>

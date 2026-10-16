@@ -1,26 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import IntroLogin from '../components/IntroLogin.jsx';
+import NovaSenha from '../components/NovaSenha.jsx';
 import useTitulo from '../lib/useTitulo.js';
 import '../styles/pages/login.css';
 
 const PERFIS = { 1: 'Administrador', 2: 'Treinador', 3: 'Atleta' };
-const CORES_FORCA = ['#FF6B6B', '#FF6B6B', '#FFB020', '#FFB020', '#00C97A'];
-
-function requisitos(val) {
-  return {
-    upper: /[A-Z]/.test(val),
-    num: /[0-9]/.test(val),
-    spec: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(val),
-    len: val.length >= 8,
-  };
-}
-
-// mesmo ícone de olho do cadastro de usuário (padrão do sistema)
-const IconeOlho = ({ aberto }) => (aberto
-  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
-  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>);
-
 export default function Login() {
   useTitulo('LAIVY — For those who live the game');
   const navigate = useNavigate();
@@ -40,10 +25,11 @@ export default function Login() {
   const [shake, setShake] = useState(0);
 
   const [userPendente, setUserPendente] = useState(null); // aguardando troca de senha
-  const [nova, setNova] = useState('');
-  const [conf, setConf] = useState('');
-  const [verNova, setVerNova] = useState(false);
-  const [verConf, setVerConf] = useState(false);
+
+  // "Esqueci minha senha": null = fechado; { valor, enviando, erro, msg } = aberto
+  const [params] = useSearchParams();
+  const [esqueci, setEsqueci] = useState(() => (params.get('esqueci') ? { valor: '' } : null));
+  const esqueciRef = useRef(null);
 
   const [loading, setLoading] = useState(null); // { nome, perfil, done }
 
@@ -123,14 +109,40 @@ export default function Login() {
     }
   }
 
-  // ---------- POPUP: TROCA DE SENHA NO PRIMEIRO LOGIN ----------
-  const reqs = requisitos(nova);
-  const metCount = Object.values(reqs).filter(Boolean).length;
-  const allMet = metCount === 4;
-  const confere = nova === conf;
-  const pronto = allMet && confere && conf.length > 0;
+  // ---------- ESQUECI MINHA SENHA ----------
+  // Só pede o link; quem cria a senha nova é o próprio usuário, pelo e-mail.
+  function abrirEsqueci() { setEsqueci({ valor: login.trim() }); }
+  function fecharEsqueci() { setEsqueci(null); }
 
-  async function psConfirmar() {
+  useEffect(() => {
+    if (!esqueci) return;
+    esqueciRef.current?.focus();
+    const esc = (e) => e.key === 'Escape' && setEsqueci(null);
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, [!!esqueci]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function pedirLink(e) {
+    e.preventDefault();
+    const valor = esqueci.valor.trim();
+    if (!valor || esqueci.enviando) return;
+    setEsqueci((s) => ({ ...s, enviando: true, erro: null }));
+    try {
+      const res = await fetch('/usuarios/esqueci-senha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login: valor }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setEsqueci((s) => ({ ...s, enviando: false, erro: data.erro || 'Não foi possível enviar agora. Tente novamente.' })); return; }
+      setEsqueci((s) => ({ ...s, enviando: false, msg: data.mensagem }));
+    } catch {
+      setEsqueci((s) => ({ ...s, enviando: false, erro: 'Servidor offline. Tente novamente em instantes.' }));
+    }
+  }
+
+  // ---------- POPUP: TROCA DE SENHA NO PRIMEIRO LOGIN ----------
+  async function psConfirmar(nova) {
     if (!userPendente) return;
     try {
       const res = await fetch('/usuarios/' + userPendente.id_usuario + '/senha', {
@@ -173,8 +185,6 @@ export default function Login() {
     const id = requestAnimationFrame(() => setOverlayVisivel(true));
     return () => cancelAnimationFrame(id);
   }, [loading]);
-
-  const classeCampo = (v, ok) => (ok ? 'ok' : v.length > 0 ? 'err' : '');
 
   return (
     <div className="pagina pg-login">
@@ -226,7 +236,7 @@ export default function Login() {
           <form id="formLogin" onSubmit={fazerLogin}>
             <div className="form-group">
               <label htmlFor="loginInput">Login</label>
-              <input type="text" id="loginInput" placeholder="Digite seu login" required autoComplete="username"
+              <input type="text" id="loginInput" placeholder="Seu login (enviado por e-mail)" required autoComplete="username"
                 className={erro?.login ? 'err-field' : ''}
                 value={login} onChange={(e) => { setLogin(e.target.value); limparErro(); }} />
             </div>
@@ -248,9 +258,37 @@ export default function Login() {
             </div>
 
             <button type="submit" className="btn-login">Entrar</button>
+            <button type="button" className="link-esqueci" onClick={abrirEsqueci}>Esqueci minha senha</button>
           </form>
         </section>
       </main>
+
+      {/* POPUP ESQUECI MINHA SENHA */}
+      <div className={'ps-overlay' + (esqueci ? ' show' : '')} onMouseDown={(e) => { if (e.target === e.currentTarget) fecharEsqueci(); }}>
+        <div className="ps-card" role="dialog" aria-modal="true" aria-labelledby="esqTitulo">
+          <div className="ps-title" id="esqTitulo">Esqueci minha senha</div>
+          {esqueci?.msg ? (
+            <>
+              <div className="ps-sub">{esqueci.msg}<br />O link vale por 30 minutos.</div>
+              <button type="button" className="ps-btn ready" onClick={fecharEsqueci}>Voltar ao login</button>
+            </>
+          ) : (
+            <form onSubmit={pedirLink}>
+              <div className="ps-sub">Informe seu login ou e-mail. Vamos enviar um link para você criar uma senha nova.</div>
+              <div className="ps-field">
+                <label htmlFor="esqLogin">Login ou e-mail</label>
+                <input id="esqLogin" ref={esqueciRef} autoComplete="username" placeholder="seu login ou e-mail"
+                  value={esqueci?.valor || ''} onChange={(e) => setEsqueci((s) => ({ ...s, valor: e.target.value, erro: null }))} />
+              </div>
+              {esqueci?.erro && <div className="ps-match err">{esqueci.erro}</div>}
+              <button type="submit" className={'ps-btn' + (esqueci?.valor?.trim() && !esqueci?.enviando ? ' ready' : '')}>
+                {esqueci?.enviando ? 'Enviando…' : 'Enviar link'}
+              </button>
+              <button type="button" className="link-esqueci" onClick={fecharEsqueci}>Cancelar</button>
+            </form>
+          )}
+        </div>
+      </div>
 
       {/* POPUP TROCA DE SENHA — PRIMEIRO LOGIN */}
       <div id="popupSenha" className={userPendente ? 'show' : ''}>
@@ -262,38 +300,7 @@ export default function Login() {
             Crie uma senha segura para continuar.
           </div>
 
-          <div className="ps-field">
-            <label htmlFor="psNova">Nova Senha</label>
-            <input type={verNova ? 'text' : 'password'} id="psNova" ref={novaRef} placeholder="••••••••" autoComplete="new-password"
-              className={allMet ? 'ok' : nova.length > 0 ? 'err' : ''} value={nova} onChange={(e) => setNova(e.target.value)} />
-            <button type="button" className="ps-eye" onClick={() => setVerNova((v) => !v)} aria-label={verNova ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={verNova}><IconeOlho aberto={verNova} /></button>
-          </div>
-
-          {/* Barra de força (0–4 requisitos = 0–100%) */}
-          <div className="ps-strength-wrap">
-            <div className="ps-strength-bar" style={{ width: metCount * 25 + '%', background: CORES_FORCA[metCount] }}></div>
-          </div>
-
-          <div className="ps-reqs">
-            <div className={'ps-req' + (reqs.upper ? ' met' : '')}>Letra maiúscula</div>
-            <div className={'ps-req' + (reqs.num ? ' met' : '')}>Número</div>
-            <div className={'ps-req' + (reqs.spec ? ' met' : '')}>Caractere especial</div>
-            <div className={'ps-req' + (reqs.len ? ' met' : '')}>Mínimo 8 caracteres</div>
-          </div>
-
-          <div className="ps-field">
-            <label htmlFor="psConf">Confirmar Senha</label>
-            <input type={verConf ? 'text' : 'password'} id="psConf" placeholder="••••••••" autoComplete="new-password"
-              className={conf.length > 0 ? classeCampo(conf, confere) : ''} value={conf} onChange={(e) => setConf(e.target.value)} />
-            <button type="button" className="ps-eye" onClick={() => setVerConf((v) => !v)} aria-label={verConf ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={verConf}><IconeOlho aberto={verConf} /></button>
-          </div>
-          <div className={'ps-match' + (conf.length > 0 ? (confere ? ' ok' : ' err') : '')}>
-            {conf.length > 0 && (confere ? '✅ Senhas conferem' : '❌ Senhas não conferem')}
-          </div>
-
-          <button className={'ps-btn' + (pronto ? ' ready' : '')} onClick={psConfirmar}>
-            ✅ Confirmar Nova Senha
-          </button>
+          <NovaSenha onConfirmar={psConfirmar} inputRef={novaRef} />
         </div>
       </div>
     </div>

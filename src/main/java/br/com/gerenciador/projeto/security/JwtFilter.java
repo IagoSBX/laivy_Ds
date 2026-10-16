@@ -17,7 +17,7 @@ import java.util.List;
  * HttpOnly "jwtToken", enviado automaticamente pelo navegador.
  *
  * Tudo mais (arquivos estáticos, favicon, /error) passa direto.
- * Rotas públicas: POST /usuarios/login, POST /usuarios/logout
+ * Rotas públicas: POST /usuarios/login, /logout, /esqueci-senha e /redefinir-senha
  *
  * Após validar o token, o filtro expõe a identidade do usuário
  * autenticado como atributos da requisição:
@@ -53,7 +53,9 @@ public class JwtFilter implements Filter {
 
     private static final List<String> API_PUBLICAS = List.of(
         "/usuarios/login",
-        "/usuarios/logout"
+        "/usuarios/logout",
+        "/usuarios/esqueci-senha",
+        "/usuarios/redefinir-senha"
     );
 
     // Casa o path com o prefixo respeitando limite de segmento:

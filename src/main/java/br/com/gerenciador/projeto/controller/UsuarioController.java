@@ -134,6 +134,28 @@ public class UsuarioController {
         return ResponseEntity.ok(Map.<String, Object>of("usuario", resultado.usuario));
     }
 
+    // ── POST /usuarios/{id}/reenviar-acesso ───────────────────────────────
+    // Nova senha temporária direto para o e-mail do usuário; quem pede não a vê.
+    @PostMapping("/{id}/reenviar-acesso")
+    public Usuario reenviarAcesso(@PathVariable Integer id, HttpServletRequest request) {
+        return usuarioService.reenviarAcesso(id, authId(request), authTipo(request));
+    }
+
+    // ── POST /usuarios/esqueci-senha (pública) ────────────────────────────
+    // Resposta sempre igual, exista o login/e-mail ou não.
+    @PostMapping("/esqueci-senha")
+    public Map<String, Object> esqueciSenha(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        usuarioService.solicitarRedefinicao(body.get("login"), request.getRemoteAddr());
+        return Map.of("mensagem", "Se o login ou e-mail estiver cadastrado, enviamos um link para redefinir a senha. Confira sua caixa de entrada e o spam.");
+    }
+
+    // ── POST /usuarios/redefinir-senha (pública) ──────────────────────────
+    @PostMapping("/redefinir-senha")
+    public ResponseEntity<Void> redefinirSenha(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        usuarioService.redefinirSenha(body.get("token"), body.get("senha_usuario"), request.getRemoteAddr());
+        return ResponseEntity.noContent().build();
+    }
+
     // ── DELETE /usuarios/{id} ─────────────────────────────────────────────
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable Integer id, HttpServletRequest request) {

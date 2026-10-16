@@ -28,7 +28,7 @@ const ORD_TREINADORES = [
 
 const FORM_TREINADOR = {
   nome_usuario: '', email_usuario: '', cel_usuario: '', cpf_usuario: '', data_nasc_usuario: '', cep_usuario: '',
-  endereco_usuario: '', bairro_usuario: '', cidade_usuario: '', estado_usuario: '', login_usuario: '', senha_usuario: '',
+  endereco_usuario: '', bairro_usuario: '', cidade_usuario: '', estado_usuario: '',
 };
 
 // Contadores mostram apenas atividades que ainda vão acontecer (não conta canceladas/finalizadas).
@@ -246,15 +246,10 @@ export default function PainelAdmin() {
     if (!timeForm) hint('time', 'Selecione um time responsável', false);
     if (!formRef.current.checkValidity()) { formRef.current.reportValidity(); return; }
     if (!ok || !timeForm) return;
-    if (!form.senha_usuario || form.senha_usuario.length < 8) {
-      toast('Informe uma senha inicial com pelo menos 8 caracteres.', false);
-      return;
-    }
     const payload = {
       ...form,
       data_nasc_usuario: form.data_nasc_usuario || null,
       tipo_usuario: 2,
-      primeiro_login: 1,
       foto_usuario: foto || null,
       time: { id_time: parseInt(timeForm) },
     };
@@ -265,7 +260,10 @@ export default function PainelAdmin() {
         const erro = await r.json().catch(() => ({}));
         throw new Error(erro.erro || 'Erro ao cadastrar. Verifique o servidor.');
       }
-      toast('Treinador cadastrado com sucesso!');
+      // a senha temporária vai direto para o e-mail do treinador; aqui só sabemos se saiu
+      const salvo = await r.json().catch(() => ({}));
+      if (salvo.acesso_enviado) toast('Treinador cadastrado com o login "' + salvo.login_usuario + '". Login e senha temporária foram enviados para ' + salvo.email_usuario + '.');
+      else toast('Treinador cadastrado com o login "' + salvo.login_usuario + '", mas o e-mail com o acesso não foi enviado. Confira o endereço e use "Reenviar acesso" em Usuários.', false);
       resetFormTreinador();
       carregarTreinadores();
       carregarTimes();
@@ -518,15 +516,9 @@ export default function PainelAdmin() {
                       <input className="form-control" id="inp-estado" placeholder="SP" required value={form.estado_usuario} onChange={(e) => set('estado_usuario', e.target.value)} />
                     </div>
                     <div className="col-12"><div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }}></div></div>
-                    <div className="col-md-6">
-                      <label className="form-label" htmlFor="inp-login">Login <span className="required">*</span></label>
-                      <input className="form-control" id="inp-login" placeholder="login de acesso" required value={form.login_usuario} onChange={(e) => set('login_usuario', e.target.value)} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label" htmlFor="inp-senha">Senha Inicial <span className="required">*</span></label>
-                      <input type="password" className="form-control" id="inp-senha" placeholder="Mín. 8 caracteres, com letras e números" required minLength={8}
-                        value={form.senha_usuario} onChange={(e) => set('senha_usuario', e.target.value)} />
-                      <div className="field-hint ok show" style={{ fontSize: 10 }}>O treinador trocará a senha no primeiro acesso</div>
+                    <div className="col-12">
+                      <label className="form-label">Acesso</label>
+                      <div className="field-hint ok show" style={{ fontSize: 12, marginTop: 4 }}>O login é gerado automaticamente pelo sistema. Login e senha temporária vão para o e-mail do treinador, que cria a senha dele no primeiro acesso.</div>
                     </div>
                     <div className="col-12">
                       <label className="form-label">Time Responsável <span className="required">*</span></label>

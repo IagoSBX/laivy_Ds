@@ -16,6 +16,7 @@ const NovoTime = lazy(() => import('./pages/NovoTime.jsx'));
 const PainelAdmin = lazy(() => import('./pages/PainelAdmin.jsx'));
 const PerfilAtleta = lazy(() => import('./pages/PerfilAtleta.jsx'));
 const Prancheta = lazy(() => import('./pages/Prancheta.jsx'));
+const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'));
 const SelecionarTime = lazy(() => import('./pages/SelecionarTime.jsx'));
 const Usuarios = lazy(() => import('./pages/Usuarios.jsx'));
 
@@ -27,6 +28,7 @@ export default function App() {
     <Suspense fallback={null}>
       <Routes>
         <Route path="/login.html" element={<Login />} />
+        <Route path="/redefinir-senha.html" element={<RedefinirSenha />} />
         <Route path="/selecionar-time.html" element={<SelecionarTime />} />
         <Route path="/dashboard.html" element={<Dashboard />} />
         <Route path="/usuarios.html" element={<Usuarios />} />

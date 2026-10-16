@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * saúde, CPF) nunca é lido nem gravado. A única leitura de corpo é a da
  * RESPOSTA de uma criação, para anotar o id do item criado.
  *
- * Login, logout e tentativas com senha errada são registrados no
+ * Login, logout, tentativas com senha errada e o "esqueci minha senha" são registrados no
  * UsuarioService/UsuarioController, que sabem quem tentou entrar.
  */
 @Component
@@ -106,7 +106,8 @@ public class AuditoriaFilter implements Filter {
 
     /** Rotas que não entram no log: login/logout (registrados à parte) e a contagem de visualizações. */
     private static boolean ignorar(String[] seg) {
-        if (seg[0].equals("usuarios") && seg.length == 2 && (seg[1].equals("login") || seg[1].equals("logout"))) return true;
+        if (seg[0].equals("usuarios") && seg.length == 2
+            && java.util.Set.of("login", "logout", "esqueci-senha", "redefinir-senha").contains(seg[1])) return true;
         return seg[seg.length - 1].equals("visualizacao");
     }
 
@@ -152,6 +153,9 @@ public class AuditoriaFilter implements Filter {
                 ? new Alvo("EDITAR", "removeu", "remover", "membro do time", "times", id1, detalhe, null)
                 : new Alvo("EDITAR", "adicionou", "adicionar", "membro ao time", "times", id1, detalhe, null);
         }
+
+        if (raiz.equals("usuarios") && seg.length >= 3 && seg[2].equals("reenviar-acesso"))
+            return new Alvo("SENHA", "reenviou", "reenviar", "o acesso de usuário (nova senha temporária por e-mail)", "usuarios", id1, null, null);
 
         if (raiz.equals("usuarios") && seg.length >= 3 && seg[2].equals("senha")) {
             boolean propria = id1 != null && id1.equals(req.getAttribute(JwtFilter.ATTR_ID));

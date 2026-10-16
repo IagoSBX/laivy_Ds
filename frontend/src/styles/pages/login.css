@@ -212,12 +212,20 @@
  }
 
 /* ── POPUP TROCA DE SENHA ── */
-#popupSenha {
+#popupSenha, .ps-overlay {
  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
  background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
  z-index: 99999; display: none; align-items: center; justify-content: center;
 }
-#popupSenha.show { display: flex; }
+#popupSenha.show, .ps-overlay.show { display: flex; }
+.ps-overlay .ps-card { margin: 16px; }
+/* "Esqueci minha senha" (abaixo do Entrar e no Cancelar do popup) */
+.link-esqueci {
+ display: block; margin: 16px auto 0; background: none; border: 0; padding: 4px 8px;
+ font-family: 'Barlow', sans-serif; font-size: 13px; color: #8899BB;
+ text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
+}
+.link-esqueci:hover, .link-esqueci:focus-visible { color: #00C97A; outline: none; }
 .ps-card {
  background: linear-gradient(135deg, #0D1E3C, #112244);
  border: 1px solid rgba(0,201,122,0.25);

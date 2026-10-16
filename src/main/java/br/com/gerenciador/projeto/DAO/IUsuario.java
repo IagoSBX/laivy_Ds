@@ -33,6 +33,13 @@ public interface IUsuario extends JpaRepository<Usuario, Integer> {
     @Query("SELECT COUNT(u) > 0 FROM Usuario u WHERE u.login_usuario = :login")
     boolean existeLogin(@Param("login") String login);
 
+    /** "Esqueci minha senha": o usuário pode informar o login ou o e-mail. */
+    @Query("SELECT u FROM Usuario u WHERE u.login_usuario = :valor OR LOWER(u.email_usuario) = LOWER(:valor)")
+    List<Usuario> buscarPorLoginOuEmail(@Param("valor") String valor);
+
+    @Query("SELECT u FROM Usuario u WHERE u.reset_senha_hash = :hash")
+    Optional<Usuario> buscarPorResetHash(@Param("hash") String hash);
+
     @Query("SELECT u FROM Usuario u WHERE u.cpf_usuario = :cpf")
     List<Usuario> buscarPorCpf(@Param("cpf") String cpf);
 }

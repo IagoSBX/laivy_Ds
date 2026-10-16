@@ -39,13 +39,6 @@ public class AssistenteService {
     @Autowired private JogadaService jogadaService;
     @Autowired private UsuarioService usuarioService;
     @Autowired private ExameDAO exameDAO;
-    @Autowired private org.springframework.mail.javamail.JavaMailSender mailSender;
-
-    @Value("${app.mail.from}")
-    private String mailFrom;
-
-    @Value("${app.url}")
-    private String appUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -379,7 +372,6 @@ public class AssistenteService {
     private static final int MAX_ATLETAS_POR_DIA = 100;
     // ponytail: contador em memória (zera no restart); mover pro banco se precisar de auditoria.
     private final java.util.concurrent.ConcurrentHashMap<String, Integer> cadastrosHoje = new java.util.concurrent.ConcurrentHashMap<>();
-    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
 
     /** Um atleta extraído pela IA (de um PDF ou da mensagem do treinador). */
     public record NovoAtleta(String nome, String email, String dataNascimento, String celular, String cpf) {}
@@ -389,10 +381,10 @@ public class AssistenteService {
      * jogadas: recalculada a partir do idUsuario real (treinador do próprio
      * time ou admin). O cadastro em si passa pelo UsuarioService.criar, então
      * valem as mesmas regras da tela: Treinador só cadastra Atleta, no próprio
-     * time, e a senha vai com BCrypt. Cada atleta recebe uma senha temporária
-     * e primeiro_login=1 (troca obrigatória no primeiro acesso), enviada por
-     * e-mail direto pro atleta — a senha não volta pra IA (nem pra OpenAI).
-     * Só se o e-mail falhar ela volta na resposta, pro treinador repassar.
+     * time, e o próprio criar gera a senha temporária, manda por e-mail direto
+     * pro atleta e exige a troca no primeiro acesso. A senha nunca volta na
+     * resposta (nem pra IA, nem pro treinador): se o e-mail falhar, o treinador
+     * usa "Reenviar acesso" na tela de usuários.
      *
      * Cada linha é independente: um e-mail repetido não derruba o lote inteiro,
      * só entra em "ignorados" com o motivo.
@@ -440,14 +432,10 @@ public class AssistenteService {
                 continue;
             }
 
-            String senhaTemporaria = gerarSenhaTemporaria();
             Usuario u = new Usuario();
             u.setNome_usuario(nome);
             u.setEmail_usuario(email);
-            u.setLogin_usuario(gerarLogin(email));
-            u.setSenha_usuario(senhaTemporaria);
             u.setTipo_usuario(3);
-            u.setPrimeiro_login(1);
             u.setData_nasc_usuario(nascimento);
             u.setCel_usuario(limitar(a.celular(), 20));
             u.setCpf_usuario(limitar(a.cpf(), 20));
@@ -459,9 +447,9 @@ public class AssistenteService {
                 m.put("nome", salvo.getNome_usuario());
                 m.put("email", salvo.getEmail_usuario());
                 m.put("login", salvo.getLogin_usuario());
-                boolean enviado = enviarCredenciais(salvo, senhaTemporaria, time.getNome_time());
+                boolean enviado = Boolean.TRUE.equals(salvo.getAcesso_enviado());
                 m.put("email_enviado", enviado);
-                if (!enviado) m.put("senha_temporaria", senhaTemporaria);
+                if (!enviado) m.put("aviso", "O e-mail não foi enviado. Confira o endereço e use \"Reenviar acesso\" na tela de Usuários.");
                 criados.add(m);
             } catch (Exception e) {
                 ignorados.add(Map.of("nome", nome, "email", email, "motivo", "Erro ao salvar: " + e.getMessage()));
@@ -476,52 +464,6 @@ public class AssistenteService {
         r.put("criados", criados);
         r.put("ignorados", ignorados);
         return r;
-    }
-
-    /** Manda login + senha temporária pro e-mail do atleta. Falha não desfaz o cadastro. */
-    private boolean enviarCredenciais(Usuario u, String senha, String nomeTime) {
-        try {
-            var msg = new org.springframework.mail.SimpleMailMessage();
-            msg.setFrom(mailFrom);
-            msg.setTo(u.getEmail_usuario());
-            msg.setSubject("Seu acesso ao LAIVY - " + nomeTime);
-            msg.setText("Olá, " + u.getNome_usuario() + "!\n\n"
-                + "Você foi cadastrado(a) no time " + nomeTime + " no LAIVY.\n\n"
-                + "Acesse: " + appUrl + "/login.html\n"
-                + "Perfil: Atleta\n"
-                + "Login: " + u.getLogin_usuario() + "\n"
-                + "Senha temporária: " + senha + "\n\n"
-                + "No primeiro acesso você vai precisar criar uma nova senha.\n"
-                + "Se você não esperava este e-mail, pode ignorá-lo.");
-            mailSender.send(msg);
-            return true;
-        } catch (Exception e) {
-            System.err.println("[LAIVY] Falha ao enviar e-mail para " + u.getEmail_usuario() + ": " + e.getMessage());
-            return false;
-        }
-    }
-
-    /** Login = parte do e-mail antes do @, sem acentos/símbolos, com sufixo se já existir. */
-    private String gerarLogin(String email) {
-        String base = java.text.Normalizer.normalize(email.substring(0, email.indexOf('@')), java.text.Normalizer.Form.NFD)
-            .replaceAll("[^A-Za-z0-9._-]", "").toLowerCase();
-        if (base.isEmpty()) base = "atleta";
-        if (base.length() > 40) base = base.substring(0, 40);
-        String login = base;
-        for (int i = 2; usuarioDAO.existeLogin(login); i++) login = base + i;
-        return login;
-    }
-
-    /** 10 caracteres, sempre com letra e número (passa na senhaFraca do UsuarioService). */
-    private static String gerarSenhaTemporaria() {
-        final String letras = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
-        final String numeros = "23456789";
-        final String todos = letras + numeros;
-        StringBuilder sb = new StringBuilder();
-        sb.append(letras.charAt(RANDOM.nextInt(letras.length())));
-        sb.append(numeros.charAt(RANDOM.nextInt(numeros.length())));
-        for (int i = 0; i < 8; i++) sb.append(todos.charAt(RANDOM.nextInt(todos.length())));
-        return sb.toString();
     }
 
     private static String limitar(String s, int max) {

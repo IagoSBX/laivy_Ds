@@ -52,18 +52,8 @@ body{font-family:'Barlow',sans-serif;background:var(--azul);color:var(--branco);
 .form-select option{background:#0D1E3C;}
 label.form-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cinza);margin-bottom:6px;display:block;}
 .field-hint{font-size:11px;margin-top:4px;display:none;}
-.senha-wrap{position:relative;}
-.senha-wrap input::-ms-reveal,.senha-wrap input::-ms-clear{display:none;}
-.senha-wrap .form-control{padding-right:44px!important;}
-.btn-olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;border-radius:6px;padding:6px;color:var(--cinza);display:flex;cursor:pointer;}
-.btn-olho:hover,.btn-olho:focus-visible{color:var(--verde);outline:none;background:rgba(0,201,122,0.08);}
-.btn-olho .ico-ocultar{display:none;}
-.btn-olho[aria-pressed="true"] .ico-ver{display:none;}
-.btn-olho[aria-pressed="true"] .ico-ocultar{display:block;}
-.senha-reqs{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--cinza);}
-.senha-reqs li::before{content:'\25CB';display:inline-block;width:14px;}
-.senha-reqs li.ok{color:var(--verde);}
-.senha-reqs li.ok::before{content:'\2713';}
+/* no lugar do antigo campo de senha: só o próprio usuário define a senha */
+.acesso-box{min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:8px 10px;flex-wrap:wrap;padding:8px 12px;border:1.5px dashed rgba(255,255,255,0.12);border-radius:10px;font-size:12px;line-height:1.4;color:var(--cinza);}
 .field-hint.show{display:block;}
 .field-hint.ok{color:#00C97A;}
 .field-hint.err{color:#FF6B6B;}

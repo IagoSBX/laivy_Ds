@@ -42,6 +42,21 @@ public class Usuario {
     @Column(name = "token_version", nullable = false)
     private Integer token_version = 0;
 
+    // "Esqueci minha senha": hash do token enviado por e-mail e validade. Nunca saem na API.
+    @JsonIgnore
+    @Column(name = "reset_senha_hash", length = 64)
+    private String reset_senha_hash;
+
+    @JsonIgnore
+    @Column(name = "reset_senha_expira")
+    private java.time.LocalDateTime reset_senha_expira;
+
+    // Só na resposta do cadastro/reenvio: se o e-mail com a senha temporária saiu.
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Boolean acesso_enviado;
+
     @Column(name = "tipo_usuario", nullable = false)
     private Integer tipo_usuario; // 1=Admin, 2=Treinador, 3=Atleta
 
@@ -147,6 +162,14 @@ public class Usuario {
     public Integer getToken_version() { return token_version != null ? token_version : 0; }
     public void setToken_version(Integer token_version) { this.token_version = token_version; }
     public void setPrimeiro_login(Integer primeiro_login) { this.primeiro_login = primeiro_login; }
+
+    public String getReset_senha_hash() { return reset_senha_hash; }
+    public void setReset_senha_hash(String reset_senha_hash) { this.reset_senha_hash = reset_senha_hash; }
+    public java.time.LocalDateTime getReset_senha_expira() { return reset_senha_expira; }
+    public void setReset_senha_expira(java.time.LocalDateTime reset_senha_expira) { this.reset_senha_expira = reset_senha_expira; }
+
+    public Boolean getAcesso_enviado() { return acesso_enviado; }
+    public void setAcesso_enviado(Boolean acesso_enviado) { this.acesso_enviado = acesso_enviado; }
 
     public Integer getTipo_usuario() { return tipo_usuario; }
     public void setTipo_usuario(Integer tipo_usuario) { this.tipo_usuario = tipo_usuario; }

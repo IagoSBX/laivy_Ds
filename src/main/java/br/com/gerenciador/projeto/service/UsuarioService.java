@@ -29,6 +29,7 @@ public class UsuarioService {
     @Autowired private TimeDAO   timeDAO;
     @Autowired private JwtUtil   jwtUtil;
     @Autowired private AuditoriaService auditoria;
+    @Autowired private AcessoService acesso;
     @PersistenceContext private EntityManager entityManager;
 
     /** Gera hash BCrypt, evitando re-hashear algo que já é um hash BCrypt. */
@@ -133,8 +134,14 @@ public class UsuarioService {
         if (!AuthUtil.ehAdmin(authTipo) && !AuthUtil.ehTreinador(authTipo))
             throw new ForbiddenException("Somente Admin ou Treinador podem cadastrar usuarios.");
 
-        if (senhaFraca(usuario.getSenha_usuario()))
-            throw new BadRequestException(ERRO_SENHA_FRACA);
+        // a senha temporária vai para o e-mail, então ele é obrigatório
+        String email = usuario.getEmail_usuario() != null ? usuario.getEmail_usuario().trim() : "";
+        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"))
+            throw new BadRequestException("Informe um e-mail válido: a senha temporária é enviada para ele.");
+        if (dao.existeEmail(email))
+            throw new BadRequestException("Este e-mail já está cadastrado.");
+        usuario.setEmail_usuario(email);
+        usuario.setId_usuario(null); // cadastro nunca sobrescreve um usuário existente
         validarNascimento(usuario.getData_nasc_usuario());
 
         // Somente Admin pode definir o perfil (tipo_usuario) do novo cadastro —
@@ -152,9 +159,149 @@ public class UsuarioService {
 
         usuario.setCpf_usuario(normalizarCpf(usuario.getCpf_usuario()));
         substituirCpfAnterior(usuario.getCpf_usuario(), null);
-        usuario.setSenha_usuario(hashSenha(usuario.getSenha_usuario()));
+        // O login também é do sistema (nome + dígitos do celular/CPF) e vai junto no e-mail.
+        String login = gerarLogin(usuario);
+        usuario.setLogin_usuario(login);
+        // Quem cadastra nunca define nem vê a senha: o sistema gera uma temporária,
+        // manda para o e-mail do usuário, e ele cria a dele no primeiro acesso.
+        String senhaTemporaria = AcessoService.gerarSenhaTemporaria();
+        usuario.setSenha_usuario(hashSenha(senhaTemporaria));
+        usuario.setPrimeiro_login(1);
+        usuario.setReset_senha_hash(null);
+        usuario.setReset_senha_expira(null);
+        Usuario salvo = dao.saveAndFlush(usuario); // erro de banco aparece antes do e-mail sair
+        salvo.setAcesso_enviado(acesso.enviarSenhaTemporaria(salvo, senhaTemporaria, true));
+        return salvo;
+    }
 
-        return dao.save(usuario);
+    // ── Login gerado pelo sistema ────────────────────────────────────────
+    // primeiro.ultimo nome (sem acento, sem "da/de/dos") + 4 últimos dígitos do
+    // celular — ou do CPF, ou 4 números aleatórios. Ex.: "joao.silva4821".
+    // Fácil de lembrar sem ser escolhido por quem cadastra. Se já existir, ganha sufixo _2, _3...
+    private static final java.util.Set<String> PARTICULAS = java.util.Set.of("da", "de", "do", "das", "dos", "e", "di", "du");
+
+    private String gerarLogin(Usuario u) {
+        String nome = java.text.Normalizer.normalize(u.getNome_usuario() == null ? "" : u.getNome_usuario(), java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{M}", "").toLowerCase().replaceAll("[^a-z ]", " ");
+        List<String> partes = java.util.Arrays.stream(nome.trim().split("\\s+"))
+            .filter(p -> !p.isEmpty() && !PARTICULAS.contains(p)).toList();
+        String base = partes.isEmpty() ? "usuario"
+            : partes.size() == 1 ? partes.get(0)
+            : partes.get(0) + "." + partes.get(partes.size() - 1);
+        if (base.length() > 34) base = base.substring(0, 34);
+
+        String cel = u.getCel_usuario() == null ? "" : u.getCel_usuario().replaceAll("\\D", "");
+        String cpf = u.getCpf_usuario() == null ? "" : u.getCpf_usuario().replaceAll("\\D", "");
+        String digitos;
+        if (cel.length() >= 4) digitos = cel.substring(cel.length() - 4);
+        else if (cpf.length() >= 4) digitos = cpf.substring(cpf.length() - 4);
+        else digitos = String.format("%04d", RANDOM.nextInt(10_000));
+
+        String login = base + digitos;
+        for (int i = 2; dao.existeLogin(login); i++) login = base + digitos + "_" + i;
+        return login;
+    }
+
+    /**
+     * "Reenviar acesso": gera uma nova senha temporária e manda para o e-mail do
+     * usuário (a anterior e as sessões abertas deixam de valer). Admin para
+     * qualquer um; Treinador só para atletas do próprio time. Quem pede não vê a senha.
+     */
+    @Transactional
+    public Usuario reenviarAcesso(Integer id, Integer authId, Integer authTipo) {
+        Usuario alvo = dao.findById(id)
+            .orElseThrow(() -> new NotFoundException("Usuario nao encontrado."));
+        Integer idTimeAlvo = alvo.getTime() != null ? alvo.getTime().getId_time() : null;
+        boolean treinadorDoAtleta = Integer.valueOf(3).equals(alvo.getTipo_usuario())
+            && AuthUtil.podeGerenciarTime(authTipo, authId, idTimeAlvo, dao);
+        if (!AuthUtil.ehAdmin(authTipo) && !treinadorDoAtleta)
+            throw new ForbiddenException("Sem permissao para reenviar o acesso deste usuario.");
+        if (alvo.getEmail_usuario() == null || alvo.getEmail_usuario().isBlank())
+            throw new BadRequestException("Este usuário não tem e-mail cadastrado. Edite o cadastro e informe um e-mail.");
+
+        String senhaTemporaria = AcessoService.gerarSenhaTemporaria();
+        alvo.setSenha_usuario(hashSenha(senhaTemporaria));
+        alvo.setPrimeiro_login(1);
+        alvo.setToken_version(alvo.getToken_version() + 1);
+        alvo.setReset_senha_hash(null);
+        alvo.setReset_senha_expira(null);
+        dao.saveAndFlush(alvo);
+        // e-mail falhou: a exceção desfaz a troca, e a senha antiga continua valendo
+        if (!acesso.enviarSenhaTemporaria(alvo, senhaTemporaria, false))
+            throw new BadRequestException("Não consegui enviar o e-mail para " + alvo.getEmail_usuario()
+                + ". Confira o endereço e tente de novo.");
+        alvo.setAcesso_enviado(true);
+        return alvo;
+    }
+
+    // ── Esqueci minha senha ──────────────────────────────────────────────
+    // Link por e-mail com token aleatório de uso único; no banco fica só o
+    // hash dele. A resposta é sempre a mesma, exista o login/e-mail ou não.
+    private static final int  VALIDADE_LINK_MIN = 30;
+    private static final int  MAX_PEDIDOS_POR_IP = 10;     // por hora
+    private static final int  MAX_PEDIDOS_POR_CONTA = 3;   // a cada 15 min
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+    private final java.util.concurrent.ConcurrentHashMap<String, long[]> pedidosRedefinicao = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Transactional
+    public void solicitarRedefinicao(String loginOuEmail, String ip) {
+        if (excedeuPedidos("ip|" + ip, MAX_PEDIDOS_POR_IP, 60 * 60 * 1000L))
+            throw new TooManyRequestsException("Muitos pedidos de redefinição. Tente novamente mais tarde.");
+        String valor = loginOuEmail != null ? loginOuEmail.trim() : "";
+        if (valor.isEmpty() || valor.length() > 255) return;
+
+        for (Usuario u : dao.buscarPorLoginOuEmail(valor)) {
+            if (u.getEmail_usuario() == null || u.getEmail_usuario().isBlank()) continue;
+            if (excedeuPedidos("conta|" + u.getId_usuario(), MAX_PEDIDOS_POR_CONTA, 15 * 60 * 1000L)) continue;
+            byte[] bytes = new byte[32];
+            RANDOM.nextBytes(bytes);
+            String token = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+            u.setReset_senha_hash(sha256(token));
+            u.setReset_senha_expira(java.time.LocalDateTime.now().plusMinutes(VALIDADE_LINK_MIN));
+            dao.save(u);
+            acesso.enviarLinkRedefinicao(u, token, VALIDADE_LINK_MIN);
+            registrarLogin(u.getId_usuario(), "SENHA", "Pediu redefinição de senha por e-mail", 200, ip);
+        }
+    }
+
+    @Transactional
+    public void redefinirSenha(String token, String nova, String ip) {
+        String erro = "Link inválido ou expirado. Peça um novo em \"Esqueci minha senha\".";
+        if (token == null || token.length() != 43) throw new BadRequestException(erro);
+        Usuario u = dao.buscarPorResetHash(sha256(token)).orElseThrow(() -> new BadRequestException(erro));
+        if (u.getReset_senha_expira() == null || u.getReset_senha_expira().isBefore(java.time.LocalDateTime.now())) {
+            u.setReset_senha_hash(null);
+            u.setReset_senha_expira(null);
+            dao.save(u);
+            throw new BadRequestException(erro);
+        }
+        if (senhaFraca(nova)) throw new BadRequestException(ERRO_SENHA_FRACA);
+
+        u.setSenha_usuario(hashSenha(nova));
+        u.setPrimeiro_login(0);
+        u.setToken_version(u.getToken_version() + 1); // derruba sessões abertas com a senha antiga
+        u.setReset_senha_hash(null);                  // uso único
+        u.setReset_senha_expira(null);
+        dao.save(u);
+        registrarLogin(u.getId_usuario(), "SENHA", "Redefiniu a senha pelo link do e-mail", 200, ip);
+    }
+
+    private boolean excedeuPedidos(String chave, int max, long janelaMs) {
+        long agora = System.currentTimeMillis();
+        if (pedidosRedefinicao.size() > 10_000) pedidosRedefinicao.values().removeIf(p -> agora - p[1] > janelaMs);
+        long[] p = pedidosRedefinicao.compute(chave, (k, v) ->
+            v == null || agora - v[1] > janelaMs ? new long[]{1, agora} : new long[]{v[0] + 1, v[1]});
+        return p[0] > max;
+    }
+
+    private static String sha256(String texto) {
+        try {
+            byte[] h = java.security.MessageDigest.getInstance("SHA-256")
+                .digest(texto.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return java.util.HexFormat.of().formatHex(h);
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     public static class LoginResultado {
@@ -282,18 +429,13 @@ public class UsuarioService {
         if (!ehDono && !ehAdmin && !ehTreinadorDoTime)
             throw new ForbiddenException("Sem permissao para editar este usuario.");
 
-        boolean trocandoSenha = dados.getSenha_usuario() != null && !dados.getSenha_usuario().isBlank();
-        if (trocandoSenha && senhaFraca(dados.getSenha_usuario()))
-            throw new BadRequestException(ERRO_SENHA_FRACA);
-        // Só o próprio dono ou um Admin podem trocar a senha por aqui —
-        // um Treinador não pode sequestrar a conta de outro usuário via troca de senha.
-        if (trocandoSenha && !ehDono && !ehAdmin)
-            throw new ForbiddenException("Sem permissao para alterar a senha deste usuario.");
+        // A senha não muda por aqui (nem para Admin): o dono troca no primeiro
+        // acesso ou em "Esqueci minha senha"; quem gerencia só pode reenviar o acesso.
 
         Usuario u = alvo;
         if (dados.getNome_usuario()      != null) u.setNome_usuario(dados.getNome_usuario());
         if (dados.getEmail_usuario()     != null) u.setEmail_usuario(dados.getEmail_usuario());
-        if (dados.getLogin_usuario()     != null) u.setLogin_usuario(dados.getLogin_usuario());
+        // login é gerado pelo sistema no cadastro e não muda na edição
         // Somente Admin pode alterar o perfil (tipo_usuario) de um cadastro —
         // evita que o próprio usuário ou um Treinador se autopromovam.
         if (dados.getTipo_usuario() != null && ehAdmin) u.setTipo_usuario(dados.getTipo_usuario());
@@ -319,10 +461,6 @@ public class UsuarioService {
         if (dados.getCpf_responsavel_2() != null) u.setCpf_responsavel_2(dados.getCpf_responsavel_2());
         if (dados.getCel_responsavel_1() != null) u.setCel_responsavel_1(dados.getCel_responsavel_1());
         if (dados.getCel_responsavel_2() != null) u.setCel_responsavel_2(dados.getCel_responsavel_2());
-        if (trocandoSenha) {
-            u.setSenha_usuario(hashSenha(dados.getSenha_usuario()));
-            u.setToken_version(u.getToken_version() + 1);
-        }
         // Admin move para qualquer time; Treinador só pode vincular ao próprio time.
         if (dados.getTime() != null && dados.getTime().getId_time() != null) {
             Integer novoTime = dados.getTime().getId_time();
@@ -355,10 +493,8 @@ public class UsuarioService {
     }
 
     public LoginResultado trocarSenha(Integer id, String nova, Integer authId, Integer authTipo) {
-        // Só o próprio usuário do token (ou um Admin) pode trocar esta senha
-        boolean ehDono  = authId != null && authId.equals(id);
-        boolean ehAdmin = authTipo != null && authTipo == 1;
-        if (!ehDono && !ehAdmin)
+        // Só o próprio usuário do token troca a sua senha — nem o Admin troca a de outra pessoa.
+        if (authId == null || !authId.equals(id))
             throw new ForbiddenException("Sem permissao para alterar a senha deste usuario.");
 
         if (senhaFraca(nova))
@@ -369,6 +505,8 @@ public class UsuarioService {
         u.setSenha_usuario(BCrypt.hashpw(nova, BCrypt.gensalt(12)));
         u.setPrimeiro_login(0);
         u.setToken_version(u.getToken_version() + 1); // derruba sessões abertas com a senha antiga
+        u.setReset_senha_hash(null);
+        u.setReset_senha_expira(null);
         dao.save(u);
         String token = jwtUtil.gerarToken(u.getId_usuario(), u.getLogin_usuario(), u.getTipo_usuario(), u.getToken_version());
         u.setSenha_usuario(null);
