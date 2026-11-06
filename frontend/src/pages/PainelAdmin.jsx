@@ -5,7 +5,7 @@ import LogAtividades from '../components/LogAtividades.jsx';
 import Modal from '../components/Modal.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 import ToastsIcone from '../components/ToastsIcone.jsx';
-import { authFetch, getJson, iniciais, lerImagem } from '../lib/api.js';
+import { authFetch, getJson, iniciais, lerFoto } from '../lib/api.js';
 import { ordenar } from '../lib/ordenacao.js';
 import { usuarioLogado } from '../lib/sessao.js';
 import useTitulo from '../lib/useTitulo.js';
@@ -224,7 +224,7 @@ export default function PainelAdmin() {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    try { setFoto(await lerImagem(file)); } catch { toast('Foto muito grande. Máximo 2MB.', false); }
+    try { setFoto(await lerFoto(file)); } catch { toast('Foto muito grande. Máximo 2MB.', false); }
   }
 
   function selecionarTimeForm(id) {

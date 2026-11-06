@@ -134,7 +134,8 @@ public class Usuario {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_time")
-    @JsonIgnoreProperties({"membros","treinador"})
+    // logo_time fora: em base64, ela se repetiria em cada usuário das listagens (a logo vem de /times).
+    @JsonIgnoreProperties({"membros","treinador","logo_time"})
     private Time time;
 
     @Column(name = "rg_responsavel_1", length = 45)

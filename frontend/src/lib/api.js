@@ -49,4 +49,25 @@ export function lerImagem(file, maxMB = 2) {
   });
 }
 
+/**
+ * Foto de perfil: reduz para no máximo `lado` px antes de virar base64, porque
+ * ela viaja em toda listagem de usuários. Se o navegador não conseguir abrir
+ * o arquivo como imagem, fica o original.
+ */
+export async function lerFoto(file, lado = 256, maxMB = 2) {
+  if (file.size > maxMB * 1024 * 1024) throw new Error('grande');
+  let img;
+  try { img = await createImageBitmap(file); } catch { return lerImagem(file, maxMB); }
+  const escala = Math.min(1, lado / Math.max(img.width, img.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * escala);
+  canvas.height = Math.round(img.height * escala);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; // JPEG não tem transparência
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  img.close();
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
 export const iniciais = (n) => (n || '?').split(' ').slice(0, 2).map((x) => x[0]).join('').toUpperCase();
