@@ -65,7 +65,6 @@
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "beoy7V0EaL0kdKqD",
           "name": "OpenAI account"
         }
       }
@@ -92,7 +91,6 @@
       "name": "Qdrant Vector Store",
       "credentials": {
         "qdrantApi": {
-          "id": "9ekHX0pjAnv5VeKz",
           "name": "Qdrant account"
         }
       }
@@ -111,7 +109,6 @@
       "name": "Embeddings OpenAI",
       "credentials": {
         "openAiApi": {
-          "id": "beoy7V0EaL0kdKqD",
           "name": "OpenAI account"
         }
       }
@@ -559,25 +556,6 @@
   "versionCounter": 61,
   "triggerCount": 1,
   "tags": [],
-  "shared": [
-    {
-      "updatedAt": "2026-06-08T22:42:18.429Z",
-      "createdAt": "2026-06-08T22:42:18.429Z",
-      "role": "workflow:owner",
-      "workflowId": "9ahyddVsBWDzoYmv",
-      "projectId": "WP1iNvNx9VAZyIGB",
-      "project": {
-        "updatedAt": "2026-06-02T20:52:43.791Z",
-        "createdAt": "2026-06-02T20:17:52.615Z",
-        "id": "WP1iNvNx9VAZyIGB",
-        "name": "LAIVY",
-        "type": "personal",
-        "icon": null,
-        "description": null,
-        "creatorId": "bf880f09-108f-4dcc-94a3-0787944d7bee"
-      }
-    }
-  ],
   "versionMetadata": {
     "name": null,
     "description": null

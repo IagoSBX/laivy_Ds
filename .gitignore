@@ -20,3 +20,10 @@ src/main/resources/static/
 
 # backups do servidor (scripts/backup.sh)
 backups/
+
+# Configurações locais de IDE
+.idea/
+.vscode/
+# Estado local de ferramentas e arquivos compactados (podem conter dados privados)
+.claude/
+*.zip
