@@ -5,42 +5,41 @@
   </picture>
 </p>
 
-<p align="center"><em>For those who live the game.</em></p>
-
 <p align="center">
   <img alt="Java 21" src="https://img.shields.io/badge/Java-21-007396?logo=openjdk&logoColor=white">
   <img alt="Spring Boot 3.5" src="https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white">
   <img alt="React 19" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
-  <img alt="Vite 8" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white">
   <img alt="MySQL 8" src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white">
   <img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
   <img alt="n8n" src="https://img.shields.io/badge/n8n-IA-EA4B71?logo=n8n&logoColor=white">
 </p>
 
-**LAIVY** é uma plataforma web de gestão para times de basquete. Ela reúne num só lugar o
-elenco, a agenda, os exames e o desempenho dos atletas, uma **prancheta tática animada** e um
-**assistente de IA** que conhece os dados do time.
+# LAIVY
 
-Projeto de TCC do curso técnico da **ETEC (2026)**.
+Sistema web para gestão de times de basquete, feito como TCC do curso técnico da ETEC, em 2026.
 
----
+No LAIVY o treinador cadastra o elenco, marca treinos e jogos, registra exames e o desempenho
+dos atletas, monta jogadas numa prancheta e tira dúvidas com um assistente que conhece os
+dados do próprio time.
 
-## Destaques
+## O que dá para fazer
 
-- **Prancheta tática** – editor de jogadas em SVG com quadra FIBA, linha do tempo de frames,
-  animação, desfazer/refazer, formações defensivas prontas (zona 2-3, 3-2, 1-3-1, individual) e
-  exportação em **PNG** e **PDF**. Tem também um chat de IA que movimenta os jogadores direto no editor.
-- **Assistente de IA com RAG** – chat que responde sobre o time, os atletas e a documentação do
-  sistema, sugere e edita jogadas e cadastra atletas em lote a partir de um PDF ou CSV anexado.
-  Roda em um workflow **n8n** com **OpenAI** e base vetorial **Qdrant**.
-- **Gestão do time** – usuários com quatro perfis (Administrador, Treinador, Atleta e Preparador
-  Físico), times, escalação na quadra, atividades com recorrência, calendário de jogos e
-  pontuação, exames com foto e desempenho com gráficos.
-- **Planos e convites** – autocadastro de treinador, assinatura via **PIX (Mercado Pago)** e
-  convites de atletas por e-mail.
-- **Painel administrativo** – visão geral do sistema e **log de auditoria** das ações dos usuários.
+- Cadastrar usuários em quatro perfis: administrador, treinador, atleta e preparador físico.
+  Cada perfil vê só o que precisa; o atleta, por exemplo, vê apenas os próprios dados.
+- Montar a escalação na quadra, agendar atividades (inclusive recorrentes), lançar resultados
+  de jogos e acompanhar o desempenho em gráficos.
+- Guardar exames com foto.
+- Desenhar jogadas na prancheta: a quadra segue o padrão FIBA, a jogada tem vários quadros que
+  viram uma animação, e dá para exportar em PNG ou PDF. Também existem formações defensivas
+  prontas (zona 2-3, 3-2, 1-3-1 e individual).
+- Conversar com o assistente de IA, que responde sobre o time, sugere e ajusta jogadas e
+  consegue cadastrar vários atletas de uma vez a partir de um PDF ou CSV.
+- Treinadores podem se cadastrar sozinhos, assinar um plano via PIX (Mercado Pago) e convidar
+  atletas por e-mail.
+- O administrador tem um painel com a visão geral do sistema e o histórico de ações dos
+  usuários.
 
-## Arquitetura
+## Como funciona por dentro
 
 ```mermaid
 flowchart LR
@@ -54,97 +53,93 @@ flowchart LR
     B --> SMTP[SMTP]
 ```
 
-- O **frontend React** é compilado pelo Vite e servido pelo próprio Spring Boot, então a
-  aplicação vira um único container.
-- O **n8n** recebe a pergunta já com o contexto que o usuário pode ver e chama ferramentas
-  da API para ler ou alterar dados, sempre com as permissões desse usuário.
-- O banco é versionado com **Flyway** (`src/main/resources/db/migration`).
+O back-end é uma API em Java 21 com Spring Boot 3.5. O front-end é React 19 com Vite; o build
+dele é servido pelo próprio Spring, então a aplicação roda num único container. O banco é
+MySQL, com as mudanças de estrutura versionadas pelo Flyway.
 
-## Stack
+O assistente roda num workflow do n8n. O backend envia a pergunta junto com o contexto que o
+usuário tem permissão de ver, e o n8n usa a OpenAI e uma base vetorial no Qdrant (com a
+documentação do sistema) para responder. Quando precisa ler ou alterar algo, ele chama a
+própria API, sempre com as permissões de quem perguntou.
 
-| Camada | Tecnologias |
-|---|---|
-| Backend | Java 21, Spring Boot 3.5 (Web, Data JPA, Validation, Mail), Flyway, JJWT, jBCrypt, Apache Batik e PDFBox |
-| Frontend | React 19, React Router 7, Vite, Bootstrap 5, Chart.js, FullCalendar |
-| Dados | MySQL 8.4 |
-| IA | n8n, OpenAI, Qdrant |
-| Infra | Docker Compose, Caddy (HTTPS automático), Mailpit para e-mails em desenvolvimento |
+Outras bibliotecas usadas: Bootstrap, Chart.js e FullCalendar no front; JJWT, jBCrypt,
+Apache Batik e PDFBox no back. Em produção, o Caddy cuida do HTTPS.
 
 ## Segurança
 
-- Autenticação com **JWT em cookie `HttpOnly` e `SameSite=Strict`**, senhas com **BCrypt**.
-  Uma versão de token por usuário permite derrubar todas as sessões dele.
-- Senhas temporárias enviadas por e-mail, com troca obrigatória no primeiro acesso. As contas de
-  exemplo recebem uma senha aleatória na primeira subida.
-- Regras de acesso por perfil e por time no backend. O atleta só vê os próprios dados.
-- Cabeçalhos de segurança (CSP, HSTS e outros) no Caddy. Em produção, só as portas 80 e 443
-  ficam expostas.
-- Segredos só por variáveis de ambiente (`.env`, fora do Git), com scripts para gerá-los e
-  trocá-los.
+Alguns cuidados que tomamos:
 
-## Como rodar
+- O login usa JWT guardado em cookie `HttpOnly` e `SameSite=Strict`, e as senhas são salvas
+  com BCrypt. Cada usuário tem uma versão de token, o que permite encerrar todas as sessões
+  dele de uma vez.
+- A senha inicial é temporária, chega por e-mail e precisa ser trocada no primeiro acesso.
+- As permissões são checadas no back-end, por perfil e por time.
+- Nenhum segredo fica no código: tudo vem de variáveis de ambiente, e há scripts para gerar e
+  trocar esses valores.
+- Em produção só as portas 80 e 443 ficam abertas, e o Caddy envia os cabeçalhos de segurança
+  (CSP, HSTS e outros).
 
-**Pré-requisito:** Docker Desktop.
+## Rodando localmente
+
+Precisa do Docker Desktop instalado.
 
 ```bash
-git clone https://github.com/IagoSBX/laivy.git
-cd laivy
+git clone https://github.com/IagoSBX/laivy_Ds.git
+cd laivy_Ds
 cp .env.example .env
 docker compose up --build
 ```
 
-1. Abra **http://localhost:8080**. Os e-mails enviados em desenvolvimento aparecem no Mailpit,
-   em http://localhost:8025.
-2. As contas iniciais (`admin`, `treinador` e `atleta`) recebem uma senha temporária na primeira
-   subida. Para vê-la:
+Depois é só abrir http://localhost:8080. Os e-mails enviados em desenvolvimento não saem de
+verdade; eles aparecem no Mailpit, em http://localhost:8025.
 
-   ```bash
-   docker logs laivy-backend | grep "Senha padrao"
-   ```
+As contas de exemplo (`admin`, `treinador` e `atleta`) ganham uma senha temporária na primeira
+vez que o sistema sobe. Para descobrir qual é:
 
-3. **Segredos fortes (recomendado):** com os containers no ar, rode
-   `python3 scripts/rotacionar-segredos.py` e depois
-   `docker compose up -d --force-recreate backend n8n`.
-4. **Assistente de IA (opcional):** abra o n8n em http://localhost:5678, importe os workflows de
-   `n8n/workflows/` e cadastre as credenciais da OpenAI e do Qdrant.
+```bash
+docker logs laivy-backend | grep "Senha padrao"
+```
 
-### Desenvolvimento
+Para gerar segredos fortes no `.env`, rode `python3 scripts/rotacionar-segredos.py` com os
+containers no ar e depois `docker compose up -d --force-recreate backend n8n`.
 
-Com o Docker no ar, o frontend pode rodar com recarga automática:
+O assistente de IA é opcional. Para usá-lo, abra o n8n em http://localhost:5678, importe os
+workflows da pasta `n8n/workflows/` e cadastre suas credenciais da OpenAI e do Qdrant.
+
+Para mexer no front com recarga automática, deixe o Docker rodando e use:
 
 ```bash
 npm --prefix frontend ci
-npm --prefix frontend run dev    # abre em :5173 e repassa as chamadas da API para :8080
+npm --prefix frontend run dev
 ```
 
-**Testes:** `mvn test` (backend) e `npm --prefix frontend test` (frontend).
+Os testes rodam com `mvn test` (back-end) e `npm --prefix frontend test` (front-end). O passo a
+passo para colocar num servidor está no [DEPLOY.md](DEPLOY.md).
 
-**Produção:** o guia [DEPLOY.md](DEPLOY.md) cobre VPS, HTTPS, segredos, n8n e backups.
-
-## Estrutura
+## Organização das pastas
 
 ```
-├── src/main/java/br/com/gerenciador/projeto/
-│   ├── controller/   endpoints REST
-│   ├── service/      regras de negócio, IA, PIX, exportação PNG/PDF
-│   ├── DAO/          repositórios JPA
-│   ├── model/        entidades
-│   └── security/     JWT, auditoria, proteção das senhas padrão
-├── src/main/resources/db/migration/   migrations Flyway
-├── frontend/src/
-│   ├── pages/        uma tela por arquivo
-│   ├── components/   componentes compartilhados
-│   ├── prancheta/    motor do editor de jogadas (domínio, editor, player, IA)
-│   └── lib/          API, sessão, máscaras e validações
-├── n8n/workflows/    workflows do assistente de IA
-├── deploy/           Caddyfile de produção
-└── scripts/          geração e troca de segredos, backup
+src/main/java/br/com/gerenciador/projeto/
+    controller/   endpoints da API
+    service/      regras de negócio, assistente, PIX e exportação
+    DAO/          acesso ao banco
+    model/        entidades
+    security/     JWT, auditoria e proteção das senhas iniciais
+src/main/resources/db/migration/   migrations do Flyway
+frontend/src/
+    pages/        uma tela por arquivo
+    components/   componentes reaproveitados entre telas
+    prancheta/    editor de jogadas
+    lib/          chamadas à API, sessão, máscaras e validações
+n8n/workflows/    workflows do assistente
+deploy/           configuração do Caddy
+scripts/          segredos e backup
 ```
 
-A documentação técnica completa do TCC está em
+A documentação completa entregue no TCC está em
 [LAIVY_Documentacao_Completa_v2.pdf](LAIVY_Documentacao_Completa_v2.pdf). Ela é de junho de
-2026 e descreve uma versão anterior, sem o React.
+2026, de uma versão anterior à migração para React.
 
 ## Equipe
 
-Iago Silva · Victor Hugo · Yago Ribeiro · Leonardo Assis · João Pedro
+Iago Silva, Victor Hugo, Yago Ribeiro, Leonardo Assis e João Pedro.
